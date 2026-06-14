@@ -17,9 +17,9 @@ pooling_head: 8
 dropout: 0.3
 
 # after the preprocessing step, make sure to point this to your data folder
-data_path: '/scratch/users/rthapa84/psg_fm/data/data_new_128/'
-split_path: '../configs/dataset_split.json'
-save_path: '../checkpoints/'
+data_path: 'data/mesa/hdf5'
+split_path: 'sleepfm/configs/dataset_split.json'
+save_path: 'sleepfm/checkpoints'
 weight_decay: 0.0
 
 # contrastive learning objective you want. pairwise vs. leave_one_out

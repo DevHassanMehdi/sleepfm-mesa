@@ -38,7 +38,7 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
     logger.info("Loaded configuration file")
 
     # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
     model_params = config['model_params']

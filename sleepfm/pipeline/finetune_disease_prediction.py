@@ -112,7 +112,7 @@ def finetune_diagnosis(config_path, channel_groups_path, checkpoint_path, split_
     # config['use_wandb'] = False
 
     # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
     # Initialize model

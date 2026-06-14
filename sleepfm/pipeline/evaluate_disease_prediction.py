@@ -41,7 +41,7 @@ def evaluate_diagnosis_coxph(config_path, channel_groups_path, output_path, spli
     logger.info("Loaded configuration file")
 
     # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
     # Initialize model

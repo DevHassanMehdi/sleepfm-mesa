@@ -19,10 +19,10 @@ lr: 0.001
 num_workers: 8
 
 # make sure to change this path to your local paths. Also, look at README.md for what labels_path should contain
-data_path: '/scratch/users/rthapa84/psg_fm/data/data_new_128/'
-model_path: '../checkpoints/SetTransformer/leave_one_out_128_patch_size_3840'
-split_path: '../configs/dataset_split.json'
-labels_path: '/oak/stanford/groups/jamesz/rthapa84/psg_fm/10_14_28/annotations/sleep_stages'
+data_path: 'data/mesa/hdf5'
+model_path: 'sleepfm/checkpoints/model_base'
+split_path: 'data/mesa/dataset_split_10fold.json'
+labels_path: 'data/mesa/labels'
 save_iter: 1000
 eval_iter: 1000
 log_interval: 10
@@ -30,7 +30,7 @@ accumulation_steps: 16
 use_wandb: false
 
 # dataloader configs
-max_files: 100
+max_files: null
 sampling_freq: 128
 
 channel_like: ["BAS", "RESP", "EKG", "EMG"]

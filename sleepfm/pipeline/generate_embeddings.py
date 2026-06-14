@@ -66,8 +66,8 @@ def generate_embeddings(
 
     logger.info(f"Batch Size: {batch_size}; Number of Workers: {num_workers}")
 
-    device = torch.device("cuda")
-    logger.info(f"Device set to Cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    logger.info(f"Device set to {device}")
 
     start = time.time()
     split_dataset = load_data(split_path)

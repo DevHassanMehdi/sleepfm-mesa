@@ -87,7 +87,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
 
 
     # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
     # Initialize model

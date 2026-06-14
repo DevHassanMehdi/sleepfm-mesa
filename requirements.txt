@@ -1,5 +1,6 @@
 pyedflib==0.1.37
 h5py==3.11.0
+requests==2.34.2
 tqdm==4.66.2
 loguru==0.7.2
 einops==0.7.0

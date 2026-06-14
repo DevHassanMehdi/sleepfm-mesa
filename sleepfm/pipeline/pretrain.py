@@ -177,8 +177,8 @@ def pretrain(
     logger.info(f"Batch Size: {batch_size}; Number of Workers: {num_workers}")
     logger.info(f"Weight Decay: {weight_decay}; Learning Rate: {lr}; Learning Step Period: {lr_step_period}")
 
-    device = torch.device("cuda")
-    logger.info(f"Device set to Cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    logger.info(f"Device set to {device}")
 
     num_modalities = len(modality_types)
     ij = sum([((i, j), (j, i)) for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))], ())
