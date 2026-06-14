@@ -8,13 +8,13 @@ Usage:
 
 import argparse
 import json
+import os
 import random
+import shutil
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
-
-import requests
-from tqdm import tqdm
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -24,10 +24,15 @@ LABEL_DIR = REPO_ROOT / "data/mesa/labels"
 LOGS_DIR = REPO_ROOT / "logs"
 SPLIT_OUT = REPO_ROOT / "data/mesa/dataset_split_10fold.json"
 
-MESA_EDF_BASE = "https://sleepdata.org/datasets/mesa/files/m/browser/polysomnography/edfs"
-MESA_ANNOT_BASE = "https://sleepdata.org/datasets/mesa/files/m/browser/polysomnography/annotations-events-nsrr"
+NSRR_BIN = "/scratch/project_2019517/miniconda3/share/rubygems/bin/nsrr"
+NSRR_GEM_ENV = {
+    "GEM_HOME": "/scratch/project_2019517/miniconda3/share/rubygems",
+    "GEM_PATH": "/scratch/project_2019517/miniconda3/share/rubygems",
+}
+
+MESA_EDF_REMOTE = "mesa/polysomnography/edfs"
+MESA_ANNOT_REMOTE = "mesa/polysomnography/annotations-events-nsrr"
 EDF_MIN_BYTES = 50 * 1024 * 1024
-CHUNK_SIZE = 1024 * 1024
 MAX_SUBJECT_ID = 9999
 
 STAGE_MAP = {
@@ -86,27 +91,28 @@ def save_label_csv(rows: list, csv_path: Path) -> None:
             f.write(f"{r['Start']},{r['Stop']},{r['StageName']},{r['StageNumber']}\n")
 
 
-def stream_download(url: str, token: str, dest_path: Path) -> bool:
-    params = {"auth_token": token}
-    try:
-        with requests.get(url, params=params, stream=True, timeout=60) as resp:
-            if resp.status_code != 200:
-                return False
-            total = int(resp.headers.get("content-length", 0))
-            dest_path.parent.mkdir(parents=True, exist_ok=True)
-            tmp_path = dest_path.with_suffix(dest_path.suffix + ".part")
-            with open(tmp_path, "wb") as f, tqdm(
-                total=total, unit="B", unit_scale=True, desc=dest_path.name, leave=False
-            ) as pbar:
-                for chunk in resp.iter_content(chunk_size=CHUNK_SIZE):
-                    if chunk:
-                        f.write(chunk)
-                        pbar.update(len(chunk))
-            tmp_path.rename(dest_path)
-            return True
-    except requests.RequestException as e:
-        print(f"[ERROR] Download failed for {url}: {e}")
+def check_nsrr_binary() -> None:
+    if not os.access(NSRR_BIN, os.X_OK):
+        print(f"[ERROR] nsrr binary not found or not executable: {NSRR_BIN}")
+        print("        Install it with: gem install nsrr --no-document")
+        sys.exit(1)
+
+
+def nsrr_download(remote_path: str, token: str, dest_path: Path) -> bool:
+    env = {**os.environ, **NSRR_GEM_ENV}
+    cmd = [NSRR_BIN, "download", remote_path, f"--token={token}"]
+    result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env)
+    if result.returncode != 0:
+        print(f"[ERROR] nsrr download failed for {remote_path}: {result.stderr.strip()}")
         return False
+
+    downloaded_path = REPO_ROOT / remote_path
+    if not downloaded_path.exists():
+        return False
+
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(downloaded_path), str(dest_path))
+    return True
 
 
 def generate_10fold_split(subject_ids: list, output_path: Path):
@@ -147,6 +153,7 @@ def main():
     if not args.subjects and not args.subject_list:
         parser.error("Must specify either --subjects or --subject-list")
 
+    check_nsrr_binary()
     token = load_token()
 
     if args.subject_list:
@@ -192,12 +199,12 @@ def main():
                     print(f"[ERROR] Failed to parse XML for {sid}: {e}")
             continue
 
-        edf_url = f"{MESA_EDF_BASE}/mesa-sleep-{sid}.edf"
-        annot_url = f"{MESA_ANNOT_BASE}/mesa-sleep-{sid}-nsrr.xml"
+        edf_remote = f"{MESA_EDF_REMOTE}/mesa-sleep-{sid}.edf"
+        annot_remote = f"{MESA_ANNOT_REMOTE}/mesa-sleep-{sid}-nsrr.xml"
 
         print(f"[INFO] Downloading subject {sid}...")
 
-        edf_success = stream_download(edf_url, token, edf_path)
+        edf_success = nsrr_download(edf_remote, token, edf_path)
         if not edf_success:
             print(f"[WARN] EDF not found for subject {sid}")
             not_found += 1
@@ -209,7 +216,7 @@ def main():
             not_found += 1
             continue
 
-        annot_success = stream_download(annot_url, token, annot_path)
+        annot_success = nsrr_download(annot_remote, token, annot_path)
         if not annot_success:
             print(f"[WARN] Annotation not found for subject {sid}")
             not_found += 1
