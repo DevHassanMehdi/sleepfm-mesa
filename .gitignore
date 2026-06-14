@@ -182,11 +182,7 @@ cython_debug/
 .pypirc
 
 # MESA data (large binary files)
-data/mesa/edf/
-data/mesa/annotations/
-data/mesa/hdf5/
-data/mesa/embeddings/
-data/mesa/embeddings_5min/
+data/
 
 # macOS
 .DS_Store
