@@ -115,6 +115,86 @@ def nsrr_download(remote_path: str, token: str, dest_path: Path) -> bool:
     return True
 
 
+def process_subject(sid: str, token: str):
+    """Download (or reuse) a single subject's EDF/annotation/label files.
+
+    Returns a tuple of (status, label_generated) where status is one of
+    "skipped", "downloaded", or "not_found".
+    """
+    edf_path = EDF_DIR / f"mesa-sleep-{sid}.edf"
+    annot_path = ANNOT_DIR / f"mesa-sleep-{sid}-nsrr.xml"
+    label_path = LABEL_DIR / f"mesa-sleep-{sid}.csv"
+
+    edf_ok = edf_path.exists() and edf_path.stat().st_size >= EDF_MIN_BYTES
+    annot_ok = annot_path.exists()
+
+    label_generated = False
+
+    if edf_ok and annot_ok:
+        if not label_path.exists():
+            try:
+                rows = parse_mesa_xml(annot_path)
+                save_label_csv(rows, label_path)
+                label_generated = True
+            except ET.ParseError as e:
+                print(f"[ERROR] Failed to parse XML for {sid}: {e}")
+        return "skipped", label_generated
+
+    edf_remote = f"{MESA_EDF_REMOTE}/mesa-sleep-{sid}.edf"
+    annot_remote = f"{MESA_ANNOT_REMOTE}/mesa-sleep-{sid}-nsrr.xml"
+
+    print(f"[INFO] Downloading subject {sid}...")
+
+    edf_success = nsrr_download(edf_remote, token, edf_path)
+    if not edf_success:
+        print(f"[WARN] EDF not found for subject {sid}")
+        return "not_found", label_generated
+
+    if edf_path.stat().st_size < EDF_MIN_BYTES:
+        print(f"[WARN] EDF for subject {sid} is too small, removing")
+        edf_path.unlink()
+        return "not_found", label_generated
+
+    annot_success = nsrr_download(annot_remote, token, annot_path)
+    if not annot_success:
+        print(f"[WARN] Annotation not found for subject {sid}")
+        return "not_found", label_generated
+
+    try:
+        rows = parse_mesa_xml(annot_path)
+        save_label_csv(rows, label_path)
+        label_generated = True
+    except ET.ParseError as e:
+        print(f"[ERROR] Failed to parse XML for {sid}: {e}")
+
+    return "downloaded", label_generated
+
+
+def scan_existing_subjects() -> list:
+    """Find all subjects with a valid EDF + annotation already on disk.
+
+    Regenerates any missing label CSVs from the annotation XML so the
+    split stays consistent across resumed runs.
+    """
+    subject_ids = []
+    for edf_path in sorted(EDF_DIR.glob("mesa-sleep-*.edf")):
+        if edf_path.stat().st_size < EDF_MIN_BYTES:
+            continue
+        sid = edf_path.stem.split("-")[-1]
+        annot_path = ANNOT_DIR / f"mesa-sleep-{sid}-nsrr.xml"
+        label_path = LABEL_DIR / f"mesa-sleep-{sid}.csv"
+        if not annot_path.exists():
+            continue
+        if not label_path.exists():
+            try:
+                rows = parse_mesa_xml(annot_path)
+                save_label_csv(rows, label_path)
+            except ET.ParseError as e:
+                print(f"[ERROR] Failed to parse XML for {sid}: {e}")
+        subject_ids.append(sid)
+    return subject_ids
+
+
 def generate_10fold_split(subject_ids: list, output_path: Path):
     random.seed(42)
     ids = subject_ids.copy()
@@ -156,15 +236,6 @@ def main():
     check_nsrr_binary()
     token = load_token()
 
-    if args.subject_list:
-        subject_ids = []
-        for line in Path(args.subject_list).read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line:
-                subject_ids.append(line.zfill(4))
-    else:
-        subject_ids = [str(i).zfill(4) for i in range(1, args.subjects + 1)]
-
     EDF_DIR.mkdir(parents=True, exist_ok=True)
     ANNOT_DIR.mkdir(parents=True, exist_ok=True)
     LABEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -176,64 +247,56 @@ def main():
     labels_generated = 0
     completed_ids = []
 
-    for sid in subject_ids:
-        if int(sid) > MAX_SUBJECT_ID:
-            continue
+    if args.subject_list:
+        subject_ids = []
+        for line in Path(args.subject_list).read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                subject_ids.append(line.zfill(4))
 
-        edf_path = EDF_DIR / f"mesa-sleep-{sid}.edf"
-        annot_path = ANNOT_DIR / f"mesa-sleep-{sid}-nsrr.xml"
-        label_path = LABEL_DIR / f"mesa-sleep-{sid}.csv"
+        for sid in subject_ids:
+            if int(sid) > MAX_SUBJECT_ID:
+                continue
 
-        edf_ok = edf_path.exists() and edf_path.stat().st_size >= EDF_MIN_BYTES
-        annot_ok = annot_path.exists()
+            status, label_generated = process_subject(sid, token)
+            if label_generated:
+                labels_generated += 1
 
-        if edf_ok and annot_ok:
-            skipped += 1
-            completed_ids.append(sid)
-            if not label_path.exists():
-                try:
-                    rows = parse_mesa_xml(annot_path)
-                    save_label_csv(rows, label_path)
-                    labels_generated += 1
-                except ET.ParseError as e:
-                    print(f"[ERROR] Failed to parse XML for {sid}: {e}")
-            continue
+            if status == "skipped":
+                skipped += 1
+                completed_ids.append(sid)
+            elif status == "downloaded":
+                downloaded += 1
+                completed_ids.append(sid)
+            else:
+                not_found += 1
+    else:
+        target = args.subjects
+        sid_num = 1
 
-        edf_remote = f"{MESA_EDF_REMOTE}/mesa-sleep-{sid}.edf"
-        annot_remote = f"{MESA_ANNOT_REMOTE}/mesa-sleep-{sid}-nsrr.xml"
+        while len(completed_ids) < target and sid_num <= MAX_SUBJECT_ID:
+            sid = str(sid_num).zfill(4)
 
-        print(f"[INFO] Downloading subject {sid}...")
+            status, label_generated = process_subject(sid, token)
+            if label_generated:
+                labels_generated += 1
 
-        edf_success = nsrr_download(edf_remote, token, edf_path)
-        if not edf_success:
-            print(f"[WARN] EDF not found for subject {sid}")
-            not_found += 1
-            continue
+            if status == "skipped":
+                skipped += 1
+                completed_ids.append(sid)
+            elif status == "downloaded":
+                downloaded += 1
+                completed_ids.append(sid)
+            else:
+                not_found += 1
 
-        if edf_path.stat().st_size < EDF_MIN_BYTES:
-            print(f"[WARN] EDF for subject {sid} is too small, removing")
-            edf_path.unlink()
-            not_found += 1
-            continue
+            print(f"[INFO] Progress: {len(completed_ids)}/{target} subjects completed")
+            sid_num += 1
 
-        annot_success = nsrr_download(annot_remote, token, annot_path)
-        if not annot_success:
-            print(f"[WARN] Annotation not found for subject {sid}")
-            not_found += 1
-            continue
-
-        try:
-            rows = parse_mesa_xml(annot_path)
-            save_label_csv(rows, label_path)
-            labels_generated += 1
-        except ET.ParseError as e:
-            print(f"[ERROR] Failed to parse XML for {sid}: {e}")
-
-        downloaded += 1
-        completed_ids.append(sid)
-
-    if completed_ids:
-        generate_10fold_split(completed_ids, SPLIT_OUT)
+    existing_ids = scan_existing_subjects()
+    all_completed_ids = sorted(set(existing_ids) | set(completed_ids))
+    if all_completed_ids:
+        generate_10fold_split(all_completed_ids, SPLIT_OUT)
 
     print("=" * 46)
     print(" MESA Download Complete")
