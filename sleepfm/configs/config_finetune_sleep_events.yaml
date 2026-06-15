@@ -14,7 +14,7 @@ seed: 42
 model: 'SleepEventLSTMClassifier'
 dataset: 'mesa'
 batch_size: 16
-epochs: 2
+epochs: 20
 lr: 0.001
 num_workers: 2
 
