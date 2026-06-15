@@ -9,6 +9,7 @@
 #SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/embeddings_%j.log
 
 cd /users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
 
@@ -17,4 +18,5 @@ python sleepfm/pipeline/generate_embeddings.py \
     --dataset_name mesa \
     --splits train,validation,test \
     --num_workers 4 \
-    --batch_size 32
+    --batch_size 32 \
+    --fold 0

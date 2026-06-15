@@ -4,7 +4,10 @@ from torch import nn
 from loguru import logger
 import os
 import sys
-sys.path.append("../")
+
+SLEEPFM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.dirname(SLEEPFM_DIR)
+sys.path.append(SLEEPFM_DIR)
 from utils import *
 from models.dataset import SetTransformerDataset, collate_fn
 from models.models import SetTransformer
@@ -22,19 +25,21 @@ import h5py
 @click.command("generate_embeddings")
 @click.option("--model_path", type=str, default='path')
 @click.option("--dataset_name", type=str, default='mesa')
-@click.option("--channel_groups_path", type=str, default='../configs/channel_groups.json')
-@click.option("--split_path", type=str, default='../configs/dataset_split.json')
+@click.option("--channel_groups_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/channel_groups.json"))
+@click.option("--split_path", type=str, default=os.path.join(REPO_ROOT, "data/mesa/dataset_split_10fold.json"))
 @click.option("--splits", type=str, default='train,validation,test')
 @click.option("--num_workers", type=int, default=16)
 @click.option("--batch_size", type=int, default=128)
+@click.option("--fold", type=int, default=0)
 def generate_embeddings(
     model_path,
-    dataset_name, 
-    channel_groups_path, 
+    dataset_name,
+    channel_groups_path,
     split_path,
     splits,
-    num_workers, 
-    batch_size
+    num_workers,
+    batch_size,
+    fold
 ):
     config_path = os.path.join(model_path, "config.json")
     config = load_config(config_path)
@@ -71,6 +76,7 @@ def generate_embeddings(
 
     start = time.time()
     split_dataset = load_data(split_path)
+    split_dataset = split_dataset[f"fold_{fold}"]
     splits = splits.split(",")
 
     if dataset_name.lower() in ["shhs1", "shhs2"]:
@@ -82,7 +88,7 @@ def generate_embeddings(
             filtered_files = [fp for fp in split_dataset[split] if dataset_name in fp.lower()]
             hdf5_paths += filtered_files
         
-        hdf5_paths = [os.path.join(data_path, file) for file in hdf5_paths]
+        hdf5_paths = [os.path.join(data_path, os.path.dirname(file), "hdf5", os.path.basename(file)) for file in hdf5_paths]
 
     logger.info(f"Number of files to process: {len(hdf5_paths)}")
 
@@ -105,8 +111,15 @@ def generate_embeddings(
     logger.info(f'Trainable parameters: {total_params / 1e6:.2f} million')
     logger.info(f'Number of layers: {total_layers}')
 
-    checkpoint = torch.load(os.path.join(model_path, "best.pt"))
-    model.load_state_dict(checkpoint["state_dict"])
+    checkpoint = torch.load(os.path.join(model_path, "best.pt"), map_location=device)
+    state_dict = checkpoint["state_dict"]
+    has_module_prefix = any(k.startswith("module.") for k in state_dict.keys())
+    model_has_module = isinstance(model, torch.nn.DataParallel)
+    if has_module_prefix and not model_has_module:
+        state_dict = {k[len("module."):]: v for k, v in state_dict.items()}
+    elif not has_module_prefix and model_has_module:
+        state_dict = {f"module.{k}": v for k, v in state_dict.items()}
+    model.load_state_dict(state_dict)
     model.eval()
 
     with torch.no_grad():

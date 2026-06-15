@@ -15,6 +15,7 @@
     "num_layers": 6,
     "pooling_head": 8,
     "dropout": 0.3,
+    "data_path": "/users/hamehdi/projects/sleepfm-mesa/data",
     "split_path": "path_to_/dataset_split.json",
     "save_path": "path_to_/models",
     "weight_decay": 0.0,

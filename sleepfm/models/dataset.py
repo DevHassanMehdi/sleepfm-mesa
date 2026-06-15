@@ -9,7 +9,7 @@ from tqdm import tqdm
 import multiprocessing
 import time
 import sys
-sys.path.append("../")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import load_data, save_data
 import pandas as pd
 import json
