@@ -3,7 +3,7 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:v100:1
 #SBATCH --time=04:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=128G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=mesa_finetune
 #SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/finetune_%j.log

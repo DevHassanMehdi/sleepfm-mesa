@@ -16,10 +16,12 @@ dataset: 'mesa'
 batch_size: 16
 epochs: 2
 lr: 0.001
-num_workers: 8
+num_workers: 2
 
 # make sure to change this path to your local paths. Also, look at README.md for what labels_path should contain
-data_path: 'data/mesa/hdf5'
+# data_path points at the embeddings root (model_path), since fine-tuning trains on
+# generated embeddings (sleepfm/checkpoints/model_base/mesa/*.hdf5), not raw EDF-derived HDF5s.
+data_path: 'sleepfm/checkpoints/model_base'
 model_path: 'sleepfm/checkpoints/model_base'
 split_path: 'data/mesa/dataset_split_10fold.json'
 labels_path: 'data/mesa/labels'
@@ -33,5 +35,5 @@ use_wandb: false
 max_files: null
 sampling_freq: 128
 
-channel_like: ["BAS", "RESP", "EKG", "EMG"]
+channel_like: ["BAS"]
 

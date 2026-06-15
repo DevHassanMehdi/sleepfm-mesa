@@ -7,13 +7,21 @@ from loguru import logger
 import wandb
 import yaml
 import os
+
+# Must be set before h5py is imported (via models.dataset) to take effect.
+os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
+
 from datetime import datetime
 import sys
-sys.path.append("../")
+
+SLEEPFM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.dirname(SLEEPFM_DIR)
+sys.path.append(SLEEPFM_DIR)
+
 from utils import *
 from models.models import SleepEventLSTMClassifier
 from models.dataset import SleepEventClassificationDataset as Dataset
-from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn 
+from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn
 from tqdm import tqdm
 import pandas as pd
 import torch.nn.functional as F
@@ -49,22 +57,39 @@ def masked_cross_entropy_loss(outputs, y_data, mask):
 
 
 @click.command("finetune_sleep_staging")
-@click.option("--config_path", type=str, default='../configs/config_finetune_sleep_events.yaml')
-@click.option("--channel_groups_path", type=str, default='../configs/channel_groups.json' )
+@click.option("--config_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/config_finetune_sleep_events.yaml"))
+@click.option("--channel_groups_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/channel_groups.json"))
 @click.option("--checkpoint_path", type=str, default=None)
 @click.option("--split_path", type=str, default=None)
 @click.option("--train_split", type=str, default="train")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split):
+@click.option("--fold", type=int, default=0)
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
+
+    # Resolve relative config paths against the repo root so the script
+    # works regardless of the current working directory.
+    for key in ["data_path", "model_path", "split_path", "labels_path"]:
+        if config.get(key) and not os.path.isabs(config[key]):
+            config[key] = os.path.join(REPO_ROOT, config[key])
 
     prefix = config["labels_path"].split("/")[-1]
     current_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if split_path:
+        if not os.path.isabs(split_path):
+            split_path = os.path.join(REPO_ROOT, split_path)
         config["split_path"] = split_path
-    
+
+    # Select the requested fold from the 10-fold split and write it out as a
+    # flat {train, validation, test} split for the dataset class to consume.
+    full_split = load_data(config["split_path"])
+    fold_split = full_split[f"fold_{fold}"]
+    fold_split_path = os.path.join(REPO_ROOT, "data/mesa", f"dataset_split_10fold_fold{fold}.json")
+    save_data(fold_split, fold_split_path)
+    config["split_path"] = fold_split_path
+
     split_path = config["split_path"]
     channel_like = config["channel_like"]
     channel_like_string = "_".join(channel_like)

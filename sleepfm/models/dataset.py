@@ -190,7 +190,11 @@ class SleepEventClassificationDataset(Dataset):
         label_files = []
 
         for dataset_name in dataset:
-            label_files += glob.glob(os.path.join(labels_path, dataset_name, "**", "*.csv"), recursive=True)
+            dataset_label_files = glob.glob(os.path.join(labels_path, dataset_name, "**", "*.csv"), recursive=True)
+            if not dataset_label_files:
+                # Fall back to labels_path itself if it doesn't have a per-dataset subdirectory
+                dataset_label_files = glob.glob(os.path.join(labels_path, "**", "*.csv"), recursive=True)
+            label_files += dataset_label_files
 
         # label_files = [label_file for label_file in os.listdir(labels_path) if label_file.endswith(".csv")]
 
@@ -277,8 +281,17 @@ class SleepEventClassificationDataset(Dataset):
 
         # Convert x_data to tensor
         x_data = torch.tensor(x_data, dtype=torch.float32)
+        y_data = pd.to_numeric(pd.Series(y_data), errors="coerce").fillna(-1).to_numpy()
         y_data = torch.tensor(y_data, dtype=torch.float32)
         min_length = min(x_data.shape[1], len(y_data))
+
+        if min_length == 0:
+            # Skip files with no usable (modality, label) overlap, e.g. when
+            # channel_like selects a modality with an empty embedding for
+            # this file. Otherwise this propagates as a zero-length sequence
+            # dimension into the collate function's mask tensor.
+            return self.__getitem__((idx + 1) % self.total_len)
+
         x_data = x_data[:, :min_length, :]
         y_data = y_data[:min_length]
 
