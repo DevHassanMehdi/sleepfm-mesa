@@ -12,6 +12,7 @@ cd /users/hamehdi/projects/sleepfm-mesa
 export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
+export HDF5_USE_FILE_LOCKING=FALSE
 
 python sleepfm/pipeline/generate_embeddings.py \
     --model_path sleepfm/checkpoints/model_base \
