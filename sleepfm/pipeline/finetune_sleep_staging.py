@@ -105,7 +105,6 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-    logger.info(f"Using device: {device}")
 
     # Initialize model
     model_params = config['model_params']
@@ -116,9 +115,8 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
 
-    logger.info(f"Model loaded: {model_name}")
     total_layers, total_params = count_parameters(model)
-    logger.info(f'Params: {total_params / 1e6:.2f}M | Layers: {total_layers}')
+    print(f"Device: {device.type} | Model: {model_name} | Params: {total_params / 1e6:.2f}M")
 
     # Initialize dataset and dataloaders
     batch_size = config.get('batch_size', 1)
@@ -130,7 +128,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
 
-    logger.info(f"Data loaded: {len(train_loader)} train batches, {len(val_loader)} val batches")
+    print(f"Data: fold={fold} | train={len(train_dataset)} subjects | val={len(val_dataset)} subjects")
 
     # Optimizer and loss function
     num_epochs = config.get('epochs', 500)
@@ -138,18 +136,13 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-6)
 
     start_epoch = 0
-    best_val_loss = float('inf')
     if checkpoint_path:
         checkpoint_path = os.path.join(output, "checkpoint.pth")
         if os.path.isfile(checkpoint_path):
-            logger.info(f"Loading checkpoint '{checkpoint_path}'")
             checkpoint = torch.load(checkpoint_path)
             start_epoch = checkpoint['epoch']
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            logger.info(f"Checkpoint loaded. Resuming from epoch {start_epoch}.")
-        else:
-            logger.info(f"Initializing the model from scratch...")
 
     # Set up Weights & Biases
     if config["use_wandb"]:
@@ -158,10 +151,11 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
 
     # Training loop
     best_val_f1 = -float('inf')
+    best_epoch = 0
     patience_counter = 0
     patience = 50
 
-    class_names = ['Wake', 'N1', 'N2', 'N3', 'REM']
+    class_abbrev = ['W', 'N1', 'N2', 'N3', 'R']
 
     for epoch in range(start_epoch, num_epochs):
         model.train()
@@ -206,24 +200,13 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         val_f1 = f1_score(all_targets_valid, all_preds_valid, average='macro', zero_division=0)
         per_class_f1 = f1_score(all_targets_valid, all_preds_valid, average=None, zero_division=0)
 
-        # Get current learning rate
-        current_lr = optimizer.param_groups[0]['lr']
-
         # Format per-class F1 scores
-        per_class_f1_str = " ".join([f"{cls}={f1:.2f}" for cls, f1 in zip(class_names, per_class_f1)])
+        per_class_str = " ".join([f"{abbr}={f1:.2f}" for abbr, f1 in zip(class_abbrev, per_class_f1)])
 
-        # Colored logging with epoch summary
-        f1_color = "<green>" if val_f1 > best_val_f1 else "<red>"
-        best_marker = " <yellow>⭐ BEST</yellow>" if val_f1 > best_val_f1 else ""
-        epoch_log = (
-            f"<cyan>[E{epoch + 1:03d}/{num_epochs}]</cyan> "
-            f"<yellow>loss={train_loss:.3f} val_loss={val_loss:.3f}</yellow> "
-            f"{f1_color}val_f1={val_f1:.3f}</> "
-            f"<cyan>lr={current_lr:.2e}</> | "
-            f"{per_class_f1_str}"
-            f"{best_marker}"
-        )
-        logger.info(epoch_log)
+        # Plain text epoch log
+        best_marker = " *" if val_f1 > best_val_f1 else ""
+        epoch_log = f"E{epoch + 1:03d} loss={train_loss:.3f} vl={val_loss:.3f} vf1={val_f1:.3f} | {per_class_str}{best_marker}"
+        print(epoch_log)
 
         # Log to wandb if enabled
         if config["use_wandb"]:
@@ -231,13 +214,13 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
                 "train_loss": train_loss,
                 "val_loss": val_loss,
                 "val_f1": val_f1,
-                "lr": current_lr,
                 "epoch": epoch + 1
             })
 
         # Early stopping
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
+            best_epoch = epoch + 1
             patience_counter = 0
             best_model_path = os.path.join(output, "best.pth")
             torch.save(model.state_dict(), best_model_path)
@@ -245,7 +228,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                logger.warning(f"<bold><red>Early stopping at epoch {epoch + 1} (F1 did not improve for {patience} epochs)</red></bold>")
+                print(f"E{epoch + 1} Early stop | best_f1={best_val_f1:.3f} @ epoch {best_epoch}")
                 break
 
         scheduler.step()
