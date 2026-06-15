@@ -1,11 +1,13 @@
 
 import os
 import glob
+import gc
 import pyedflib
 import h5py
 import numpy as np
 import pandas as pd
 import datetime
+import psutil
 from scipy.signal import resample
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -17,13 +19,20 @@ from scipy.signal import butter, filtfilt
 import mne
 
 
+def log_memory_usage(prefix=""):
+    process = psutil.Process()
+    mem_mb = process.memory_info().rss / 1024 / 1024
+    logger.info(f"{prefix}Memory usage: {mem_mb:.0f} MB")
+
+
 class EDFToHDF5Converter:
-    def __init__(self, root_dir, target_dir, resample_rate=512, num_threads=1, num_files=-1):
-        self.resample_rate = resample_rate 
+    def __init__(self, root_dir, target_dir, resample_rate=512, num_threads=1, num_files=-1, batch_size=10):
+        self.resample_rate = resample_rate
         self.root_dir = root_dir
         self.target_dir = target_dir
         self.num_threads = num_threads
         self.num_files = num_files
+        self.batch_size = batch_size
         self.file_locations = self.get_files() 
         # self.scorers = ['ES','LS','MS']
         self.flow_events = {'Central Apnea': 1, 'Mixed Apnea': 2, 'Obstructive Apnea': 3, 'Hypopnea': 4, 'RERA': 5}
@@ -253,10 +262,14 @@ class EDFToHDF5Converter:
         event_signal_names = []
         self.save_to_hdf5(resampled_signals, channel_names,event_signals,event_signal_names, hdf5_path)
 
+        del signals, resampled_signals, sample_rates, channel_names, event_signals, event_signal_names
+        gc.collect()
+        log_memory_usage(prefix=f"After {os.path.basename(edf_path)}: ")
+
     def convert_multiprocessing(self, args):
         edf_files = args
 
-        for edf_file in tqdm(edf_files, desc="Converting EDF files"):
+        for i, edf_file in enumerate(tqdm(edf_files, desc="Converting EDF files"), start=1):
 
             if edf_file.endswith(".edf"):
                 replace_str = ".edf"
@@ -272,6 +285,10 @@ class EDFToHDF5Converter:
             except Exception as e:
                 warnings.warn(f"Warning: Could not process the file {edf_file}. Error: {str(e)}")
                 continue
+
+            if i % self.batch_size == 0:
+                gc.collect()
+                log_memory_usage(prefix=f"After batch of {self.batch_size} files ({i}/{len(edf_files)}): ")
         return [1]
 
     def convert_all(self):
@@ -378,18 +395,20 @@ def main():
     parser = argparse.ArgumentParser(description="Process data and create hdf5")
     parser.add_argument('--root_dir', type=str, required=True, help='Path to edf')
     parser.add_argument('--target_dir', type=str, required=True, help='Path to save hdf5')
-    parser.add_argument("--num_threads", type=int, default=4, help="Number of threads for parallel processing")
+    parser.add_argument("--num_threads", type=int, default=1, help="Number of threads for parallel processing")
     parser.add_argument("--num_files", type=int, default=-1, help="Number of files to process. If -1, process all")
     parser.add_argument("--resample_rate", type=int, default=256, help="Target sampling rate for hdf5 file.")
+    parser.add_argument("--batch_size", type=int, default=10, help="Number of files to process before clearing memory")
     args = parser.parse_args()
 
     os.makedirs(args.target_dir, exist_ok=True)
 
     converter = EDFToHDF5Converter(root_dir=args.root_dir,
-                                target_dir=args.target_dir, 
-                                num_threads=args.num_threads, 
+                                target_dir=args.target_dir,
+                                num_threads=args.num_threads,
                                 num_files=args.num_files,
-                                resample_rate=args.resample_rate)
+                                resample_rate=args.resample_rate,
+                                batch_size=args.batch_size)
 
     converter.convert_all_multiprocessing()
 

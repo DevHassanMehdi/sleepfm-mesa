@@ -14,6 +14,6 @@ conda activate sleepfm_env
 python sleepfm/preprocessing/preprocessing.py \
     --root_dir data/mesa/edf \
     --target_dir data/mesa/hdf5 \
-    --num_threads 8 \
+    --num_threads 1 \
     --num_files -1 \
     --resample_rate 128
