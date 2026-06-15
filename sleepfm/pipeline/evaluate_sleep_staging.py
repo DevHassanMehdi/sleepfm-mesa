@@ -8,27 +8,49 @@ from loguru import logger
 import wandb
 import yaml
 import os
+
+# Must be set before h5py is imported (via models.dataset) to take effect.
+os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
+
 from datetime import datetime
 import sys
-sys.path.append("../")
+
+SLEEPFM_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.dirname(SLEEPFM_DIR)
+sys.path.append(SLEEPFM_DIR)
+
 from utils import *
 
 from models.models import SleepEventLSTMClassifier
 from models.dataset import SleepEventClassificationDataset as Dataset
-from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn 
+from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn
 from tqdm import tqdm
 
 
 @click.command("evaluate_sleep_staging")
-@click.option("--config_path", type=str, default='../configs/config_finetune_sleep_events.yaml')
-@click.option("--channel_groups_path", type=str, default='../configs/channel_groups.json' )
+@click.option("--config_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/config_finetune_sleep_events.yaml"))
+@click.option("--channel_groups_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/channel_groups.json"))
 @click.option("--output_path", type=str, required=True)
 @click.option("--split", type=str, default="test")
 @click.option("--dataset", type=str, default=None)
-def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split, dataset):
+@click.option("--fold", type=int, default=0)
+def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split, dataset, fold):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
+
+    # Resolve relative config paths against the repo root so the script
+    # works regardless of the current working directory.
+    for key in ["data_path", "model_path", "split_path", "labels_path"]:
+        if config.get(key) and not os.path.isabs(config[key]):
+            config[key] = os.path.join(REPO_ROOT, config[key])
+
+    if not os.path.isabs(output_path):
+        output_path = os.path.join(REPO_ROOT, output_path)
+
+    # Each fold's checkpoint lives in its own subdirectory (see
+    # finetune_sleep_staging.py), so load from output_path/fold_{fold}.
+    output_path = os.path.join(output_path, f"fold_{fold}")
 
     if "config.json" in os.listdir(output_path):
         config = load_data(os.path.join(output_path, "config.json"))
@@ -62,7 +84,7 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
     checkpoint_path = os.path.join(output_path, "best.pth")
     if os.path.isfile(checkpoint_path):
         logger.info(f"Loading checkpoint '{checkpoint_path}'")
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint)
         logger.info("Checkpoint loaded successfully")
     else:

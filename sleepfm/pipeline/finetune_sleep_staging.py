@@ -100,7 +100,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         output = checkpoint_path
         config = load_data(os.path.join(output, "config.json"))
     else:
-        output = os.path.join(config["model_path"], f"{config['model']}_{dataset_prefix}_{prefix}_{channel_like_string}")
+        output = os.path.join(config["model_path"], f"{config['model']}_{dataset_prefix}_{prefix}_{channel_like_string}", f"fold_{fold}")
         os.makedirs(output, exist_ok=True)
     
     # Set up logging
