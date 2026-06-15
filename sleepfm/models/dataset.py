@@ -250,13 +250,23 @@ class SleepEventClassificationDataset(Dataset):
         return self.index_map
 
     def __getitem__(self, idx):
+        # Iterate instead of recursing when a sample is invalid (e.g. empty
+        # BAS embedding with channel_like=["BAS"]) so that a large fraction
+        # of unusable samples doesn't blow the recursion/call stack.
+        for attempt in range(self.total_len):
+            result = self._try_get_item((idx + attempt) % self.total_len)
+            if result is not None:
+                return result
+        raise RuntimeError(f"No valid samples found after {self.total_len} attempts")
+
+    def _try_get_item(self, idx):
         hdf5_path, label_path, start_index = self.index_map[idx]
         labels_df = pd.read_csv(label_path)
         labels_df["StageNumber"] = labels_df["StageNumber"].replace(-1, 0)
 
         #### Temp
         # labels_df["StageNumber"] = labels_df["StageNumber"].apply(lambda x: 1 if x > 0 else 0)
-        
+
         y_data = labels_df["StageNumber"].to_numpy()
 
         x_data = []
@@ -274,7 +284,7 @@ class SleepEventClassificationDataset(Dataset):
 
         if not x_data:
             # Skip this data point if x_data is empty
-            return self.__getitem__((idx + 1) % self.total_len)
+            return None
 
         # Convert x_data list to a single numpy array
         x_data = np.array(x_data)
@@ -290,7 +300,7 @@ class SleepEventClassificationDataset(Dataset):
             # channel_like selects a modality with an empty embedding for
             # this file. Otherwise this propagates as a zero-length sequence
             # dimension into the collate function's mask tensor.
-            return self.__getitem__((idx + 1) % self.total_len)
+            return None
 
         x_data = x_data[:, :min_length, :]
         y_data = y_data[:min_length]
