@@ -284,6 +284,11 @@ class SleepEventClassificationDataset(Dataset):
 
         if not x_data:
             # Skip this data point if x_data is empty
+            logger.debug(
+                f"_try_get_item: skipping idx={idx} hdf5_path={hdf5_path} "
+                f"label_path={label_path} dset_names={dset_names} "
+                f"channel_like={self.channel_like} reason=no_matching_channels"
+            )
             return None
 
         # Convert x_data list to a single numpy array
@@ -300,6 +305,11 @@ class SleepEventClassificationDataset(Dataset):
             # channel_like selects a modality with an empty embedding for
             # this file. Otherwise this propagates as a zero-length sequence
             # dimension into the collate function's mask tensor.
+            logger.debug(
+                f"_try_get_item: skipping idx={idx} hdf5_path={hdf5_path} "
+                f"label_path={label_path} x_data.shape={tuple(x_data.shape)} "
+                f"len(y_data)={len(y_data)} reason=min_length_zero"
+            )
             return None
 
         x_data = x_data[:, :min_length, :]

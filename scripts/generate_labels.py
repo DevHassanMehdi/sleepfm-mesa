@@ -18,7 +18,7 @@ STAGE_MAP = {
     "stage 2": 2, "n2": 2, "stage 2 sleep": 2,
     "stage 3": 3, "n3": 3, "sws": 3, "stage 4": 3,
     "stage 3 sleep": 3, "stage 4 sleep": 3,
-    "rem": 4, "stage r": 4, "stage rem": 4, "rem sleep": 4,
+    "rem": 4, "stage r": 4, "stage r sleep": 4, "stage rem": 4, "rem sleep": 4,
 }
 
 
@@ -27,13 +27,17 @@ def parse_mesa_xml(xml_path: Path) -> list:
     root = tree.getroot()
     rows = []
     for event in root.iter("ScoredEvent"):
-        name_el = event.find("Name")
+        type_el = event.find("EventType")
+        concept_el = event.find("EventConcept")
         start_el = event.find("Start")
         dur_el = event.find("Duration")
-        if name_el is None or start_el is None or dur_el is None:
+        if type_el is None or concept_el is None or start_el is None or dur_el is None:
             continue
-        raw_name = (name_el.text or "").strip()
-        stage_name = raw_name.split("|")[0].strip()
+        event_type = (type_el.text or "").strip()
+        if "Stages" not in event_type:
+            continue
+        raw_concept = (concept_el.text or "").strip()
+        stage_name = raw_concept.split("|")[0].strip()
         stage_num = STAGE_MAP.get(stage_name.lower(), -1)
         start = float(start_el.text)
         stop = start + float(dur_el.text)
