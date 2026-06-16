@@ -1,0 +1,30 @@
+# SleepFM Sleep Staging Results — BAS Only (EEG Baseline)
+# Date: 2026-06-15
+# Modalities: BAS (EEG1, EEG2, EEG3, EOG-L, EOG-R)
+# Subjects: 349 MESA subjects
+# CV: 10-fold
+# Epochs: 500 (early stopping patience=50)
+# LR: 0.0001 (cosine annealing)
+# Class weights: inverse frequency
+
+Per-fold macro F1:
+Fold 0: 0.2243 (n=7073)
+Fold 1: 0.2071 (n=6769)
+Fold 2: 0.1870 (n=7188)
+Fold 3: 0.2119 (n=6978)
+Fold 4: 0.2245 (n=6402)
+Fold 5: 0.2232 (n=7532)
+Fold 6: 0.2091 (n=7380)
+Fold 7: 0.2111 (n=6640)
+Fold 8: 0.2216 (n=6405)
+Fold 9: 0.2018 (n=6675)
+
+Mean macro F1: 0.2122 +/- 0.0113
+Overall accuracy: 0.2411
+
+Per-class F1:
+Wake:  precision=0.23 recall=0.26 f1=0.24 support=14013
+N1:    precision=0.32 recall=0.33 f1=0.32 support=20783
+N2:    precision=0.35 recall=0.16 f1=0.22 support=23720
+N3:    precision=0.15 recall=0.28 f1=0.19 support=6518
+REM:   precision=0.07 recall=0.16 f1=0.10 support=4008
