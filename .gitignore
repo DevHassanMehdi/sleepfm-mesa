@@ -16,6 +16,8 @@ __pycache__/
 
 # sleepfm/checkpoints
 sleepfm/pipeline/logs
+sleepfm/checkpoints/model_base
+sleepfm/checkpoints/runs
 
 # Distribution / packaging
 .Python

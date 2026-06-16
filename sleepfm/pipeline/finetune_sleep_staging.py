@@ -97,11 +97,9 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         output = checkpoint_path
         config = load_data(os.path.join(output, "config.json"))
     else:
-        output = os.path.join(config["model_path"], f"{config['model']}_{dataset_prefix}_{prefix}_{channel_like_string}", f"fold_{fold}")
+        scratch_base = "/scratch/project_2019517/sleepfm-data/checkpoints"
+        output = os.path.join(scratch_base, f"{config['model']}_{dataset_prefix}_{prefix}_{channel_like_string}", f"fold_{fold}")
         os.makedirs(output, exist_ok=True)
-
-    # Set up logging
-    logger.add("logs/training_{time}.log", rotation="10 MB")
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -116,7 +114,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         model = nn.DataParallel(model)
 
     total_layers, total_params = count_parameters(model)
-    print(f"Device: {device.type} | Model: {model_name} | Params: {total_params / 1e6:.2f}M")
+    logger.info(f"Device: {device.type} | Model: {model_name} | Params: {total_params / 1e6:.2f}M")
 
     # Initialize dataset and dataloaders
     batch_size = config.get('batch_size', 1)
@@ -128,7 +126,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
 
-    print(f"Data: fold={fold} | train={len(train_dataset)} subjects | val={len(val_dataset)} subjects")
+    logger.info(f"Data: fold={fold} | train={len(train_dataset)} | val={len(val_dataset)}")
 
     # Optimizer and loss function
     num_epochs = config.get('epochs', 500)
@@ -206,7 +204,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         # Plain text epoch log
         best_marker = " *" if val_f1 > best_val_f1 else ""
         epoch_log = f"E{epoch + 1:03d} loss={train_loss:.3f} vl={val_loss:.3f} vf1={val_f1:.3f} | {per_class_str}{best_marker}"
-        print(epoch_log)
+        logger.info(epoch_log)
 
         # Log to wandb if enabled
         if config["use_wandb"]:
@@ -228,7 +226,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"E{epoch + 1} Early stop | best_f1={best_val_f1:.3f} @ epoch {best_epoch}")
+                logger.info(f"E{epoch + 1} Early stop | best_f1={best_val_f1:.3f} @ epoch {best_epoch}")
                 break
 
         scheduler.step()
