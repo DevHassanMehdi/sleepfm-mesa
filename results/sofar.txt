@@ -1,0 +1,9 @@
+The modular staging pipeline is done. EEG baseline → +ECG → +RESP → +EMG, all with 10-fold CV.
+Results (5-class macro F1): EEG 0.212, +ECG 0.216, +RESP 0.221, +EMG 0.219.
+Preprocessing exactly as the SleepFM paper did: 128 Hz, 4th-order Butterworth, z-score; embeddings from the frozen SetTransformer.
+Note: MESA has no skin temperature or accelerometer channels.
+Note: SleepFM was pretrained on MESA, so fine-tuning means data leakage. May need to train from scratch.
+Pipeline bugs along the way. label parsing, temporal alignment, and class collapse to N1 due to wrong weights distribution.
+CSC Issues. VS Code server bug, profile path issue, aknowledged by CSC.
+Next, disease prediction on the same modular pipeline.
+Stick with 10-fold? or test leave-one-out? Timing?
