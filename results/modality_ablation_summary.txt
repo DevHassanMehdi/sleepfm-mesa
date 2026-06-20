@@ -1,0 +1,22 @@
+SleepFM MESA Sleep Staging - Modality Ablation
+10-fold CV | Frozen published SleepFM encoder + 2-layer BiLSTM head | 5-class
+
+Modalities                Overall MacroF1   Accuracy   Per-fold mean
+BAS (EEG/EOG)             0.7205            0.8216     0.7194 +/- 0.0153
+BAS+EKG                   0.7237            0.8232     0.7230 +/- 0.0129
+BAS+EKG+RESP              0.7269            0.8253     0.7263 +/- 0.0118
+BAS+EKG+RESP+EMG          0.7305            0.8259     0.7298 +/- 0.0148
+
+Per-class F1 (full multimodal):
+  Wake 0.94 | N1 0.43 | N2 0.80 | N3 0.65 | REM 0.84
+
+Key points:
+- Monotonic improvement with each added modality (+0.010 macro F1 total)
+- N1 lowest F1 (expected; hardest stage, low inter-rater agreement)
+- Results within SleepFM paper range (0.70-0.78)
+- Low fold variance (~0.012-0.015), result is stable
+- Fixed label segment-to-epoch alignment bug that previously capped all
+  staging at ~0.16-0.22 macro F1; linear probe jumped 0.16 -> 0.63 after fix
+
+Caveat: SleepFM was pretrained on data including MESA (encoder-level leakage).
+Test subjects are held out from head training, but encoder has seen MESA.
