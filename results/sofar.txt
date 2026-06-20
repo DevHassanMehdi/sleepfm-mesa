@@ -7,3 +7,11 @@ Pipeline bugs along the way. label parsing, temporal alignment, and class collap
 CSC Issues. VS Code server bug, profile path issue, aknowledged by CSC.
 Next, disease prediction on the same modular pipeline.
 Stick with 10-fold? or test leave-one-out? Timing?
+
+
+The accurracy should be 70-80 not 20 ish
+Data pre-proceessing check
+focus on eeg and ecg
+the performacne should be way higher than we are getting. We need to check what the actual issue is.
+Try with either sleep staging or disease prediction. Just make sure pipeline is working.
+Everything is good with CSC
