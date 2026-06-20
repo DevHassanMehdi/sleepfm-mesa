@@ -36,4 +36,4 @@ use_wandb: false
 max_files: null
 sampling_freq: 128
 
-channel_like: ["BAS"]
+channel_like: ["BAS", "EKG"]

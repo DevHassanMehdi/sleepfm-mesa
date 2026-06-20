@@ -1,16 +1,15 @@
 """Regenerate MESA label CSVs from already-downloaded annotation XML files.
-
+Emits ONE ROW PER 30-SECOND EPOCH (expanded from variable-length stage events).
 Usage:
     python scripts/generate_labels.py
 """
-
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-
 ANNOT_DIR = REPO_ROOT / "data/mesa/annotations"
 LABEL_DIR = REPO_ROOT / "data/mesa/labels"
+EPOCH_SEC = 30.0
 
 STAGE_MAP = {
     "wake": 0, "w": 0,
@@ -21,11 +20,10 @@ STAGE_MAP = {
     "rem": 4, "stage r": 4, "stage r sleep": 4, "stage rem": 4, "rem sleep": 4,
 }
 
-
 def parse_mesa_xml(xml_path: Path) -> list:
     tree = ET.parse(xml_path)
     root = tree.getroot()
-    rows = []
+    events = []
     for event in root.iter("ScoredEvent"):
         type_el = event.find("EventType")
         concept_el = event.find("EventConcept")
@@ -33,22 +31,30 @@ def parse_mesa_xml(xml_path: Path) -> list:
         dur_el = event.find("Duration")
         if type_el is None or concept_el is None or start_el is None or dur_el is None:
             continue
-        event_type = (type_el.text or "").strip()
-        if "Stages" not in event_type:
+        if "Stages" not in (type_el.text or ""):
             continue
-        raw_concept = (concept_el.text or "").strip()
-        stage_name = raw_concept.split("|")[0].strip()
+        stage_name = (concept_el.text or "").strip().split("|")[0].strip()
         stage_num = STAGE_MAP.get(stage_name.lower(), -1)
+        if stage_num < 0:
+            continue
         start = float(start_el.text)
-        stop = start + float(dur_el.text)
-        rows.append({
-            "Start": start,
-            "Stop": stop,
-            "StageName": stage_name,
-            "StageNumber": stage_num,
-        })
-    return [r for r in rows if r["StageNumber"] >= 0]
+        dur = float(dur_el.text)
+        events.append((start, dur, stage_name, stage_num))
 
+    # Expand into per-30-sec-epoch rows
+    rows = []
+    for start, dur, stage_name, stage_num in events:
+        n_epochs = int(round(dur / EPOCH_SEC))
+        for e in range(n_epochs):
+            ep_start = start + e * EPOCH_SEC
+            ep_stop = ep_start + EPOCH_SEC
+            rows.append({
+                "Start": ep_start,
+                "Stop": ep_stop,
+                "StageName": stage_name,
+                "StageNumber": stage_num,
+            })
+    return rows
 
 def save_label_csv(rows: list, csv_path: Path) -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -57,20 +63,14 @@ def save_label_csv(rows: list, csv_path: Path) -> None:
         for r in rows:
             f.write(f"{r['Start']},{r['Stop']},{r['StageName']},{r['StageNumber']}\n")
 
-
 def main():
     if not ANNOT_DIR.exists():
         print(f"[ERROR] Annotations directory not found: {ANNOT_DIR}")
         return
-
     xml_files = sorted(ANNOT_DIR.glob("*.xml"))
     print(f"[INFO] Found {len(xml_files)} annotation files in {ANNOT_DIR}")
-
     LABEL_DIR.mkdir(parents=True, exist_ok=True)
-
-    generated = 0
-    failed = 0
-
+    generated = failed = 0
     for xml_path in xml_files:
         subject_id = xml_path.name.split("-nsrr")[0]
         csv_path = LABEL_DIR / f"{subject_id}.csv"
@@ -78,19 +78,14 @@ def main():
             rows = parse_mesa_xml(xml_path)
             save_label_csv(rows, csv_path)
             generated += 1
-            print(f"[OK] {subject_id}: {len(rows)} stage events -> {csv_path.name}")
+            print(f"[OK] {subject_id}: {len(rows)} epochs -> {csv_path.name}")
         except ET.ParseError as e:
             print(f"[ERROR] Failed to parse {xml_path.name}: {e}")
             failed += 1
-
     print("=" * 46)
-    print(" Label Generation Complete")
-    print("=" * 46)
-    print(f" Generated : {generated} CSV files")
-    print(f" Failed    : {failed}")
+    print(f" Generated : {generated} CSV files | Failed: {failed}")
     print(f" Output    : {LABEL_DIR}")
     print("=" * 46)
-
 
 if __name__ == "__main__":
     main()

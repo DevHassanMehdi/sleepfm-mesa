@@ -3,7 +3,7 @@ seed: 42
 model: 'SetTransformer'
 in_channels: 1
 batch_size: 128
-epochs: 2
+epochs: 30
 lr: 0.001
 lr_step_period: 2
 gamma: 0.1
