@@ -148,7 +148,9 @@ The gap between the two is about 0.07 to 0.09 macro F1. This is the cost of remo
 
 ## How to reproduce
 
-Key files in the repository:
+Repository & Key files in the repository:
+
+### Repo: https://github.com/DevHassanMehdi/sleepfm-mesa.git
 
 - Label generation: `scripts/generate_labels.py` (expands stage events into per-30-second-epoch labels)
 - Published-encoder ablation configs: `sleepfm/configs/config_ft_BAS.yaml`, `config_ft_BAS_EKG.yaml`, `config_ft_BAS_EKG_RESP.yaml`, `config_ft_BAS_EKG_RESP_EMG.yaml`
@@ -168,6 +170,6 @@ Result files:
 
 Environment:
 
-- Run on the CSC Puhti supercomputer, GPU partition, one V100 per job.
+- Ran on the CSC Puhti supercomputer, GPU partition, one V100 per job.
 - Conda environment `sleepfm_env`, Python 3.10.
 - Set `export HDF5_USE_FILE_LOCKING=FALSE` before any HDF5 operation.
