@@ -1,0 +1,34 @@
+SleepFM MESA Sleep Staging - Published vs From-Scratch Comparison
+5-class staging, 2-layer BiLSTM head on frozen embeddings.
+
+PUBLISHED ENCODER (pretrained on data incl. MESA -> encoder-level leakage)
+Protocol: 10-fold CV, test set, all 350 subjects.
+  Modalities              Macro F1   Accuracy
+  BAS                     0.7205     0.8216
+  BAS+EKG                 0.7237     0.8232
+  BAS+EKG+RESP            0.7269     0.8253
+  BAS+EKG+RESP+EMG        0.7305     0.8259
+
+FROM-SCRATCH ENCODER (pretrained by us on 270 MESA subjects only, no leakage)
+Protocol: single split, held-out 50 test (49 with labels).
+  Modalities              Macro F1   Accuracy
+  BAS                     0.6509     0.7702
+  BAS+EKG                 0.6310     0.7610
+  BAS+EKG+RESP            0.6496     0.7755
+  BAS+EKG+RESP+EMG        0.6601     0.7802
+
+Per-class F1 (from-scratch, full multimodal):
+  Wake 0.90 | N1 0.27 | N2 0.76 | N3 0.62 | REM 0.75
+
+KEY POINTS
+- Removing leakage + pretraining on only 270 subjects costs ~0.07-0.09 macro F1.
+- From-scratch still reaches mid-0.60s, showing the architecture, head, and
+  data carry real signal without large-scale pretraining.
+- From-scratch ablation is noisier (single split) and not cleanly monotonic;
+  full multimodal is still the best (0.66).
+- N1 remains the weakest stage in both settings (expected).
+
+PROTOCOL CAVEAT
+Published = 10-fold CV test; from-scratch = single held-out split. Different
+protocols, so not perfectly apples-to-apples, but both are held-out test
+evaluations. From-scratch single-split numbers carry more variance.
