@@ -30,6 +30,24 @@ EDF_DIR = Path("/scratch/project_2019517/sleepfm-data/mesa/edf")
 HYPNOGRAM_DIR = Path("/scratch/project_2019517/usleep_mesa/hypnograms")
 VIEWS_ROOT = Path("/scratch/project_2019517/usleep_mesa/views")
 
+# Channel groups per modality. U-Sleep randomly samples one channel per group
+# at train time and predicts on every combination (+ majority vote) at test
+# time. The number of groups = number of input channels the model is built
+# for (must match build.batch_shape's last dim, patched below).
+MODALITY_CHANNEL_GROUPS = {
+    "EEG_EOG": [["EEG1", "EEG2", "EEG3"], ["EOG-L", "EOG-R"]],
+    "EEG_ONLY": [["EEG1", "EEG2", "EEG3"]],
+    "ECG_ONLY": [["EKG"]],
+    "EEG_ECG": [["EEG1", "EEG2", "EEG3"], ["EKG"]],
+}
+
+
+def format_channel_groups_yaml(groups) -> str:
+    inner = ",\n  ".join(
+        "[" + ", ".join(f"'{ch}'" for ch in group) + "]" for group in groups
+    )
+    return f"[\n  {inner}\n]"
+
 DATASET_CONFIG_TEMPLATE = """\
 train_data:
   data_dir: {views_dir}/train
@@ -54,10 +72,7 @@ test_data:
 
 set_sample_rate: 128
 
-channel_sampling_groups: [
-  ['EEG1', 'EEG2', 'EEG3'],
-  ['EOG-L', 'EOG-R']
-]
+channel_sampling_groups: {channel_sampling_groups}
 
 sleep_stage_annotations:
   W: 0
@@ -112,8 +127,9 @@ def link_subject(subject_id: str, split_view_dir: Path):
 
 
 
-def patch_hparams(project_dir: Path):
-    """Remove non-mesa datasets and cap n_epochs in hparams.yaml."""
+def patch_hparams(project_dir: Path, n_channels: int):
+    """Remove non-mesa datasets, cap n_epochs, and fix the model's expected
+    input channel count (build.batch_shape's last dim) in hparams.yaml."""
     import re
     hparams_path = project_dir / "hyperparameters" / "hparams.yaml"
     if not hparams_path.exists():
@@ -121,26 +137,39 @@ def patch_hparams(project_dir: Path):
         return
     with open(hparams_path) as f:
         c = f.read()
-    if "shhs:" not in c and "n_epochs: 500" in c:
-        print("hparams.yaml already patched, skipping")
-        return
+    already_patched = "shhs:" not in c and "n_epochs: 500" in c
+    if not already_patched:
+        c = re.sub(
+            r'datasets:.*?(?=\nbuild:)',
+            'datasets:\n  mesa: dataset_configurations/mesa.yaml\n',
+            c,
+            flags=re.DOTALL
+        )
+        c = re.sub(r'n_epochs:\s*\d+', 'n_epochs: 500', c)
+        c = re.sub(r',?\s*decay:\s*[0-9.]+', '', c)
+        c = c.replace('ignore_out_of_bounds_classes: true', 'ignore_out_of_bounds_classes: false')
+        c = re.sub(r'learning_rate:\s*[0-9e\.\-]+', 'learning_rate: 1.0e-04', c)
+        c = re.sub(r'max_loaded_per_dataset:\s*\d+', 'max_loaded_per_dataset: 20', c)
+        c = re.sub(r'num_access_before_reload:\s*\d+', 'num_access_before_reload: 64', c)
+
+    # batch_shape: [batch, seq_len, samples_per_epoch, n_channels] - n_channels
+    # must equal the number of channel_sampling_groups for this modality.
     c = re.sub(
-        r'datasets:.*?(?=\nbuild:)',
-        'datasets:\n  mesa: dataset_configurations/mesa.yaml\n',
+        r'batch_shape:\s*\[(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,)\s*\d+\s*\]',
+        lambda m: f'batch_shape: [{m.group(1)} {n_channels}]',
         c,
-        flags=re.DOTALL
     )
-    c = re.sub(r'n_epochs:\s*\d+', 'n_epochs: 500', c)
-    c = re.sub(r',?\s*decay:\s*[0-9.]+', '', c)
-    c = c.replace('ignore_out_of_bounds_classes: true', 'ignore_out_of_bounds_classes: false')
+
     with open(hparams_path, "w") as f:
         f.write(c)
-    print("hparams.yaml patched: mesa only, n_epochs=500")
+    print(f"hparams.yaml patched: mesa only, n_epochs=500, batch_shape n_channels={n_channels}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fold", type=int, required=True)
+    parser.add_argument("--modality", required=True, choices=sorted(MODALITY_CHANNEL_GROUPS),
+                         help="Which channel set to configure U-Sleep for")
     parser.add_argument("--split_path", default="data/mesa/dataset_split_10fold.json")
     parser.add_argument("--project_dir", required=True,
                          help="Path to the U-Sleep project dir created by 'ut init'")
@@ -165,15 +194,20 @@ def main():
                 n_ok += 1
         print(f"  linked {n_ok}/{len(entries)} subjects")
 
+    channel_groups = MODALITY_CHANNEL_GROUPS[args.modality]
+
     project_dir = Path(args.project_dir)
     dataset_config_dir = project_dir / "hyperparameters" / "dataset_configurations"
     dataset_config_dir.mkdir(parents=True, exist_ok=True)
     dataset_config_path = dataset_config_dir / "mesa.yaml"
     dataset_config_path.write_text(
-        DATASET_CONFIG_TEMPLATE.format(views_dir=views_dir)
+        DATASET_CONFIG_TEMPLATE.format(
+            views_dir=views_dir,
+            channel_sampling_groups=format_channel_groups_yaml(channel_groups),
+        )
     )
-    print(f"Wrote dataset config: {dataset_config_path}")
-    patch_hparams(project_dir)
+    print(f"Wrote dataset config ({args.modality}, {len(channel_groups)} channel(s)): {dataset_config_path}")
+    patch_hparams(project_dir, n_channels=len(channel_groups))
 
 
 if __name__ == "__main__":

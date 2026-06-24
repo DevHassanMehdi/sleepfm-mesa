@@ -1,0 +1,3 @@
+YASA BASELINE - ECG_ONLY
+==================================================
+SKIPPED: yasa.SleepStaging requires an EEG channel (eeg_name is mandatory) and has no ECG-only mode. Not run.

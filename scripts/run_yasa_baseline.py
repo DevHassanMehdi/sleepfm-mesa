@@ -1,8 +1,12 @@
 """
 YASA sleep staging baseline on MESA 10-fold CV.
 Runs on raw EDF files, computes macro F1 against existing per-epoch labels.
-Uses EEG1 + EOG-L + EMG channels.
+
+Supports multiple modality configurations via --modality, for a 1-1
+comparison with SleepFM's modality ablation. YASA's SleepStaging always
+requires an EEG channel, so ECG_ONLY is not supported (see SKIP note below).
 """
+import argparse
 import os
 import json
 import warnings
@@ -17,10 +21,20 @@ warnings.filterwarnings("ignore")
 EDF_DIR = "/scratch/project_2019517/sleepfm-data/mesa/edf"
 LABELS_DIR = "data/mesa/labels"
 SPLIT_PATH = "data/mesa/dataset_split_10fold.json"
-OUTPUT_PATH = "results/yasa_baseline_results.txt"
 
 YASA_TO_INT = {"WAKE": 0, "N1": 1, "N2": 2, "N3": 3, "REM": 4, "ART": -1, "UNS": -1}
 STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
+
+# YASA's SleepStaging classifier is EEG-anchored (eeg_name is mandatory);
+# it cannot run on ECG alone, hence no ECG_ONLY entry here.
+MODALITY_KWARGS = {
+    "EEG_EOG": dict(eeg_name="EEG1", eog_name="EOG-L", emg_name="EMG"),
+    "EEG_ONLY": dict(eeg_name="EEG1", emg_name="EMG"),
+}
+MODALITY_CHANNELS_LABEL = {
+    "EEG_EOG": "EEG1 + EOG-L + EMG",
+    "EEG_ONLY": "EEG1 + EMG (no EOG)",
+}
 
 def get_subject_id(filepath):
     return os.path.basename(filepath).replace(".hdf5", "")
@@ -31,13 +45,13 @@ def load_labels(subject_id):
         return None
     return pd.read_csv(label_path)["StageNumber"].values.astype(int)
 
-def run_yasa_on_subject(subject_id):
+def run_yasa_on_subject(subject_id, modality_kwargs):
     edf_path = os.path.join(EDF_DIR, f"{subject_id}.edf")
     if not os.path.exists(edf_path):
         return None, f"EDF not found"
     try:
         raw = mne.io.read_raw_edf(edf_path, preload=True, verbose=False)
-        sls = yasa.SleepStaging(raw, eeg_name="EEG1", eog_name="EOG-L", emg_name="EMG")
+        sls = yasa.SleepStaging(raw, **modality_kwargs)
         hypnogram = sls.predict()
         predicted = hypnogram.hypno.values
         pred_int = np.array([YASA_TO_INT[s] for s in predicted])
@@ -46,6 +60,28 @@ def run_yasa_on_subject(subject_id):
         return None, str(e)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--modality", default="EEG_EOG",
+                         choices=["EEG_EOG", "EEG_ONLY", "ECG_ONLY"])
+    args = parser.parse_args()
+
+    output_path = f"results/yasa_{args.modality}_results.txt"
+
+    if args.modality == "ECG_ONLY":
+        os.makedirs("results", exist_ok=True)
+        msg = (
+            "YASA BASELINE - ECG_ONLY\n"
+            + "=" * 50 + "\n"
+            "SKIPPED: yasa.SleepStaging requires an EEG channel (eeg_name is "
+            "mandatory) and has no ECG-only mode. Not run.\n"
+        )
+        print(msg)
+        with open(output_path, "w") as f:
+            f.write(msg)
+        return
+
+    modality_kwargs = MODALITY_KWARGS[args.modality]
+
     with open(SPLIT_PATH) as f:
         splits = json.load(f)
 
@@ -69,7 +105,7 @@ def main():
                 print(f"  No labels: {subject_id}")
                 continue
 
-            preds, err = run_yasa_on_subject(subject_id)
+            preds, err = run_yasa_on_subject(subject_id, modality_kwargs)
             if preds is None:
                 print(f"  Error {subject_id}: {err}")
                 errors.append((subject_id, err))
@@ -109,9 +145,9 @@ def main():
     )
 
     lines = [
-        "YASA BASELINE — MESA 10-fold CV",
+        f"YASA BASELINE ({args.modality}) — MESA 10-fold CV",
         "=" * 50,
-        "Channels: EEG1 + EOG-L + EMG",
+        f"Channels: {MODALITY_CHANNELS_LABEL[args.modality]}",
         "",
         "Per-fold macro F1:",
     ]
@@ -131,9 +167,9 @@ def main():
 
     result_text = "\n".join(lines)
     print("\n" + result_text)
-    with open(OUTPUT_PATH, "w") as f:
+    with open(output_path, "w") as f:
         f.write(result_text)
-    print(f"\nSaved to {OUTPUT_PATH}")
+    print(f"\nSaved to {output_path}")
 
 if __name__ == "__main__":
     main()
