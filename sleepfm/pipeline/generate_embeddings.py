@@ -126,24 +126,11 @@ def generate_embeddings(
         with tqdm.tqdm(total=len(dataloader)) as pbar:
             for batch in dataloader:
                 batch_data, mask_list, file_paths, dset_names_list, chunk_starts = batch
-                (bas, resp, ekg, emg) = batch_data
-                (mask_bas, mask_resp, mask_ekg, mask_emg) = mask_list
-
-                bas = bas.to(device, dtype=torch.float)
-                resp = resp.to(device, dtype=torch.float)
-                ekg = ekg.to(device, dtype=torch.float)
-                emg = emg.to(device, dtype=torch.float)
-
-                mask_bas = mask_bas.to(device, dtype=torch.bool)
-                mask_resp = mask_resp.to(device, dtype=torch.bool)
-                mask_ekg = mask_ekg.to(device, dtype=torch.bool)
-                mask_emg = mask_emg.to(device, dtype=torch.bool)
-
+                modality_tensors = [x.to(device, dtype=torch.float) for x in batch_data]
+                modality_masks = [m.to(device, dtype=torch.bool) for m in mask_list]
                 embeddings = [
-                    model(bas, mask_bas),
-                    model(resp, mask_resp),
-                    model(ekg, mask_ekg),
-                    model(emg, mask_emg),
+                    model(modality_tensors[i], modality_masks[i])
+                    for i in range(len(modality_tensors))
                 ]
 
                 embeddings_new = [e[0].unsqueeze(1) for e in embeddings]

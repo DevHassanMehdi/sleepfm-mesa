@@ -28,14 +28,10 @@ def index_file_helper(args):
                 if not channel_like or dset_name in channel_like:
                     if isinstance(hf[dset_name], h5py.Dataset):
                         dset_names.append(dset_name)
-                        if dset_name in channel_groups["BAS"]:
-                            modality_to_channels["BAS"].append(dset_name)
-                        if dset_name in channel_groups["RESP"]:
-                            modality_to_channels["RESP"].append(dset_name)
-                        if dset_name in channel_groups["EKG"]:
-                            modality_to_channels["EKG"].append(dset_name)
-                        if dset_name in channel_groups["EMG"]:
-                            modality_to_channels["EMG"].append(dset_name)
+                        for group_name, group_channels in channel_groups.items():
+                            if dset_name in group_channels:
+                                if group_name in modality_to_channels:
+                                    modality_to_channels[group_name].append(dset_name)
             flag = True
             for modality, channels in modality_to_channels.items():
                 if len(channels) == 0:
@@ -107,14 +103,10 @@ class SetTransformerDataset(Dataset):
 
         modality_to_channels = {modality_type: [] for modality_type in self.config["modality_types"]}
         for dset_name in dset_names:
-            if dset_name in self.channel_groups["BAS"]:
-                modality_to_channels["BAS"].append(dset_name)
-            if dset_name in self.channel_groups["RESP"]:
-                modality_to_channels["RESP"].append(dset_name)
-            if dset_name in self.channel_groups["EKG"]:
-                modality_to_channels["EKG"].append(dset_name)
-            if dset_name in self.channel_groups["EMG"]:
-                modality_to_channels["EMG"].append(dset_name)
+            for group_name, group_channels in self.channel_groups.items():
+                if dset_name in group_channels:
+                    if group_name in modality_to_channels:
+                        modality_to_channels[group_name].append(dset_name)
 
         target = []
         with h5py.File(file_path, 'r', rdcc_nbytes=300 * 512 * 8 * 2) as hf:
