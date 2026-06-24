@@ -1,0 +1,137 @@
+"""
+YASA sleep staging baseline on MESA 10-fold CV.
+Runs on raw EDF files, computes macro F1 against existing per-epoch labels.
+Uses EEG1 + EOG-L + EMG channels.
+"""
+import os
+import json
+import warnings
+import numpy as np
+import pandas as pd
+import mne
+import yasa
+from sklearn.metrics import f1_score, classification_report
+
+warnings.filterwarnings("ignore")
+
+EDF_DIR = "/scratch/project_2019517/sleepfm-data/mesa/edf"
+LABELS_DIR = "data/mesa/labels"
+SPLIT_PATH = "data/mesa/dataset_split_10fold.json"
+OUTPUT_PATH = "results/yasa_baseline_results.txt"
+
+YASA_TO_INT = {"WAKE": 0, "N1": 1, "N2": 2, "N3": 3, "REM": 4, "ART": -1, "UNS": -1}
+STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
+
+def get_subject_id(filepath):
+    return os.path.basename(filepath).replace(".hdf5", "")
+
+def load_labels(subject_id):
+    label_path = os.path.join(LABELS_DIR, f"{subject_id}.csv")
+    if not os.path.exists(label_path):
+        return None
+    return pd.read_csv(label_path)["StageNumber"].values.astype(int)
+
+def run_yasa_on_subject(subject_id):
+    edf_path = os.path.join(EDF_DIR, f"{subject_id}.edf")
+    if not os.path.exists(edf_path):
+        return None, f"EDF not found"
+    try:
+        raw = mne.io.read_raw_edf(edf_path, preload=True, verbose=False)
+        sls = yasa.SleepStaging(raw, eeg_name="EEG1", eog_name="EOG-L", emg_name="EMG")
+        hypnogram = sls.predict()
+        predicted = hypnogram.hypno.values
+        pred_int = np.array([YASA_TO_INT[s] for s in predicted])
+        return pred_int, None
+    except Exception as e:
+        return None, str(e)
+
+def main():
+    with open(SPLIT_PATH) as f:
+        splits = json.load(f)
+
+    all_preds = []
+    all_labels = []
+    fold_f1s = []
+    errors = []
+
+    for fold_idx in range(10):
+        fold_key = f"fold_{fold_idx}"
+        test_files = splits[fold_key]["test"]
+        fold_preds = []
+        fold_labels = []
+
+        print(f"\n=== Fold {fold_idx} ({len(test_files)} subjects) ===")
+
+        for filepath in test_files:
+            subject_id = get_subject_id(filepath)
+            labels = load_labels(subject_id)
+            if labels is None:
+                print(f"  No labels: {subject_id}")
+                continue
+
+            preds, err = run_yasa_on_subject(subject_id)
+            if preds is None:
+                print(f"  Error {subject_id}: {err}")
+                errors.append((subject_id, err))
+                continue
+
+            n = min(len(preds), len(labels))
+            preds = preds[:n]
+            labels = labels[:n]
+
+            # exclude ART/UNS
+            mask = preds >= 0
+            fold_preds.append(preds[mask])
+            fold_labels.append(labels[mask])
+
+        if fold_preds:
+            fp = np.concatenate(fold_preds)
+            fl = np.concatenate(fold_labels)
+            macro_f1 = f1_score(fl, fp, average="macro", zero_division=0)
+            fold_f1s.append(macro_f1)
+            all_preds.append(fp)
+            all_labels.append(fl)
+            print(f"  Fold {fold_idx} macro F1: {macro_f1:.4f}")
+
+    all_preds_cat = np.concatenate(all_preds)
+    all_labels_cat = np.concatenate(all_labels)
+    overall_f1 = f1_score(all_labels_cat, all_preds_cat, average="macro", zero_division=0)
+    mean_f1 = np.mean(fold_f1s)
+    std_f1 = np.std(fold_f1s)
+
+    report = classification_report(
+        all_labels_cat, all_preds_cat,
+        labels=[0, 1, 2, 3, 4],
+        target_names=STAGE_NAMES,
+        zero_division=0
+    )
+
+    lines = [
+        "YASA BASELINE — MESA 10-fold CV",
+        "=" * 50,
+        "Channels: EEG1 + EOG-L + EMG",
+        "",
+        "Per-fold macro F1:",
+    ]
+    for i, f1 in enumerate(fold_f1s):
+        lines.append(f"  Fold {i}: {f1:.4f}")
+    lines += [
+        f"\nMean fold macro F1: {mean_f1:.4f} +/- {std_f1:.4f}",
+        f"Overall macro F1:   {overall_f1:.4f}",
+        "",
+        "Classification report (all folds combined):",
+        report,
+    ]
+    if errors:
+        lines.append(f"Errors ({len(errors)} subjects):")
+        for sid, err in errors:
+            lines.append(f"  {sid}: {err}")
+
+    result_text = "\n".join(lines)
+    print("\n" + result_text)
+    with open(OUTPUT_PATH, "w") as f:
+        f.write(result_text)
+    print(f"\nSaved to {OUTPUT_PATH}")
+
+if __name__ == "__main__":
+    main()
