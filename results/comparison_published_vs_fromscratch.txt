@@ -27,8 +27,3 @@ KEY POINTS
 - From-scratch ablation is noisier (single split) and not cleanly monotonic;
   full multimodal is still the best (0.66).
 - N1 remains the weakest stage in both settings (expected).
-
-PROTOCOL CAVEAT
-Published = 10-fold CV test; from-scratch = single held-out split. Different
-protocols, so not perfectly apples-to-apples, but both are held-out test
-evaluations. From-scratch single-split numbers carry more variance.

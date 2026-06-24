@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=project_2019517
 #SBATCH --partition=small
-#SBATCH --time=04:00:00
+#SBATCH --time=16:00:00
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=yasa_baseline

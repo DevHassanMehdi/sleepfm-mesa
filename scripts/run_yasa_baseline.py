@@ -83,6 +83,8 @@ def main():
             mask = preds >= 0
             fold_preds.append(preds[mask])
             fold_labels.append(labels[mask])
+            subj_f1 = f1_score(labels[mask], preds[mask], average="macro", zero_division=0)
+            print(f"  {subject_id}: {subj_f1:.3f}", flush=True)
 
         if fold_preds:
             fp = np.concatenate(fold_preds)
