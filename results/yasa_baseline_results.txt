@@ -1,0 +1,31 @@
+YASA BASELINE — MESA 10-fold CV
+==================================================
+Channels: EEG1 + EOG-L + EMG
+
+Per-fold macro F1:
+  Fold 0: 0.7239
+  Fold 1: 0.7440
+  Fold 2: 0.7216
+  Fold 3: 0.7406
+  Fold 4: 0.7370
+  Fold 5: 0.7247
+  Fold 6: 0.7254
+  Fold 7: 0.7291
+  Fold 8: 0.7398
+  Fold 9: 0.7044
+
+Mean fold macro F1: 0.7291 +/- 0.0112
+Overall macro F1:   0.7304
+
+Classification report (all folds combined):
+              precision    recall  f1-score   support
+
+        Wake       0.94      0.93      0.93    191677
+          N1       0.44      0.43      0.43     33749
+          N2       0.80      0.84      0.82    143770
+          N3       0.75      0.54      0.63     26517
+         REM       0.81      0.87      0.84     45307
+
+    accuracy                           0.83    441020
+   macro avg       0.75      0.72      0.73    441020
+weighted avg       0.83      0.83      0.83    441020
