@@ -1,996 +1,0 @@
-=====================================================
-EXPERIMENT: BAS
-=====================================================
-Evaluating experiment: SleepEventLSTMClassifier_mesa_labels_BAS
-================================================
-Evaluating fold 0...
-2026-06-21 02:26:12.162 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:12.245 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:12.245 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:12.294 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:12.295 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:12.295 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:12.295 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:12.295 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_0/best.pth'
-2026-06-21 02:26:12.311 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:12.317 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:12.317 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:12.317 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:12.317 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.20it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.12it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.84it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.30it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.93it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.98it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.00it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.30it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.56it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.53it/s]
-2026-06-21 02:26:14.875 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_0/mesa/test/all_outputs.pickle
-2026-06-21 02:26:14.875 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_0/mesa/test/all_logits.pickle
-Evaluating fold 1...
-2026-06-21 02:26:18.334 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:18.418 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:18.418 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:18.466 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:18.467 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:18.467 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:18.467 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:18.467 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_1/best.pth'
-2026-06-21 02:26:18.478 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:18.484 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:18.484 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:18.484 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:18.484 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.23it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.23it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.85it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.37it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.73it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.01it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.29it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.54it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.88it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.66it/s]
-2026-06-21 02:26:20.956 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_1/mesa/test/all_outputs.pickle
-2026-06-21 02:26:20.957 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_1/mesa/test/all_logits.pickle
-Evaluating fold 2...
-2026-06-21 02:26:24.418 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:24.500 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:24.500 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:24.548 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:24.548 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:24.548 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:24.548 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:24.548 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_2/best.pth'
-2026-06-21 02:26:24.560 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:24.565 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:24.565 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:24.565 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:24.566 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.21it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.10it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.78it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.42it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.75it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.32it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.60it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.60it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.82it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.66it/s]
-2026-06-21 02:26:27.034 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_2/mesa/test/all_outputs.pickle
-2026-06-21 02:26:27.034 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_2/mesa/test/all_logits.pickle
-Evaluating fold 3...
-2026-06-21 02:26:30.527 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:30.611 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:30.612 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:30.662 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:30.663 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:30.663 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:30.663 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:30.663 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_3/best.pth'
-2026-06-21 02:26:30.674 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:30.680 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:30.680 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:30.680 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:30.680 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.16it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.06it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.73it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.25it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.66it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.96it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.12it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.25it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.79it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.52it/s]
-2026-06-21 02:26:33.247 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_3/mesa/test/all_outputs.pickle
-2026-06-21 02:26:33.247 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_3/mesa/test/all_logits.pickle
-Evaluating fold 4...
-2026-06-21 02:26:36.747 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:36.831 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:36.831 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:36.879 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:36.880 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:36.880 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:36.880 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:36.880 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_4/best.pth'
-2026-06-21 02:26:36.892 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:36.897 | INFO     | models.dataset:__init__:241 - Number of files in test set: 34
-2026-06-21 02:26:36.897 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 34
-2026-06-21 02:26:36.898 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:36.898 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.17it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.07it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.87it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.31it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.79it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.01it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.19it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.22it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.65it/s]
-2026-06-21 02:26:39.374 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_4/mesa/test/all_outputs.pickle
-2026-06-21 02:26:39.374 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_4/mesa/test/all_logits.pickle
-Evaluating fold 5...
-2026-06-21 02:26:42.855 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:42.937 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:42.937 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:42.992 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:42.992 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:42.992 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:42.992 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:42.993 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_5/best.pth'
-2026-06-21 02:26:43.004 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:43.009 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:43.009 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:43.009 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:43.010 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.19it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.92it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.49it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.13it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.53it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.82it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.03it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.15it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.58it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.39it/s]
-2026-06-21 02:26:45.673 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_5/mesa/test/all_outputs.pickle
-2026-06-21 02:26:45.674 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_5/mesa/test/all_logits.pickle
-Evaluating fold 6...
-2026-06-21 02:26:49.161 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:49.245 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:49.245 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:49.291 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:49.291 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:49.291 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:49.291 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:49.292 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_6/best.pth'
-2026-06-21 02:26:49.303 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:49.309 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:49.309 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:49.309 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:49.309 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.17it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.96it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.80it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.27it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.64it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.91it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.09it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.27it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.64it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.48it/s]
-2026-06-21 02:26:51.907 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_6/mesa/test/all_outputs.pickle
-2026-06-21 02:26:51.907 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_6/mesa/test/all_logits.pickle
-Evaluating fold 7...
-2026-06-21 02:26:55.610 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:26:55.692 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:26:55.693 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:26:55.738 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:26:55.739 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:26:55.739 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:26:55.739 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:26:55.739 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_7/best.pth'
-2026-06-21 02:26:55.752 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:26:55.759 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:26:55.759 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:26:55.759 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:26:55.760 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.15it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.98it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.67it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.13it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.57it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.90it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.36it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.67it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.83it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.52it/s]
-2026-06-21 02:26:58.325 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_7/mesa/test/all_outputs.pickle
-2026-06-21 02:26:58.325 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_7/mesa/test/all_logits.pickle
-Evaluating fold 8...
-2026-06-21 02:27:01.835 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:01.917 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:01.918 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:01.968 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:01.969 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:01.969 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:01.969 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:01.969 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_8/best.pth'
-2026-06-21 02:27:01.981 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:01.986 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:01.986 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:01.986 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:01.987 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.25it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.17it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.82it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.38it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.57it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.83it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.02it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.14it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.65it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.53it/s]
-2026-06-21 02:27:04.550 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_8/mesa/test/all_outputs.pickle
-2026-06-21 02:27:04.550 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_8/mesa/test/all_logits.pickle
-Evaluating fold 9...
-2026-06-21 02:27:08.029 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:08.112 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:08.112 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:08.156 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:08.156 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:08.156 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:08.157 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:08.157 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_9/best.pth'
-2026-06-21 02:27:08.168 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:08.174 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:08.174 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:08.174 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:08.174 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.23it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.13it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.70it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.20it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.50it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.69it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.91it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  3.84it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.21it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.34it/s]
-2026-06-21 02:27:10.877 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_9/mesa/test/all_outputs.pickle
-2026-06-21 02:27:10.877 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS/fold_9/mesa/test/all_logits.pickle
-
-================================================
-Computing aggregate metrics...
-Fold 0: macro F1 = 0.7306, n=43560
-Fold 1: macro F1 = 0.7409, n=43239
-Fold 2: macro F1 = 0.7327, n=42789
-Fold 3: macro F1 = 0.7406, n=44789
-Fold 4: macro F1 = 0.7123, n=42608
-Fold 5: macro F1 = 0.7144, n=44460
-Fold 6: macro F1 = 0.7099, n=43499
-Fold 7: macro F1 = 0.7059, n=42977
-Fold 8: macro F1 = 0.7153, n=44218
-Fold 9: macro F1 = 0.6916, n=43690
-
-Mean macro F1: 0.7194 +/- 0.0153
-
-==================================================
-OVERALL (test set, 10 folds)
-==================================================
-Macro F1:  0.7205
-Accuracy:  0.8216
-
-              precision    recall  f1-score   support
-
-        Wake       0.93      0.94      0.93    186837
-          N1       0.46      0.34      0.40     33666
-          N2       0.83      0.76      0.79    143590
-          N3       0.58      0.75      0.65     26515
-         REM       0.76      0.90      0.82     45221
-
-    accuracy                           0.82    435829
-   macro avg       0.71      0.74      0.72    435829
-weighted avg       0.82      0.82      0.82    435829
-
-=====================================================
-EXPERIMENT: BAS_EKG
-=====================================================
-Evaluating experiment: SleepEventLSTMClassifier_mesa_labels_BAS_EKG
-================================================
-Evaluating fold 0...
-2026-06-21 02:27:16.274 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:16.357 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:16.357 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:16.405 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:16.406 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:16.406 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:16.406 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:16.406 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_0/best.pth'
-2026-06-21 02:27:16.417 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:16.423 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:16.423 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:16.423 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:16.423 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.17it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.07it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.75it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.18it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.84it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.99it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.13it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.38it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.70it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.52it/s]
-2026-06-21 02:27:18.987 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_0/mesa/test/all_outputs.pickle
-2026-06-21 02:27:18.988 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_0/mesa/test/all_logits.pickle
-Evaluating fold 1...
-2026-06-21 02:27:22.483 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:22.565 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:22.565 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:22.619 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:22.619 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:22.619 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:22.619 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:22.619 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_1/best.pth'
-2026-06-21 02:27:22.631 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:22.636 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:22.636 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:22.637 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:22.637 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.16it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.21it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.84it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.33it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.67it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.84it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.19it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.46it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.82it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.58it/s]
-2026-06-21 02:27:25.158 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_1/mesa/test/all_outputs.pickle
-2026-06-21 02:27:25.159 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_1/mesa/test/all_logits.pickle
-Evaluating fold 2...
-2026-06-21 02:27:28.640 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:28.724 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:28.724 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:28.772 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:28.773 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:28.773 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:28.773 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:28.773 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_2/best.pth'
-2026-06-21 02:27:28.784 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:28.790 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:28.790 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:28.790 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:28.791 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.22it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.10it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.79it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.42it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.71it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.20it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.48it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.50it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.76it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.63it/s]
-2026-06-21 02:27:31.282 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_2/mesa/test/all_outputs.pickle
-2026-06-21 02:27:31.282 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_2/mesa/test/all_logits.pickle
-Evaluating fold 3...
-2026-06-21 02:27:34.769 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:34.853 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:34.854 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:34.899 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:34.899 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:34.899 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:34.899 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:34.899 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_3/best.pth'
-2026-06-21 02:27:34.910 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:34.916 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:34.916 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:34.916 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:34.917 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.09it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.98it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.66it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.17it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.61it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.86it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.04it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.18it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.70it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.43it/s]
-2026-06-21 02:27:37.549 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_3/mesa/test/all_outputs.pickle
-2026-06-21 02:27:37.549 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_3/mesa/test/all_logits.pickle
-Evaluating fold 4...
-2026-06-21 02:27:41.060 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:41.144 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:41.144 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:41.189 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:41.189 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:41.189 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:41.190 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:41.190 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_4/best.pth'
-2026-06-21 02:27:41.201 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:41.206 | INFO     | models.dataset:__init__:241 - Number of files in test set: 34
-2026-06-21 02:27:41.207 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 34
-2026-06-21 02:27:41.207 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:41.207 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.15it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.04it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.79it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.21it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.69it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.89it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.08it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.14it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.59it/s]
-2026-06-21 02:27:43.727 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_4/mesa/test/all_outputs.pickle
-2026-06-21 02:27:43.727 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_4/mesa/test/all_logits.pickle
-Evaluating fold 5...
-2026-06-21 02:27:47.249 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:47.332 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:47.332 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:47.381 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:47.381 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:47.382 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:47.382 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:47.382 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_5/best.pth'
-2026-06-21 02:27:47.393 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:47.399 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:47.399 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:47.399 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:47.399 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.12it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.00it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.62it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.24it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.60it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.74it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.02it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.24it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.66it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.42it/s]
-2026-06-21 02:27:50.038 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_5/mesa/test/all_outputs.pickle
-2026-06-21 02:27:50.038 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_5/mesa/test/all_logits.pickle
-Evaluating fold 6...
-2026-06-21 02:27:53.538 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:53.622 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:53.622 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:53.666 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:53.667 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:53.667 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:53.667 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:53.667 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_6/best.pth'
-2026-06-21 02:27:53.678 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:53.684 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:53.684 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:53.684 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:53.685 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.11it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.02it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.90it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.39it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.73it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.96it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.12it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.26it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.63it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.51it/s]
-2026-06-21 02:27:56.263 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_6/mesa/test/all_outputs.pickle
-2026-06-21 02:27:56.263 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_6/mesa/test/all_logits.pickle
-Evaluating fold 7...
-2026-06-21 02:27:59.771 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:27:59.859 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:27:59.859 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:27:59.902 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:27:59.903 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:27:59.903 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:27:59.903 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:27:59.903 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_7/best.pth'
-2026-06-21 02:27:59.915 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:27:59.920 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:27:59.920 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:27:59.920 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:27:59.921 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.15it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.04it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.72it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.20it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.63it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.97it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.52it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.83it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  5.13it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.64it/s]
-2026-06-21 02:28:02.406 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_7/mesa/test/all_outputs.pickle
-2026-06-21 02:28:02.407 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_7/mesa/test/all_logits.pickle
-Evaluating fold 8...
-2026-06-21 02:28:05.928 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:06.011 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:06.012 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:06.060 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:06.060 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:06.060 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:06.060 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:06.061 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_8/best.pth'
-2026-06-21 02:28:06.072 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:06.077 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:06.077 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:06.078 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:06.078 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.22it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.14it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.82it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.42it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.77it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.02it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.19it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.32it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  5.00it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.64it/s]
-2026-06-21 02:28:08.559 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_8/mesa/test/all_outputs.pickle
-2026-06-21 02:28:08.560 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_8/mesa/test/all_logits.pickle
-Evaluating fold 9...
-2026-06-21 02:28:12.069 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:12.152 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:12.152 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:12.204 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:12.204 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:12.204 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:12.204 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:12.205 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_9/best.pth'
-2026-06-21 02:28:12.216 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:12.221 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:12.221 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:12.222 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:12.222 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.09it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.97it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.60it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.12it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.50it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.72it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.85it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.02it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.27it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.28it/s]
-2026-06-21 02:28:14.972 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_9/mesa/test/all_outputs.pickle
-2026-06-21 02:28:14.973 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG/fold_9/mesa/test/all_logits.pickle
-
-================================================
-Computing aggregate metrics...
-Fold 0: macro F1 = 0.7236, n=43560
-Fold 1: macro F1 = 0.7360, n=43239
-Fold 2: macro F1 = 0.7295, n=42789
-Fold 3: macro F1 = 0.7422, n=44789
-Fold 4: macro F1 = 0.7288, n=42608
-Fold 5: macro F1 = 0.7080, n=44460
-Fold 6: macro F1 = 0.7246, n=43499
-Fold 7: macro F1 = 0.7034, n=42977
-Fold 8: macro F1 = 0.7303, n=44218
-Fold 9: macro F1 = 0.7036, n=43690
-
-Mean macro F1: 0.7230 +/- 0.0129
-
-==================================================
-OVERALL (test set, 10 folds)
-==================================================
-Macro F1:  0.7237
-Accuracy:  0.8232
-
-              precision    recall  f1-score   support
-
-        Wake       0.93      0.94      0.94    186837
-          N1       0.48      0.35      0.41     33666
-          N2       0.83      0.76      0.79    143590
-          N3       0.56      0.79      0.66     26515
-         REM       0.77      0.89      0.83     45221
-
-    accuracy                           0.82    435829
-   macro avg       0.71      0.75      0.72    435829
-weighted avg       0.82      0.82      0.82    435829
-
-=====================================================
-EXPERIMENT: BAS_EKG_RESP
-=====================================================
-Evaluating experiment: SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP
-================================================
-Evaluating fold 0...
-2026-06-21 02:28:20.374 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:20.459 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:20.459 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:20.503 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:20.503 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:20.503 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:20.503 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:20.504 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_0/best.pth'
-2026-06-21 02:28:20.514 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:20.520 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:20.520 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:20.520 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:20.521 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.07it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.93it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.65it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.14it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.78it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.94it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.18it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.46it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.84it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.48it/s]
-2026-06-21 02:28:23.116 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_0/mesa/test/all_outputs.pickle
-2026-06-21 02:28:23.117 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_0/mesa/test/all_logits.pickle
-Evaluating fold 1...
-2026-06-21 02:28:26.650 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:26.734 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:26.734 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:26.786 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:26.787 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:26.787 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:26.787 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:26.787 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_1/best.pth'
-2026-06-21 02:28:26.798 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:26.804 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:26.804 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:26.804 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:26.805 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.13it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.14it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.75it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.26it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.61it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.92it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.28it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.54it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.88it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.57it/s]
-2026-06-21 02:28:29.337 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_1/mesa/test/all_outputs.pickle
-2026-06-21 02:28:29.337 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_1/mesa/test/all_logits.pickle
-Evaluating fold 2...
-2026-06-21 02:28:32.835 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:32.917 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:32.917 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:32.961 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:32.961 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:32.961 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:32.961 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:32.962 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_2/best.pth'
-2026-06-21 02:28:32.973 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:32.978 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:32.979 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:32.979 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:32.979 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.14it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.01it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.70it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.20it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.58it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.16it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.43it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.47it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.75it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.53it/s]
-2026-06-21 02:28:35.538 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_2/mesa/test/all_outputs.pickle
-2026-06-21 02:28:35.539 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_2/mesa/test/all_logits.pickle
-Evaluating fold 3...
-2026-06-21 02:28:39.031 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:39.113 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:39.114 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:39.159 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:39.159 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:39.159 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:39.159 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:39.159 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_3/best.pth'
-2026-06-21 02:28:39.170 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:39.175 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:39.176 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:39.176 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:39.176 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.09it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.96it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.62it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.15it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.59it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.86it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.07it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.20it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.75it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.43it/s]
-2026-06-21 02:28:41.811 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_3/mesa/test/all_outputs.pickle
-2026-06-21 02:28:41.812 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_3/mesa/test/all_logits.pickle
-Evaluating fold 4...
-2026-06-21 02:28:45.329 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:45.416 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:45.416 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:45.463 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:45.464 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:45.464 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:45.464 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:45.464 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_4/best.pth'
-2026-06-21 02:28:45.475 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:45.481 | INFO     | models.dataset:__init__:241 - Number of files in test set: 34
-2026-06-21 02:28:45.481 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 34
-2026-06-21 02:28:45.481 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:45.481 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.10it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.97it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.75it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.21it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.63it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.89it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.09it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.15it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.55it/s]
-2026-06-21 02:28:48.030 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_4/mesa/test/all_outputs.pickle
-2026-06-21 02:28:48.030 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_4/mesa/test/all_logits.pickle
-Evaluating fold 5...
-2026-06-21 02:28:51.533 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:51.615 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:51.615 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:51.659 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:51.659 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:51.659 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:51.660 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:51.660 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_5/best.pth'
-2026-06-21 02:28:51.671 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:51.676 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:51.676 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:51.677 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:51.677 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.11it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.91it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.56it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.20it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.58it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.88it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.08it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.25it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.67it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.42it/s]
-2026-06-21 02:28:54.322 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_5/mesa/test/all_outputs.pickle
-2026-06-21 02:28:54.322 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_5/mesa/test/all_logits.pickle
-Evaluating fold 6...
-2026-06-21 02:28:57.806 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:28:57.888 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:28:57.888 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:28:57.935 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:28:57.936 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:28:57.936 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:28:57.936 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:28:57.936 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_6/best.pth'
-2026-06-21 02:28:57.948 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:28:57.953 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:28:57.954 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:28:57.954 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:28:57.954 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.11it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.84it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.70it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.09it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.49it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.77it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.96it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.08it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.45it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.33it/s]
-2026-06-21 02:29:00.668 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_6/mesa/test/all_outputs.pickle
-2026-06-21 02:29:00.669 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_6/mesa/test/all_logits.pickle
-Evaluating fold 7...
-2026-06-21 02:29:04.174 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:04.257 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:04.257 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:04.301 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:04.301 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:04.302 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:04.302 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:04.302 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_7/best.pth'
-2026-06-21 02:29:04.313 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:04.319 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:04.319 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:04.319 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:04.319 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.16it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.02it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.63it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.10it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.50it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.80it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.32it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.65it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.99it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.53it/s]
-2026-06-21 02:29:06.877 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_7/mesa/test/all_outputs.pickle
-2026-06-21 02:29:06.877 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_7/mesa/test/all_logits.pickle
-Evaluating fold 8...
-2026-06-21 02:29:10.368 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:10.456 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:10.456 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:10.507 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:10.508 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:10.508 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:10.508 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:10.508 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_8/best.pth'
-2026-06-21 02:29:10.520 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:10.525 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:10.525 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:10.526 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:10.526 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.21it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.11it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.73it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.31it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.54it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.71it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.94it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.13it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.83it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.50it/s]
-2026-06-21 02:29:13.116 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_8/mesa/test/all_outputs.pickle
-2026-06-21 02:29:13.116 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_8/mesa/test/all_logits.pickle
-Evaluating fold 9...
-2026-06-21 02:29:16.617 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:16.701 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:16.701 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:16.750 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:16.751 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:16.751 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:16.751 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:16.751 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_9/best.pth'
-2026-06-21 02:29:16.762 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:16.768 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:16.768 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:16.768 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:16.768 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.14it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.02it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.64it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.16it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.47it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.47it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.75it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  3.97it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.26it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.28it/s]
-2026-06-21 02:29:19.524 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_9/mesa/test/all_outputs.pickle
-2026-06-21 02:29:19.525 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP/fold_9/mesa/test/all_logits.pickle
-
-================================================
-Computing aggregate metrics...
-Fold 0: macro F1 = 0.7211, n=43560
-Fold 1: macro F1 = 0.7256, n=43239
-Fold 2: macro F1 = 0.7379, n=42789
-Fold 3: macro F1 = 0.7501, n=44789
-Fold 4: macro F1 = 0.7234, n=42608
-Fold 5: macro F1 = 0.7031, n=44460
-Fold 6: macro F1 = 0.7305, n=43499
-Fold 7: macro F1 = 0.7244, n=42977
-Fold 8: macro F1 = 0.7297, n=44218
-Fold 9: macro F1 = 0.7175, n=43690
-
-Mean macro F1: 0.7263 +/- 0.0118
-
-==================================================
-OVERALL (test set, 10 folds)
-==================================================
-Macro F1:  0.7269
-Accuracy:  0.8253
-
-              precision    recall  f1-score   support
-
-        Wake       0.94      0.94      0.94    186837
-          N1       0.47      0.37      0.41     33666
-          N2       0.83      0.76      0.80    143590
-          N3       0.56      0.78      0.65     26515
-         REM       0.78      0.90      0.83     45221
-
-    accuracy                           0.83    435829
-   macro avg       0.72      0.75      0.73    435829
-weighted avg       0.83      0.83      0.82    435829
-
-=====================================================
-EXPERIMENT: BAS_EKG_RESP_EMG
-=====================================================
-Evaluating experiment: SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG
-================================================
-Evaluating fold 0...
-2026-06-21 02:29:24.714 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:24.797 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:24.798 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:24.841 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:24.842 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:24.842 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:24.842 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:24.842 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_0/best.pth'
-2026-06-21 02:29:24.854 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:24.859 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:24.860 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:24.860 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:24.860 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.14it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.01it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.70it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.15it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.76it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.90it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.10it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.20it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.49it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.43it/s]
-2026-06-21 02:29:27.497 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_0/mesa/test/all_outputs.pickle
-2026-06-21 02:29:27.497 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_0/mesa/test/all_logits.pickle
-Evaluating fold 1...
-2026-06-21 02:29:30.976 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:31.058 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:31.059 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:31.106 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:31.106 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:31.106 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:31.106 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:31.106 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_1/best.pth'
-2026-06-21 02:29:31.117 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:31.123 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:31.123 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:31.123 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:31.123 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.12it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.13it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.76it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.30it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.67it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.95it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.27it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.52it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.73it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.54it/s]
-2026-06-21 02:29:33.673 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_1/mesa/test/all_outputs.pickle
-2026-06-21 02:29:33.673 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_1/mesa/test/all_logits.pickle
-Evaluating fold 2...
-2026-06-21 02:29:37.162 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:37.243 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:37.244 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:37.292 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:37.293 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:37.293 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:37.293 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:37.293 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_2/best.pth'
-2026-06-21 02:29:37.304 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:37.310 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:37.310 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:37.310 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:37.310 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.17it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.04it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.75it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.38it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.74it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  4.28it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.42it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.43it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.72it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.58it/s]
-2026-06-21 02:29:39.831 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_2/mesa/test/all_outputs.pickle
-2026-06-21 02:29:39.832 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_2/mesa/test/all_logits.pickle
-Evaluating fold 3...
-2026-06-21 02:29:43.328 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:43.412 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:43.412 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:43.456 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:43.456 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:43.457 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:43.457 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:43.457 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_3/best.pth'
-2026-06-21 02:29:43.468 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:43.473 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:43.474 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:43.474 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:43.474 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.06it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.92it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.59it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.12it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.54it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.78it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.98it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.13it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.55it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.35it/s]
-2026-06-21 02:29:46.174 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_3/mesa/test/all_outputs.pickle
-2026-06-21 02:29:46.175 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_3/mesa/test/all_logits.pickle
-Evaluating fold 4...
-2026-06-21 02:29:49.687 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:49.771 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:49.771 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:49.815 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:49.815 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:49.815 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:49.816 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:49.816 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_4/best.pth'
-2026-06-21 02:29:49.827 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:49.832 | INFO     | models.dataset:__init__:241 - Number of files in test set: 34
-2026-06-21 02:29:49.833 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 34
-2026-06-21 02:29:49.833 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:49.833 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.08it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.96it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.72it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.16it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.69it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.95it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.16it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.21it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.55it/s]
-2026-06-21 02:29:52.377 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_4/mesa/test/all_outputs.pickle
-2026-06-21 02:29:52.378 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_4/mesa/test/all_logits.pickle
-Evaluating fold 5...
-2026-06-21 02:29:55.906 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:29:55.989 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:29:55.990 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:29:56.033 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:29:56.033 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:29:56.033 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:29:56.034 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:29:56.034 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_5/best.pth'
-2026-06-21 02:29:56.045 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:29:56.050 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:29:56.051 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:29:56.051 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:29:56.051 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.08it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.96it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.61it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.29it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.68it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.94it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.12it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.26it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.41it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.39it/s]
-2026-06-21 02:29:58.716 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_5/mesa/test/all_outputs.pickle
-2026-06-21 02:29:58.716 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_5/mesa/test/all_logits.pickle
-Evaluating fold 6...
-2026-06-21 02:30:02.210 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:30:02.293 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:30:02.293 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:30:02.336 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:30:02.337 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:30:02.337 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:30:02.337 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:30:02.337 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_6/best.pth'
-2026-06-21 02:30:02.348 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:30:02.354 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:30:02.354 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:30:02.354 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:30:02.355 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.07it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.96it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.83it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.31it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.68it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.95it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.98it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.15it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.34it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.38it/s]
-2026-06-21 02:30:05.026 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_6/mesa/test/all_outputs.pickle
-2026-06-21 02:30:05.026 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_6/mesa/test/all_logits.pickle
-Evaluating fold 7...
-2026-06-21 02:30:08.508 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:30:08.592 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:30:08.593 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:30:08.636 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:30:08.637 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:30:08.637 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:30:08.637 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:30:08.637 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_7/best.pth'
-2026-06-21 02:30:08.649 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:30:08.654 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:30:08.654 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:30:08.654 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:30:08.655 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.09it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  1.96it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.65it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.13it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.48it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.75it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.27it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.61it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.86it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.47it/s]
-2026-06-21 02:30:11.255 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_7/mesa/test/all_outputs.pickle
-2026-06-21 02:30:11.255 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_7/mesa/test/all_logits.pickle
-Evaluating fold 8...
-2026-06-21 02:30:14.743 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:30:14.825 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:30:14.826 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:30:14.869 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:30:14.869 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:30:14.869 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:30:14.869 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:30:14.869 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_8/best.pth'
-2026-06-21 02:30:14.880 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:30:14.886 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:30:14.886 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:30:14.886 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:30:14.886 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:07,  1.14it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.03it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.71it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.32it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.69it/s]Evaluating:  67%|██████▋   | 6/9 [00:01<00:00,  3.96it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  4.14it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.14it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.80it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.51it/s]
-2026-06-21 02:30:17.463 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_8/mesa/test/all_outputs.pickle
-2026-06-21 02:30:17.464 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_8/mesa/test/all_logits.pickle
-Evaluating fold 9...
-2026-06-21 02:30:20.962 | INFO     | __main__:evaluate_sleep_staging:60 - Loaded configuration file
-2026-06-21 02:30:21.046 | INFO     | __main__:evaluate_sleep_staging:64 - Using device: cpu
-2026-06-21 02:30:21.046 | INFO     | __main__:evaluate_sleep_staging:68 - Model Class: SleepEventLSTMClassifier
-/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/cuda/__init__.py:546: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
-2026-06-21 02:30:21.089 | INFO     | __main__:evaluate_sleep_staging:76 - Model initialized: SleepEventLSTMClassifier
-2026-06-21 02:30:21.089 | INFO     | __main__:evaluate_sleep_staging:78 - Trainable parameters: 1.83 million
-2026-06-21 02:30:21.089 | INFO     | __main__:evaluate_sleep_staging:79 - Number of layers: 28
-2026-06-21 02:30:21.089 | INFO     | __main__:evaluate_sleep_staging:81 - Loading Data...
-2026-06-21 02:30:21.090 | INFO     | __main__:evaluate_sleep_staging:86 - Loading checkpoint '/users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_9/best.pth'
-2026-06-21 02:30:21.101 | INFO     | __main__:evaluate_sleep_staging:89 - Checkpoint loaded successfully
-2026-06-21 02:30:21.106 | INFO     | models.dataset:__init__:241 - Number of files in test set: 35
-2026-06-21 02:30:21.106 | INFO     | models.dataset:__init__:242 - Number of files to be processed in test set: 35
-2026-06-21 02:30:21.107 | INFO     | __main__:evaluate_sleep_staging:107 - Number of workers: 4
-2026-06-21 02:30:21.107 | INFO     | __main__:evaluate_sleep_staging:113 - Data Loaded!
-Evaluating:   0%|          | 0/9 [00:00<?, ?it/s]/scratch/project_2019517/miniconda3/envs/sleepfm_env/lib/python3.10/site-packages/torch/nn/modules/transformer.py:562: UserWarning: Converting mask without torch.bool dtype to bool; this will negatively affect performance. Prefer to use a boolean mask directly. (Triggered internally at ../aten/src/ATen/native/transformers/attention.cpp:150.)
-  return torch._transformer_encoder_layer_fwd(
-Evaluating:  11%|█         | 1/9 [00:00<00:06,  1.14it/s]Evaluating:  22%|██▏       | 2/9 [00:01<00:03,  2.04it/s]Evaluating:  33%|███▎      | 3/9 [00:01<00:02,  2.67it/s]Evaluating:  44%|████▍     | 4/9 [00:01<00:01,  3.22it/s]Evaluating:  56%|█████▌    | 5/9 [00:01<00:01,  3.58it/s]Evaluating:  67%|██████▋   | 6/9 [00:02<00:00,  3.77it/s]Evaluating:  78%|███████▊  | 7/9 [00:02<00:00,  3.98it/s]Evaluating:  89%|████████▉ | 8/9 [00:02<00:00,  4.13it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  4.40it/s]Evaluating: 100%|██████████| 9/9 [00:02<00:00,  3.38it/s]
-2026-06-21 02:30:23.779 | INFO     | __main__:evaluate_sleep_staging:148 - All outputs saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_9/mesa/test/all_outputs.pickle
-2026-06-21 02:30:23.780 | INFO     | __main__:evaluate_sleep_staging:149 - Logits saved at /users/hamehdi/projects/sleepfm-mesa/sleepfm/checkpoints/runs/SleepEventLSTMClassifier_mesa_labels_BAS_EKG_RESP_EMG/fold_9/mesa/test/all_logits.pickle
-
-================================================
-Computing aggregate metrics...
-Fold 0: macro F1 = 0.7239, n=43560
-Fold 1: macro F1 = 0.7404, n=43239
-Fold 2: macro F1 = 0.7413, n=42789
-Fold 3: macro F1 = 0.7594, n=44789
-Fold 4: macro F1 = 0.7189, n=42608
-Fold 5: macro F1 = 0.7156, n=44460
-Fold 6: macro F1 = 0.7326, n=43499
-Fold 7: macro F1 = 0.7253, n=42977
-Fold 8: macro F1 = 0.7361, n=44218
-Fold 9: macro F1 = 0.7045, n=43690
-
-Mean macro F1: 0.7298 +/- 0.0148
-
-==================================================
-OVERALL (test set, 10 folds)
-==================================================
-Macro F1:  0.7305
-Accuracy:  0.8259
-
-              precision    recall  f1-score   support
-
-        Wake       0.94      0.94      0.94    186837
-          N1       0.48      0.39      0.43     33666
-          N2       0.83      0.76      0.80    143590
-          N3       0.56      0.78      0.65     26515
-         REM       0.78      0.90      0.84     45221
-
-    accuracy                           0.83    435829
-   macro avg       0.72      0.75      0.73    435829
-weighted avg       0.83      0.83      0.82    435829
-

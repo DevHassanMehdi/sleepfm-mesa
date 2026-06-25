@@ -14,6 +14,6 @@ export HDF5_USE_FILE_LOCKING=FALSE
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
 
-python sleepfm/pipeline/finetune_sleep_staging.py   --config_path sleepfm/configs/config_ft_fs_EEG_ONLY.yaml   --channel_groups_path sleepfm/configs/channel_groups.json   --split_path sleepfm/configs/fromscratch_heldout_flat.json   --fold 0
+python sleepfm/pipeline/finetune_sleep_staging.py   --config_path sleepfm/configs/config_ft_fs_EEG_ONLY.yaml   --channel_groups_path sleepfm/configs/channel_groups.json   --split_path sleepfm/configs/dataset_split_fromscratch_staging.json   --fold 0
 
 echo "========== DONE EEG_ONLY =========="
