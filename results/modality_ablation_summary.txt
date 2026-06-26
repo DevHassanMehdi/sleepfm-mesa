@@ -7,8 +7,11 @@ BAS+EKG                   0.7237            0.8232     0.7230 +/- 0.0129
 BAS+EKG+RESP              0.7269            0.8253     0.7263 +/- 0.0118
 BAS+EKG+RESP+EMG          0.7305            0.8259     0.7298 +/- 0.0148
 
-Per-class F1 (full multimodal):
-  Wake 0.94 | N1 0.43 | N2 0.80 | N3 0.65 | REM 0.84
+Per-class F1:
+  BAS (EEG/EOG)             Wake 0.93 | N1 0.37 | N2 0.79 | N3 0.65 | REM 0.81
+  BAS+EKG                   Wake 0.93 | N1 0.38 | N2 0.79 | N3 0.65 | REM 0.81
+  BAS+EKG+RESP              Wake 0.93 | N1 0.39 | N2 0.79 | N3 0.66 | REM 0.82
+  BAS+EKG+RESP+EMG (full)   Wake 0.93 | N1 0.41 | N2 0.79 | N3 0.65 | REM 0.83
 
 Key points:
 - Monotonic improvement with each added modality (+0.010 macro F1 total)
