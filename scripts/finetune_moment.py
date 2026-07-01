@@ -1,10 +1,9 @@
 """
-Fine-tune MOMENT-1-large end-to-end on MESA PSG for 5-class sleep staging.
+Linear-probe MOMENT-1-large on MESA PSG for 5-class sleep staging.
 
-Loads AutonLab/MOMENT-1-large with the classification head, unfreezes both
-the patch embedder and the T5 encoder (341M params) for full end-to-end
-fine-tuning, and trains with inverse-frequency class weights. Saves the
-checkpoint with the best validation macro F1.
+Loads AutonLab/MOMENT-1-large with the T5 encoder and patch embedder frozen
+(341M params unchanged), trains only the freshly-initialized classification
+head (~15K params). This is the standard MOMENT linear-probing protocol.
 
 Usage:
     python scripts/finetune_moment.py --modality EEG_ONLY
@@ -44,10 +43,9 @@ def build_model(modality, n_classes=5, pretrained_name=PRETRAINED_NAME):
             "task_name": "classification",
             "n_channels": n_channels,
             "num_class": n_classes,
-            "freeze_encoder": False,    # full end-to-end fine-tuning
-            "freeze_embedder": False,
+            "freeze_encoder": True,
+            "freeze_embedder": True,
             "reduction": "concat",
-            "enable_gradient_checkpointing": True,
         },
     )
     model.init()
@@ -119,9 +117,22 @@ def main():
                              num_workers=args.num_workers)
 
     model = build_model(args.modality).to(device)
+
+    # Freeze everything, then unfreeze only the classification head.
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in model.head.parameters():
+        param.requires_grad = True
+
+    n_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    n_total = sum(p.numel() for p in model.parameters())
+    print(f"Trainable params: {n_trainable:,} / {n_total:,}", flush=True)
+
     class_weights = compute_class_weights(train_ds).to(device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad], lr=args.lr
+    )
 
     start_epoch = 0
     best_val_f1 = -1.0
