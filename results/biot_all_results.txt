@@ -1,0 +1,154 @@
+BIOT FINE-TUNED — MESA held-out test split (fold_0)
+Pretrained checkpoint: EEG-SHHS+PREST-18-channels.ckpt
+Encoder: frozen — No. Only classification head frozen — No. Full end-to-end fine-tuning.
+Split: same 270/30/50 train/val/test as SleepFM from-scratch experiments
+Generated: 2026-07-01
+==================================================
+
+Modality         | Macro F1 | Accuracy | Wake   | N1     | N2     | N3     | REM
+-----------------+----------+----------+--------+--------+--------+--------+--------
+EEG_ONLY         | 0.7237   | 0.8007   | 0.9325 | 0.5327 | 0.7639 | 0.6594 | 0.7301
+ECG_ONLY         | 0.3086   | 0.4302   | 0.6815 | 0.1239 | 0.3933 | 0.1391 | 0.2051
+EEG_ECG          | 0.7023   | 0.7975   | 0.9345 | 0.5001 | 0.7724 | 0.5733 | 0.7311
+BAS              | 0.7583   | 0.8311   | 0.9476 | 0.5645 | 0.7914 | 0.6645 | 0.8235
+BAS_EKG          | 0.7492   | 0.8252   | 0.9425 | 0.5388 | 0.7960 | 0.6586 | 0.8102
+BAS_EKG_RESP     | 0.7418   | 0.8161   | 0.9371 | 0.5248 | 0.7867 | 0.6592 | 0.8010
+BAS_EKG_RESP_EMG | 0.7331   | 0.8054   | 0.9252 | 0.5177 | 0.7810 | 0.6502 | 0.7913
+
+==================================================
+INDIVIDUAL MODALITY RESULTS
+==================================================
+
+BIOT FINE-TUNED (EEG_ONLY) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.7237
+Accuracy:  0.8007
+
+              precision    recall  f1-score   support
+
+        Wake     0.9536    0.9124    0.9325     26358
+          N1     0.4445    0.6644    0.5327      4908
+          N2     0.8479    0.6950    0.7639     19228
+          N3     0.5679    0.7861    0.6594      3867
+         REM     0.6934    0.7709    0.7301      6189
+
+    accuracy                         0.8007     60550
+   macro avg     0.7015    0.7658    0.7237     60550
+weighted avg     0.8275    0.8007    0.8084     60550
+BIOT FINE-TUNED (ECG_ONLY) — MESA held-out test split
+==================================================
+Channels: EKG
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.3086
+Accuracy:  0.4302
+
+              precision    recall  f1-score   support
+
+        Wake     0.8004    0.5933    0.6815     26358
+          N1     0.1176    0.1310    0.1239      4908
+          N2     0.4162    0.3728    0.3933     19228
+          N3     0.1172    0.1709    0.1391      3867
+         REM     0.1526    0.3127    0.2051      6189
+
+    accuracy                         0.4302     60550
+   macro avg     0.3208    0.3162    0.3086     60550
+weighted avg     0.5132    0.4302    0.4615     60550
+BIOT FINE-TUNED (EEG_ECG) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EKG
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.7023
+Accuracy:  0.7975
+
+              precision    recall  f1-score   support
+
+        Wake     0.9581    0.9119    0.9345     26358
+          N1     0.4196    0.6190    0.5001      4908
+          N2     0.7996    0.7470    0.7724     19228
+          N3     0.6100    0.5407    0.5733      3867
+         REM     0.6967    0.7691    0.7311      6189
+
+    accuracy                         0.7975     60550
+   macro avg     0.6968    0.7176    0.7023     60550
+weighted avg     0.8152    0.7975    0.8040     60550
+BIOT FINE-TUNED (BAS) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EOG-L, EOG-R
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.7583
+Accuracy:  0.8311
+
+              precision    recall  f1-score   support
+
+        Wake     0.9728    0.9236    0.9476     26358
+          N1     0.5321    0.6011    0.5645      4908
+          N2     0.8406    0.7477    0.7914     19228
+          N3     0.5425    0.8575    0.6645      3867
+         REM     0.7885    0.8619    0.8235      6189
+
+    accuracy                         0.8311     60550
+   macro avg     0.7353    0.7983    0.7583     60550
+weighted avg     0.8488    0.8311    0.8362     60550
+BIOT FINE-TUNED (BAS_EKG) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EOG-L, EOG-R, EKG
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.7492
+Accuracy:  0.8252
+
+              precision    recall  f1-score   support
+
+        Wake     0.9680    0.9182    0.9425     26358
+          N1     0.4490    0.6736    0.5388      4908
+          N2     0.8278    0.7666    0.7960     19228
+          N3     0.6875    0.6320    0.6586      3867
+         REM     0.7726    0.8517    0.8102      6189
+
+    accuracy                         0.8252     60550
+   macro avg     0.7410    0.7684    0.7492     60550
+weighted avg     0.8435    0.8252    0.8316     60550
+BIOT FINE-TUNED (BAS_EKG_RESP) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EOG-L, EOG-R, EKG, Abdo, HR, Snore, SpO2, Therm, Thor
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.7418
+Accuracy:  0.8161
+
+              precision    recall  f1-score   support
+
+        Wake     0.9778    0.8997    0.9371     26358
+          N1     0.4319    0.6685    0.5248      4908
+          N2     0.8249    0.7519    0.7867     19228
+          N3     0.6676    0.6512    0.6592      3867
+         REM     0.7354    0.8795    0.8010      6189
+
+    accuracy                         0.8161     60550
+   macro avg     0.7275    0.7701    0.7418     60550
+weighted avg     0.8404    0.8161    0.8243     60550
+BIOT FINE-TUNED (BAS_EKG_RESP_EMG) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EOG-L, EOG-R, EKG, Abdo, HR, Snore, SpO2, Therm, Thor, EMG, Leg, Pleth
+Pretrained: EEG-SHHS+PREST-18-channels.ckpt
+
+Macro F1:  0.7331
+Accuracy:  0.8054
+
+              precision    recall  f1-score   support
+
+        Wake     0.9923    0.8666    0.9252     26358
+          N1     0.4568    0.5974    0.5177      4908
+          N2     0.8382    0.7311    0.7810     19228
+          N3     0.5256    0.8521    0.6502      3867
+         REM     0.6990    0.9118    0.7913      6189
+
+    accuracy                         0.8054     60550
+   macro avg     0.7024    0.7918    0.7331     60550
+weighted avg     0.8402    0.8054    0.8151     60550
