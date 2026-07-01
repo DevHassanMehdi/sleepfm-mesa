@@ -5,7 +5,13 @@ Loads the BIOT encoder pretrained on EEG-SHHS+PREST (5M MGH resting-EEG
 samples + 5M Sleep Heart Health Study samples -- a sleep-PSG cohort
 comparable to MESA), attaches a fresh randomly-initialized 5-class head, and
 fine-tunes the whole model end-to-end. Saves the checkpoint with the best
-validation macro F1.
+validation macro F1 to best.pth.
+
+A second checkpoint, latest.pth, is saved after every epoch (model +
+optimizer state + early-stopping counters) so a run killed by SLURM wall
+time can be resumed in place: re-running this script with the same
+--modality/--fold_key picks up latest.pth automatically and continues from
+the next epoch, rather than restarting from scratch.
 
 Usage:
     python scripts/finetune_biot.py --modality EEG_ONLY
@@ -118,11 +124,28 @@ def main():
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
 
+    start_epoch = 0
     best_val_f1 = -1.0
     best_epoch = 0
     patience_counter = 0
 
-    for epoch in range(args.epochs):
+    latest_path = os.path.join(out_dir, "latest.pth")
+    if os.path.exists(latest_path):
+        checkpoint = torch.load(latest_path, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+        best_val_f1 = checkpoint["best_val_f1"]
+        best_epoch = checkpoint["best_epoch"]
+        patience_counter = checkpoint["patience_counter"]
+        print(f"Resumed from {latest_path}: starting at epoch {start_epoch + 1}, "
+              f"best_val_f1={best_val_f1:.4f} @ epoch {best_epoch}, "
+              f"patience_counter={patience_counter}", flush=True)
+    else:
+        with open(os.path.join(out_dir, "config.json"), "w") as f:
+            json.dump(vars(args), f, indent=2)
+
+    for epoch in range(start_epoch, args.epochs):
         train_loss, train_f1 = run_epoch(model, train_loader, device, optimizer, class_weights)
         val_loss, val_f1 = run_epoch(model, val_loader, device, None, class_weights)
 
@@ -140,6 +163,15 @@ def main():
 
         print(f"E{epoch + 1:03d} train_loss={train_loss:.4f} train_f1={train_f1:.4f} "
               f"val_loss={val_loss:.4f} val_f1={val_f1:.4f}{marker}", flush=True)
+
+        torch.save({
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "best_val_f1": best_val_f1,
+            "best_epoch": best_epoch,
+            "patience_counter": patience_counter,
+        }, latest_path)
 
         if patience_counter >= args.patience:
             print(f"Early stop at epoch {epoch + 1} (best={best_val_f1:.4f} @ epoch {best_epoch})")
