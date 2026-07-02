@@ -6,7 +6,7 @@ set -e
 cd /users/hamehdi/projects/sleepfm-mesa
 mkdir -p logs
 
-MODALITIES="EEG_ONLY ECG_ONLY EEG_ECG BAS BAS_EKG BAS_EKG_RESP BAS_EKG_RESP_EMG"
+MODALITIES="EEG_ONLY ECG_ONLY EEG_ECG"
 
 for MODALITY in $MODALITIES; do
     echo "Submitting BIOT ${MODALITY}"

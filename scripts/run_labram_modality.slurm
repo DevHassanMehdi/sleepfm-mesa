@@ -8,12 +8,18 @@
 #SBATCH --job-name=labram_modality
 #SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/labram_modality_%j.log
 
-# Usage: sbatch run_labram_modality.slurm <MODALITY>
-# MODALITY: EEG_ONLY only -- LaBraM is an EEG-only foundation model, and
-# MESA's EOG channels have no defensible mapping into its 10-20-indexed
-# vocabulary (see labram_dataset.py docstring).
+# Usage: sbatch run_labram_modality.slurm <MODALITY> [FOLD_KEY]
+# MODALITY one of: EEG_ONLY, ECG_ONLY, EEG_ECG, BAS, BAS_EKG, BAS_EKG_RESP, BAS_EKG_RESP_EMG
+#
+# Non-EEG modalities use forced placeholder 10-20 electrode mappings
+# (see labram_dataset.py CHANNEL_TO_STANDARD_1020 for details).
+#
+# Resumable: finetune_labram.py checks for an existing latest.pth checkpoint
+# and resumes automatically, so re-submitting after a wall-time kill
+# continues training instead of restarting from scratch.
 set -e
 MODALITY=${1:?Usage: sbatch run_labram_modality.slurm <MODALITY>}
+FOLD_KEY=${2:-fold_0}
 
 cd /users/hamehdi/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
@@ -22,8 +28,13 @@ mkdir -p "$TMPDIR"
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
 
-echo "===== Fine-tuning LaBraM (${MODALITY}) ====="
-python scripts/finetune_labram.py --modality ${MODALITY}
+LATEST_CKPT="/scratch/project_2019517/labram/checkpoints/${MODALITY}/${FOLD_KEY}/latest.pth"
+if [ -f "$LATEST_CKPT" ]; then
+    echo "===== Resuming LaBraM fine-tuning (${MODALITY}) from ${LATEST_CKPT} ====="
+else
+    echo "===== Starting LaBraM fine-tuning (${MODALITY}) from scratch ====="
+fi
+python scripts/finetune_labram.py --modality ${MODALITY} --fold_key ${FOLD_KEY}
 
 echo "===== Evaluating LaBraM (${MODALITY}) ====="
 python scripts/evaluate_labram.py --modality ${MODALITY}

@@ -1,16 +1,15 @@
 #!/bin/bash
-# Submit LaBraM fine-tuning+eval jobs for all supported modality configurations.
+# Submit LaBraM fine-tuning+eval jobs for all 7 modality configurations.
 #
-# Only EEG_ONLY is supported -- LaBraM is an EEG-only foundation model with
-# no defensible channel mapping for MESA's EOG channels (see
-# scripts/labram_dataset.py docstring).
+# Non-EEG channels use forced placeholder 10-20 electrode mappings for
+# research purposes (see scripts/labram_dataset.py for the mapping).
 #
 # Usage: bash scripts/submit_labram_all_modalities.sh
 set -e
 cd /users/hamehdi/projects/sleepfm-mesa
 mkdir -p logs
 
-MODALITIES="EEG_ONLY"
+MODALITIES="EEG_ONLY ECG_ONLY EEG_ECG"
 
 for MODALITY in $MODALITIES; do
     echo "Submitting LaBraM ${MODALITY}"
