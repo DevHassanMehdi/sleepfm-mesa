@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Prepare a U-Sleep "views" directory and dataset config for one fold of the
-SleepFM 10-fold MESA split (data/mesa/dataset_split_10fold.json), so U-Sleep
-trains/evaluates on exactly the same train/validation/test subjects as
-SleepFM for a fair comparison.
+Prepare a U-Sleep "views" directory and dataset config for the held-out
+MESA split (sleepfm/configs/dataset_split_fromscratch_staging.json,
+fold_0: 270 train / 30 val / 50 test), so U-Sleep trains/evaluates on
+exactly the same subjects as BIOT, MOMENT, LaBraM, and SensorLM.
 
 For each subject in the fold's train/validation/test lists, creates a
 subject directory under the fold's view tree containing symlinks to:
@@ -16,8 +16,8 @@ hparams.yaml) points at this fold's view tree with the right channel names
 and label mapping for MESA.
 
 Usage:
-    python scripts/usleep_prepare_fold.py --fold 0 \
-        --project_dir /scratch/project_2019517/usleep_mesa/projects/fold_0
+    python scripts/usleep_prepare_fold.py --fold 0 --modality EEG_ONLY \
+        --project_dir /scratch/project_2019517/usleep_mesa/projects/EEG_ONLY/fold_0
 """
 import argparse
 import json
@@ -116,13 +116,16 @@ def link_subject(subject_id: str, split_view_dir: Path):
     edf_link = subject_dir / "psg.edf"
     ids_link = subject_dir / "hypnogram.ids"
 
-    if edf_link.exists() or edf_link.is_symlink():
-        edf_link.unlink()
-    if ids_link.exists() or ids_link.is_symlink():
-        ids_link.unlink()
-
-    edf_link.symlink_to(edf_path)
-    ids_link.symlink_to(ids_path)
+    edf_link.unlink(missing_ok=True)
+    try:
+        edf_link.symlink_to(edf_path)
+    except FileExistsError:
+        pass
+    ids_link.unlink(missing_ok=True)
+    try:
+        ids_link.symlink_to(ids_path)
+    except FileExistsError:
+        pass
     return True
 
 
@@ -147,7 +150,8 @@ def patch_hparams(project_dir: Path, n_channels: int):
         )
         c = re.sub(r'n_epochs:\s*\d+', 'n_epochs: 500', c)
         c = re.sub(r',?\s*decay:\s*[0-9.]+', '', c)
-        c = c.replace('ignore_out_of_bounds_classes: true', 'ignore_out_of_bounds_classes: false')
+        # Keep ignore_out_of_bounds_classes: true so UNKNOWN (label=5) epochs
+        # are excluded from the loss — changing to false causes NaN cross-entropy.
         c = re.sub(r'learning_rate:\s*[0-9e\.\-]+', 'learning_rate: 1.0e-04', c)
         c = re.sub(r'max_loaded_per_dataset:\s*\d+', 'max_loaded_per_dataset: 20', c)
         c = re.sub(r'num_access_before_reload:\s*\d+', 'num_access_before_reload: 64', c)
@@ -170,7 +174,8 @@ def main():
     parser.add_argument("--fold", type=int, required=True)
     parser.add_argument("--modality", required=True, choices=sorted(MODALITY_CHANNEL_GROUPS),
                          help="Which channel set to configure U-Sleep for")
-    parser.add_argument("--split_path", default="data/mesa/dataset_split_10fold.json")
+    parser.add_argument("--split_path",
+                        default="sleepfm/configs/dataset_split_fromscratch_staging.json")
     parser.add_argument("--project_dir", required=True,
                          help="Path to the U-Sleep project dir created by 'ut init'")
     args = parser.parse_args()

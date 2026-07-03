@@ -1,0 +1,156 @@
+"""
+Train SensorLM encoder from scratch on MESA PSG for 5-class sleep staging.
+
+Same training setup as BIOT (lr=1e-4, AdamW, early stopping patience=20,
+latest.pth + best.pth checkpointing with resume logic).
+
+Usage:
+    python scripts/finetune_sensorlm.py --modality EEG_ONLY
+"""
+import argparse
+import json
+import os
+import sys
+
+import numpy as np
+import torch
+import torch.nn as nn
+from sklearn.metrics import f1_score
+from torch.utils.data import DataLoader
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
+
+os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
+
+from sensorlm_dataset import MODALITY_CHANNELS, SensorLMSleepDataset
+from sensorlm_model import SensorLMEncoder
+
+SPLIT_PATH = os.path.join(
+    REPO_ROOT, "sleepfm/configs/dataset_split_fromscratch_staging.json"
+)
+CKPT_ROOT = "/scratch/project_2019517/sensorlm/checkpoints"
+
+
+def compute_class_weights(dataset):
+    labels = np.array([dataset.index[i][2] for i in range(len(dataset))])
+    counts = np.bincount(labels, minlength=5).astype(float)
+    weights = 1.0 / np.where(counts > 0, counts, 1.0)
+    weights /= weights.sum()
+    return torch.tensor(weights, dtype=torch.float32)
+
+
+def train_epoch(model, loader, optimizer, criterion, device):
+    model.train()
+    total_loss = 0.0
+    for x, y in loader:
+        x, y = x.to(device), y.to(device)
+        optimizer.zero_grad()
+        logits = model(x)
+        loss   = criterion(logits, y)
+        loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        total_loss += loss.item() * x.size(0)
+    return total_loss / len(loader.dataset)
+
+
+@torch.no_grad()
+def eval_epoch(model, loader, device):
+    model.eval()
+    all_preds, all_targets = [], []
+    for x, y in loader:
+        x = x.to(device)
+        preds = model(x).argmax(dim=-1).cpu().numpy()
+        all_preds.append(preds)
+        all_targets.append(y.numpy())
+    all_preds   = np.concatenate(all_preds)
+    all_targets = np.concatenate(all_targets)
+    return f1_score(all_targets, all_preds, average="macro", zero_division=0)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--modality", required=True,
+                        choices=list(MODALITY_CHANNELS.keys()))
+    parser.add_argument("--fold_key",    default="fold_0")
+    parser.add_argument("--epochs",      type=int,   default=100)
+    parser.add_argument("--patience",    type=int,   default=20)
+    parser.add_argument("--lr",          type=float, default=1e-4)
+    parser.add_argument("--batch_size",  type=int,   default=64)
+    parser.add_argument("--num_workers", type=int,   default=8)
+    args = parser.parse_args()
+
+    device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    out_dir = os.path.join(CKPT_ROOT, args.modality, args.fold_key)
+    os.makedirs(out_dir, exist_ok=True)
+
+    train_ds = SensorLMSleepDataset(SPLIT_PATH, "train", args.modality, args.fold_key)
+    val_ds   = SensorLMSleepDataset(SPLIT_PATH, "val",   args.modality, args.fold_key)
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                              num_workers=args.num_workers, pin_memory=True)
+    val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False,
+                              num_workers=args.num_workers, pin_memory=True)
+    print(f"[{args.modality}] train={len(train_ds)}  val={len(val_ds)}", flush=True)
+
+    n_channels = len(MODALITY_CHANNELS[args.modality])
+    model      = SensorLMEncoder(n_channels=n_channels).to(device)
+    n_params   = sum(p.numel() for p in model.parameters())
+    print(f"Parameters: {n_params:,}", flush=True)
+
+    class_weights = compute_class_weights(train_ds).to(device)
+    criterion     = nn.CrossEntropyLoss(weight=class_weights)
+    optimizer     = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+
+    # Resume logic
+    start_epoch     = 0
+    best_val_f1     = -1.0
+    best_epoch      = 0
+    patience_counter = 0
+
+    latest_path = os.path.join(out_dir, "latest.pth")
+    if os.path.exists(latest_path):
+        ckpt = torch.load(latest_path, map_location=device)
+        model.load_state_dict(ckpt["model_state_dict"])
+        optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+        start_epoch      = ckpt["epoch"] + 1
+        best_val_f1      = ckpt["best_val_f1"]
+        best_epoch       = ckpt["best_epoch"]
+        patience_counter = ckpt["patience_counter"]
+        print(f"Resumed from epoch {start_epoch} (best val F1={best_val_f1:.4f})", flush=True)
+    else:
+        with open(os.path.join(out_dir, "config.json"), "w") as f:
+            json.dump(vars(args), f, indent=2)
+
+    for epoch in range(start_epoch, args.epochs):
+        train_loss = train_epoch(model, train_loader, optimizer, criterion, device)
+        val_f1     = eval_epoch(model, val_loader, device)
+        print(f"Epoch {epoch+1}/{args.epochs}  loss={train_loss:.4f}  "
+              f"val_f1={val_f1:.4f}  best={best_val_f1:.4f}", flush=True)
+
+        if val_f1 > best_val_f1:
+            best_val_f1      = val_f1
+            best_epoch       = epoch
+            patience_counter = 0
+            torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
+        else:
+            patience_counter += 1
+
+        torch.save({
+            "epoch":                epoch,
+            "model_state_dict":     model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "best_val_f1":          best_val_f1,
+            "best_epoch":           best_epoch,
+            "patience_counter":     patience_counter,
+        }, latest_path)
+
+        if patience_counter >= args.patience:
+            print(f"Early stopping at epoch {epoch+1} (best epoch {best_epoch+1})", flush=True)
+            break
+
+    print(f"Training done. Best val F1={best_val_f1:.4f} at epoch {best_epoch+1}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

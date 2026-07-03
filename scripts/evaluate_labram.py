@@ -65,7 +65,7 @@ def main():
     acc = (all_preds == all_targets).mean()
     report = classification_report(
         all_targets, all_preds, labels=[0, 1, 2, 3, 4],
-        target_names=STAGE_NAMES, zero_division=0
+        target_names=STAGE_NAMES, zero_division=0, digits=4
     )
 
     lines = [

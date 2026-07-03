@@ -23,10 +23,10 @@ conda activate usleep_env
 PROJECTS_ROOT=/scratch/project_2019517/usleep_mesa/projects/${MODALITY}
 PROJECT_DIR=${PROJECTS_ROOT}/fold_${FOLD}
 
-if [ ! -d "${PROJECT_DIR}" ]; then
+if [ ! -f "${PROJECT_DIR}/hyperparameters/hparams.yaml" ]; then
     echo "===== Initializing U-Sleep project for ${MODALITY} fold ${FOLD} ====="
     mkdir -p "${PROJECTS_ROOT}"
-    ut init --name fold_${FOLD} --root "${PROJECTS_ROOT}" --model usleep
+    ut init --name fold_${FOLD} --root "${PROJECTS_ROOT}" --model usleep --overwrite
 fi
 
 echo "===== Preparing ${MODALITY} fold ${FOLD} view tree + dataset config ====="
@@ -36,10 +36,14 @@ cd "${PROJECT_DIR}"
 
 if ls model/@epoch_*.h5 >/dev/null 2>&1; then
     echo "===== Resuming training for ${MODALITY} fold ${FOLD} ====="
-    ut train --num_gpus 1 --datasets mesa --train_queue_type limitation --continue_training
+    ut train --num_gpus 1 --datasets mesa --train_queue_type limitation \
+        --max_loaded_per_dataset 300 --num_access_before_reload 5000 \
+        --continue_training
 else
     echo "===== Starting training for ${MODALITY} fold ${FOLD} ====="
-    ut train --num_gpus 1 --datasets mesa --train_queue_type limitation --overwrite
+    ut train --num_gpus 1 --datasets mesa --train_queue_type limitation \
+        --max_loaded_per_dataset 300 --num_access_before_reload 5000 \
+        --overwrite
 fi
 
 echo "===== Predicting on test split for ${MODALITY} fold ${FOLD} ====="
