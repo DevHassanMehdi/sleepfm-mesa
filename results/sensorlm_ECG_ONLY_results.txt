@@ -1,0 +1,20 @@
+SensorLM FROM SCRATCH (ECG_ONLY) — MESA held-out test split
+=======================================================
+Channels: EKG
+Architecture: ViT-B, patch=(64t,1ch), MAP pool
+Trained from random init on MESA train split
+
+Macro F1:  0.2821
+Accuracy:  0.3695
+
+              precision    recall  f1-score   support
+
+        Wake     0.7948    0.5159    0.6257     26358
+          N1     0.0973    0.2101    0.1330      4908
+          N2     0.4187    0.2732    0.3307     19228
+          N3     0.0911    0.2247    0.1296      3867
+         REM     0.1508    0.2621    0.1914      6189
+
+    accuracy                         0.3695     60550
+   macro avg     0.3105    0.2972    0.2821     60550
+weighted avg     0.5081    0.3695    0.4160     60550
