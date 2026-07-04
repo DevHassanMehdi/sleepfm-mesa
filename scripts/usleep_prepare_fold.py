@@ -156,6 +156,14 @@ def patch_hparams(project_dir: Path, n_channels: int):
         c = re.sub(r'max_loaded_per_dataset:\s*\d+', 'max_loaded_per_dataset: 20', c)
         c = re.sub(r'num_access_before_reload:\s*\d+', 'num_access_before_reload: 64', c)
 
+    if n_channels == 1:
+        # ChannelDropout requires ≥2 channels; disable it for single-channel modalities.
+        c = re.sub(
+            r'(\{cls_name: ChannelDropout,\s*kwargs:\s*\{[^}]*)apply_prob:\s*[\d.]+([^}]*\})',
+            r'\1apply_prob: 0.0\2',
+            c,
+        )
+
     # batch_shape: [batch, seq_len, samples_per_epoch, n_channels] - n_channels
     # must equal the number of channel_sampling_groups for this modality.
     c = re.sub(
