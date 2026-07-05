@@ -1,0 +1,56 @@
+U-Sleep EEG_ONLY fold 0 (EEG1) test results
+n_subjects=58/58 n_epochs=72002
+
+Macro F1: 0.1202
+Accuracy: 0.4298
+
+              precision    recall  f1-score   support
+
+        Wake       0.43      1.00      0.60     30944
+          N1       0.00      0.00      0.00      5842
+          N2       0.00      0.00      0.00     23257
+          N3       0.00      0.00      0.00      4738
+         REM       0.00      0.00      0.00      7221
+
+    accuracy                           0.43     72002
+   macro avg       0.09      0.20      0.12     72002
+weighted avg       0.18      0.43      0.26     72002
+
+
+U-Sleep ECG_ONLY fold 0 (EKG) test results
+n_subjects=58/58 n_epochs=72002
+
+Macro F1: 0.1202
+Accuracy: 0.4298
+
+              precision    recall  f1-score   support
+
+        Wake       0.43      1.00      0.60     30944
+          N1       0.00      0.00      0.00      5842
+          N2       0.00      0.00      0.00     23257
+          N3       0.00      0.00      0.00      4738
+         REM       0.00      0.00      0.00      7221
+
+    accuracy                           0.43     72002
+   macro avg       0.09      0.20      0.12     72002
+weighted avg       0.18      0.43      0.26     72002
+
+
+
+U-Sleep EEG_ECG fold 0 (EEG1+EKG) test results
+n_subjects=58/58 n_epochs=72002
+
+Macro F1: 0.1202
+Accuracy: 0.4298
+
+              precision    recall  f1-score   support
+
+        Wake       0.43      1.00      0.60     30944
+          N1       0.00      0.00      0.00      5842
+          N2       0.00      0.00      0.00     23257
+          N3       0.00      0.00      0.00      4738
+         REM       0.00      0.00      0.00      7221
+
+    accuracy                           0.43     72002
+   macro avg       0.09      0.20      0.12     72002
+weighted avg       0.18      0.43      0.26     72002
