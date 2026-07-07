@@ -276,7 +276,23 @@ def main():
                 not_found += 1
     else:
         target = args.subjects
-        sid_num = 1
+
+        # Fast-resume: scan what's already on disk so we don't re-visit
+        # every previously-downloaded subject on each restart.
+        pre_existing_ids = scan_existing_subjects()
+        if pre_existing_ids:
+            max_existing_num = max(int(sid) for sid in pre_existing_ids)
+        else:
+            max_existing_num = 0
+
+        completed_ids = list(pre_existing_ids)
+        sid_num = max_existing_num + 1
+
+        print(f"  Already downloaded: {len(pre_existing_ids)} subjects"
+              + (f" (highest ID: {str(max_existing_num).zfill(4)})" if pre_existing_ids else ""))
+        if pre_existing_ids:
+            print(f"  Resuming from subject {str(sid_num).zfill(4)}")
+        print(f"  Target: {target} total")
 
         while len(completed_ids) < target and sid_num <= MAX_SUBJECT_ID:
             sid = str(sid_num).zfill(4)
