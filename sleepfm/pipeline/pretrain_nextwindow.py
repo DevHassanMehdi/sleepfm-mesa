@@ -28,6 +28,14 @@ from models.models import SetTransformer
 from utils import load_config, load_data, save_data
 
 
+def _has_nan_or_inf(state_dict):
+    return any(
+        torch.isnan(v).any().item() or torch.isinf(v).any().item()
+        for v in state_dict.values()
+        if isinstance(v, torch.Tensor)
+    )
+
+
 class PredictionHead(nn.Module):
     """Maps online encoder output to predicted next-window embedding space."""
 
@@ -118,6 +126,10 @@ class NextWindowDataset(torch.utils.data.Dataset):
                 current[i] = hf[name][t_start : t_start + self.samples_per_chunk]
                 next_win[i] = hf[name][t1_start : t1_start + self.samples_per_chunk]
 
+        # Guard NaN/Inf before they can reach the encoder or corrupt BN stats
+        current = np.nan_to_num(current, nan=0.0, posinf=0.0, neginf=0.0)
+        next_win = np.nan_to_num(next_win, nan=0.0, posinf=0.0, neginf=0.0)
+
         return (
             torch.from_numpy(current),
             torch.from_numpy(next_win),
@@ -159,40 +171,57 @@ def run_epoch(
     with torch.set_grad_enabled(is_train):
         with tqdm.tqdm(total=len(loader), desc=f"[{split}]") as pbar:
             for current, next_win, mask in loader:
-                current = current.to(device)
-                next_win = next_win.to(device)
-                mask = mask.to(device, dtype=torch.bool)  # True = padded
+                try:
+                    current = current.to(device)
+                    next_win = next_win.to(device)
+                    mask = mask.to(device, dtype=torch.bool)  # True = padded
 
-                B, C, T = current.shape
-                x_cur = current.view(B * C, 1, T)
-                x_nxt = next_win.view(B * C, 1, T)
-                # fake 1-channel mask (spatial pooling degenerates to mean)
-                ch_mask = torch.zeros(B * C, 1, device=device, dtype=torch.bool)
+                    # Guard any NaN/Inf that slipped through the dataset
+                    current = torch.nan_to_num(current, nan=0.0, posinf=0.0, neginf=0.0)
+                    next_win = torch.nan_to_num(next_win, nan=0.0, posinf=0.0, neginf=0.0)
 
-                online_emb, _ = online_encoder(x_cur, ch_mask)  # [B*C, E]
-                pred = prediction_head(online_emb)               # [B*C, E]
+                    B, C, T = current.shape
+                    x_cur = current.view(B * C, 1, T)
+                    x_nxt = next_win.view(B * C, 1, T)
+                    # fake 1-channel mask (spatial pooling degenerates to mean)
+                    ch_mask = torch.zeros(B * C, 1, device=device, dtype=torch.bool)
 
-                with torch.no_grad():
-                    target_emb, _ = target_encoder(x_nxt, ch_mask)  # [B*C, E]
+                    online_emb, _ = online_encoder(x_cur, ch_mask)  # [B*C, E]
+                    pred = prediction_head(online_emb)               # [B*C, E]
 
-                E = online_emb.shape[-1]
-                pred_n = F.normalize(pred, dim=-1).view(B, C, E)
-                target_n = F.normalize(target_emb.detach(), dim=-1).view(B, C, E)
+                    with torch.no_grad():
+                        target_emb, _ = target_encoder(x_nxt, ch_mask)  # [B*C, E]
 
-                # per-channel MSE of normalized embeddings; ignore padded channels
-                valid = (~mask).float().unsqueeze(-1)              # [B, C, 1]
-                mse_per_ch = ((pred_n - target_n) ** 2).mean(dim=-1, keepdim=True)
-                n_valid = valid.sum().clamp(min=1)
-                loss = (mse_per_ch * valid).sum() / n_valid
+                    E = online_emb.shape[-1]
+                    # eps=1e-8 prevents instability when embedding norm is near zero
+                    pred_n = F.normalize(pred, dim=-1, eps=1e-8).view(B, C, E)
+                    target_n = F.normalize(target_emb.detach(), dim=-1, eps=1e-8).view(B, C, E)
+                    # Guard NaN from any remaining zero-norm embeddings
+                    pred_n = torch.nan_to_num(pred_n, nan=0.0)
+                    target_n = torch.nan_to_num(target_n, nan=0.0)
 
-                if is_train:
-                    optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
-                    update_ema(online_encoder, target_encoder, ema_momentum)
+                    # per-channel MSE of normalized embeddings; ignore padded channels
+                    valid = (~mask).float().unsqueeze(-1)              # [B, C, 1]
+                    mse_per_ch = ((pred_n - target_n) ** 2).mean(dim=-1, keepdim=True)
+                    n_valid = valid.sum().clamp(min=1)
+                    loss = (mse_per_ch * valid).sum() / n_valid
 
-                total_loss += loss.item() * float(n_valid.item())
-                total_n += int(n_valid.item())
+                    if torch.isnan(loss) or torch.isinf(loss):
+                        logger.warning(f"[{split}] NaN/Inf loss — skipping batch")
+                        pbar.update()
+                        continue
+
+                    if is_train:
+                        optimizer.zero_grad()
+                        loss.backward()
+                        optimizer.step()
+                        update_ema(online_encoder, target_encoder, ema_momentum)
+
+                    total_loss += loss.item() * float(n_valid.item())
+                    total_n += int(n_valid.item())
+                except Exception as exc:
+                    logger.warning(f"[{split}] batch error ({exc}) — skipping")
+
                 pbar.set_postfix_str(f"loss={total_loss / max(total_n, 1):.5f}")
                 pbar.update()
 
@@ -284,16 +313,28 @@ def pretrain_nextwindow(config_path, channel_groups_path, checkpoint_path):
     patience_counter = 0
 
     ckpt_file = os.path.join(output, "checkpoint.pt")
+    best_file = os.path.join(output, "best.pt")
     if os.path.isfile(ckpt_file):
         ckpt = torch.load(ckpt_file, map_location=device)
-        online_encoder.load_state_dict(ckpt["state_dict"])
-        prediction_head.load_state_dict(ckpt["head_state_dict"])
-        target_encoder.load_state_dict(ckpt["target_state_dict"])
-        optimizer.load_state_dict(ckpt["optim_dict"])
-        epoch_resume = ckpt["epoch"] + 1
-        best_loss = ckpt["best_loss"]
-        patience_counter = ckpt.get("patience_counter", 0)
-        logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+        if _has_nan_or_inf(ckpt.get("state_dict", {})):
+            logger.warning("checkpoint.pt has NaN/Inf weights")
+            if os.path.isfile(best_file):
+                logger.warning("  → falling back to best.pt")
+                ckpt = torch.load(best_file, map_location=device)
+            else:
+                logger.warning("  → no best.pt found, starting fresh")
+                ckpt = None
+        if ckpt is not None:
+            online_encoder.load_state_dict(ckpt["state_dict"])
+            prediction_head.load_state_dict(ckpt["head_state_dict"])
+            target_encoder.load_state_dict(ckpt["target_state_dict"])
+            optimizer.load_state_dict(ckpt["optim_dict"])
+            epoch_resume = ckpt["epoch"] + 1
+            best_loss = ckpt["best_loss"]
+            patience_counter = ckpt.get("patience_counter", 0)
+            logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+        else:
+            logger.info("Starting fresh (checkpoint discarded)")
     else:
         logger.info("Starting fresh")
 

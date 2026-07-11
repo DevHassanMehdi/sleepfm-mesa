@@ -25,6 +25,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.models import SetTransformer
 from utils import load_config, load_data, save_data
 
+def _has_nan_or_inf(state_dict):
+    return any(
+        torch.isnan(v).any().item() or torch.isinf(v).any().item()
+        for v in state_dict.values()
+        if isinstance(v, torch.Tensor)
+    )
+
+
 SPECTRAL_BANDS = [
     (0.5, 4.0),   # Delta
     (4.0, 8.0),   # Theta
@@ -112,6 +120,9 @@ class SpectralDataset(torch.utils.data.Dataset):
             for i, name in enumerate(ch_names[:C_actual]):
                 raw[i] = hf[name][chunk_start : chunk_start + self.samples_per_chunk]
 
+        # Guard NaN/Inf in raw signal before any computation
+        raw = np.nan_to_num(raw, nan=0.0, posinf=0.0, neginf=0.0)
+
         spectral = self._compute_spectral(raw[:C_actual])
         spectral_padded = np.zeros((self.max_channels, 5), dtype=np.float32)
         spectral_padded[:C_actual] = spectral
@@ -124,6 +135,8 @@ class SpectralDataset(torch.utils.data.Dataset):
 
     def _compute_spectral(self, signal):
         C, T = signal.shape
+        # Defensive: ensure no NaN/Inf reaches welch
+        signal = np.nan_to_num(signal, nan=0.0, posinf=0.0, neginf=0.0)
         n_patches = T // self.patch_size
         targets = np.zeros((C, 5), dtype=np.float32)
         for c in range(C):
@@ -134,10 +147,12 @@ class SpectralDataset(torch.utils.data.Dataset):
                 bp = []
                 for lo, hi in self.bands:
                     m = (freqs >= lo) & (freqs < hi)
-                    bp.append(float(psd[m].mean()) if m.any() else 0.0)
+                    v = float(psd[m].mean()) if m.any() else 0.0
+                    bp.append(0.0 if (np.isnan(v) or np.isinf(v)) else v)
                 window_powers.append(bp)
             targets[c] = np.log1p(np.mean(window_powers, axis=0))
-        return targets
+        # Final guard in case log1p or mean produced NaN
+        return np.nan_to_num(targets, nan=0.0, posinf=0.0, neginf=0.0)
 
 
 def run_epoch(loader, encoder, decoder, optimizer, device, split):
@@ -151,32 +166,45 @@ def run_epoch(loader, encoder, decoder, optimizer, device, split):
     with torch.set_grad_enabled(is_train):
         with tqdm.tqdm(total=len(loader), desc=f"[{split}]") as pbar:
             for raw_data, spectral_targets, mask in loader:
-                raw_data = raw_data.to(device)
-                spectral_targets = spectral_targets.to(device)
-                mask = mask.to(device, dtype=torch.bool)
+                try:
+                    raw_data = raw_data.to(device)
+                    spectral_targets = spectral_targets.to(device)
+                    mask = mask.to(device, dtype=torch.bool)
 
-                B, C, T = raw_data.shape
+                    # Guard any NaN/Inf that slipped through the dataset
+                    raw_data = torch.nan_to_num(raw_data, nan=0.0, posinf=0.0, neginf=0.0)
+                    spectral_targets = torch.nan_to_num(spectral_targets, nan=0.0, posinf=0.0, neginf=0.0)
 
-                # process each channel independently as a 1-channel modality
-                x = raw_data.view(B * C, 1, T)
-                ch_mask = torch.zeros(B * C, 1, device=device, dtype=torch.bool)
+                    B, C, T = raw_data.shape
 
-                emb, _ = encoder(x, ch_mask)  # [B*C, embed_dim]
-                pred = decoder(emb).view(B, C, -1)  # [B, C, 5]
+                    # process each channel independently as a 1-channel modality
+                    x = raw_data.view(B * C, 1, T)
+                    ch_mask = torch.zeros(B * C, 1, device=device, dtype=torch.bool)
 
-                # ignore padded channels
-                valid = (~mask).float().unsqueeze(-1)  # [B, C, 1]
-                sq_err = ((pred - spectral_targets) ** 2) * valid
-                n_valid = valid.sum().clamp(min=1)
-                loss = sq_err.sum() / n_valid
+                    emb, _ = encoder(x, ch_mask)  # [B*C, embed_dim]
+                    pred = decoder(emb).view(B, C, -1)  # [B, C, 5]
 
-                if is_train:
-                    optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
+                    # ignore padded channels
+                    valid = (~mask).float().unsqueeze(-1)  # [B, C, 1]
+                    sq_err = ((pred - spectral_targets) ** 2) * valid
+                    n_valid = valid.sum().clamp(min=1)
+                    loss = sq_err.sum() / n_valid
 
-                total_loss += loss.item() * float(n_valid.item())
-                total_n += int(n_valid.item())
+                    if torch.isnan(loss) or torch.isinf(loss):
+                        logger.warning(f"[{split}] NaN/Inf loss — skipping batch")
+                        pbar.update()
+                        continue
+
+                    if is_train:
+                        optimizer.zero_grad()
+                        loss.backward()
+                        optimizer.step()
+
+                    total_loss += loss.item() * float(n_valid.item())
+                    total_n += int(n_valid.item())
+                except Exception as exc:
+                    logger.warning(f"[{split}] batch error ({exc}) — skipping")
+
                 pbar.set_postfix_str(f"loss={total_loss / max(total_n, 1):.5f}")
                 pbar.update()
 
@@ -251,15 +279,27 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
     patience_counter = 0
 
     ckpt_file = os.path.join(output, "checkpoint.pt")
+    best_file = os.path.join(output, "best.pt")
     if os.path.isfile(ckpt_file):
         ckpt = torch.load(ckpt_file, map_location=device)
-        encoder.load_state_dict(ckpt["state_dict"])
-        decoder.load_state_dict(ckpt["decoder_state_dict"])
-        optimizer.load_state_dict(ckpt["optim_dict"])
-        epoch_resume = ckpt["epoch"] + 1
-        best_loss = ckpt["best_loss"]
-        patience_counter = ckpt.get("patience_counter", 0)
-        logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+        if _has_nan_or_inf(ckpt.get("state_dict", {})):
+            logger.warning("checkpoint.pt has NaN/Inf weights")
+            if os.path.isfile(best_file):
+                logger.warning("  → falling back to best.pt")
+                ckpt = torch.load(best_file, map_location=device)
+            else:
+                logger.warning("  → no best.pt found, starting fresh")
+                ckpt = None
+        if ckpt is not None:
+            encoder.load_state_dict(ckpt["state_dict"])
+            decoder.load_state_dict(ckpt["decoder_state_dict"])
+            optimizer.load_state_dict(ckpt["optim_dict"])
+            epoch_resume = ckpt["epoch"] + 1
+            best_loss = ckpt["best_loss"]
+            patience_counter = ckpt.get("patience_counter", 0)
+            logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+        else:
+            logger.info("Starting fresh (checkpoint discarded)")
     else:
         logger.info("Starting fresh")
 
