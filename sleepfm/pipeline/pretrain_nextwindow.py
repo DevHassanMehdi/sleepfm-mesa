@@ -123,10 +123,10 @@ class NextWindowDataset(torch.utils.data.Dataset):
 
         with h5py.File(file_path, "r", rdcc_nbytes=300 * 512 * 8 * 2) as hf:
             for i, name in enumerate(ch_names[:C_actual]):
-                current[i] = hf[name][t_start : t_start + self.samples_per_chunk]
-                next_win[i] = hf[name][t1_start : t1_start + self.samples_per_chunk]
+                current[i] = hf[name][t_start : t_start + self.samples_per_chunk].astype(np.float32)
+                next_win[i] = hf[name][t1_start : t1_start + self.samples_per_chunk].astype(np.float32)
 
-        # Guard NaN/Inf before they can reach the encoder or corrupt BN stats
+        # Safety net after explicit float32 cast
         current = np.nan_to_num(current, nan=0.0, posinf=0.0, neginf=0.0)
         next_win = np.nan_to_num(next_win, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -175,10 +175,6 @@ def run_epoch(
                     current = current.to(device)
                     next_win = next_win.to(device)
                     mask = mask.to(device, dtype=torch.bool)  # True = padded
-
-                    # Guard any NaN/Inf that slipped through the dataset
-                    current = torch.nan_to_num(current, nan=0.0, posinf=0.0, neginf=0.0)
-                    next_win = torch.nan_to_num(next_win, nan=0.0, posinf=0.0, neginf=0.0)
 
                     B, C, T = current.shape
                     x_cur = current.view(B * C, 1, T)

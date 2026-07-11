@@ -118,9 +118,9 @@ class SpectralDataset(torch.utils.data.Dataset):
 
         with h5py.File(file_path, "r", rdcc_nbytes=300 * 512 * 8 * 2) as hf:
             for i, name in enumerate(ch_names[:C_actual]):
-                raw[i] = hf[name][chunk_start : chunk_start + self.samples_per_chunk]
+                raw[i] = hf[name][chunk_start : chunk_start + self.samples_per_chunk].astype(np.float32)
 
-        # Guard NaN/Inf in raw signal before any computation
+        # Safety net after explicit float32 cast
         raw = np.nan_to_num(raw, nan=0.0, posinf=0.0, neginf=0.0)
 
         spectral = self._compute_spectral(raw[:C_actual])
@@ -135,8 +135,6 @@ class SpectralDataset(torch.utils.data.Dataset):
 
     def _compute_spectral(self, signal):
         C, T = signal.shape
-        # Defensive: ensure no NaN/Inf reaches welch
-        signal = np.nan_to_num(signal, nan=0.0, posinf=0.0, neginf=0.0)
         n_patches = T // self.patch_size
         targets = np.zeros((C, 5), dtype=np.float32)
         for c in range(C):
@@ -170,10 +168,6 @@ def run_epoch(loader, encoder, decoder, optimizer, device, split):
                     raw_data = raw_data.to(device)
                     spectral_targets = spectral_targets.to(device)
                     mask = mask.to(device, dtype=torch.bool)
-
-                    # Guard any NaN/Inf that slipped through the dataset
-                    raw_data = torch.nan_to_num(raw_data, nan=0.0, posinf=0.0, neginf=0.0)
-                    spectral_targets = torch.nan_to_num(spectral_targets, nan=0.0, posinf=0.0, neginf=0.0)
 
                     B, C, T = raw_data.shape
 

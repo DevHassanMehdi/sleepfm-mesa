@@ -82,16 +82,12 @@ class CombinedDataset(SetTransformerDataset):
 
     def __getitem__(self, idx):
         target_list, file_path, dset_names, chunk_start, modalities_length = super().__getitem__(idx)
-        # Guard NaN/Inf in all modality tensors before they reach the encoder
-        target_list = [torch.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0) for t in target_list]
-        signal = target_list[self.spec_idx].numpy()  # [C, T]  (already guarded)
+        signal = target_list[self.spec_idx].numpy().astype(np.float32)  # explicit float32
         spectral = self._compute_spectral(signal)    # [C, 5]
         return target_list, torch.from_numpy(spectral).float(), file_path, dset_names, chunk_start, modalities_length
 
     def _compute_spectral(self, signal):
         C, T = signal.shape
-        # Defensive: ensure no NaN/Inf reaches welch
-        signal = np.nan_to_num(signal, nan=0.0, posinf=0.0, neginf=0.0)
         n_patches = T // self.patch_size
         targets = np.zeros((C, 5), dtype=np.float32)
         for c in range(C):
@@ -138,22 +134,17 @@ def run_combined_iter(
 
     # Move all modality data and masks to device
     modality_data = [d.to(device, dtype=torch.float) for d in batch_data]
-    # Guard any NaN/Inf that slipped through the dataset
-    modality_data = [torch.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0) for d in modality_data]
     modality_masks = [m.to(device, dtype=torch.bool) for m in mask_list]
     spectral_targets = spectral_targets_batch.to(device)  # [B, C_spec, 5]
-    spectral_targets = torch.nan_to_num(spectral_targets, nan=0.0, posinf=0.0, neginf=0.0)
 
     # Forward: one pass per modality
     emb_results = [model(d, m) for d, m in zip(modality_data, modality_masks)]
 
     # Raw (unnormalized) spectral-modality embedding for spectral loss
-    raw_spec_emb = torch.nan_to_num(
-        emb_results[spectral_modality_idx][0], nan=0.0, posinf=0.0, neginf=0.0
-    )  # [B, E]
+    raw_spec_emb = emb_results[spectral_modality_idx][0]  # [B, E]
 
     # Normalized embeddings for contrastive loss
-    emb = [F.normalize(torch.nan_to_num(e[0], nan=0.0, posinf=0.0, neginf=0.0)) for e in emb_results]
+    emb = [F.normalize(e[0]) for e in emb_results]
 
     # ── Contrastive loss ──────────────────────────────────────────────────────
     if mode == "pairwise":
