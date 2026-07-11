@@ -331,7 +331,7 @@ def pretrain_nextwindow(config_path, channel_groups_path, checkpoint_path):
             optimizer.load_state_dict(ckpt["optim_dict"])
             epoch_resume = ckpt["epoch"] + 1
             best_loss = ckpt["best_loss"]
-            patience_counter = ckpt.get("patience_counter", 0)
+            patience_counter = 0  # fresh patience window on every resume
             logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
         else:
             logger.info("Starting fresh (checkpoint discarded)")
@@ -344,6 +344,8 @@ def pretrain_nextwindow(config_path, channel_groups_path, checkpoint_path):
     )
     with open(log_tsv, "w") as f:
         f.write("Epoch\tSplit\tLoss\n")
+
+    collapse_counter = 0  # consecutive epochs with train loss < 1e-5
 
     for epoch in range(epoch_resume, max_epochs):
         logger.info(f"Epoch {epoch}/{max_epochs - 1}")
@@ -361,6 +363,20 @@ def pretrain_nextwindow(config_path, channel_groups_path, checkpoint_path):
             optimizer, device, "pretrain", ema_momentum,
         )
         logger.info(f"  train loss: {train_loss:.6f}")
+
+        # Collapse detection: train loss near zero means online ≈ target
+        if train_loss < 1e-5:
+            collapse_counter += 1
+            if collapse_counter >= 3:
+                new_lr = optimizer.param_groups[0]["lr"] * 0.5
+                for pg in optimizer.param_groups:
+                    pg["lr"] = new_lr
+                logger.warning(
+                    f"Possible representational collapse: train loss < 1e-5 for "
+                    f"{collapse_counter} consecutive epochs — halving lr to {new_lr:.2e}"
+                )
+        else:
+            collapse_counter = 0
 
         val_loader = torch.utils.data.DataLoader(
             dataset["validation"],

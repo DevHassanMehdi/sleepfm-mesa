@@ -28,6 +28,14 @@ from models.dataset import SetTransformerDataset, collate_fn
 from models.models import SetTransformer
 from utils import count_parameters, load_config, load_data, save_data
 
+def _has_nan_or_inf(state_dict):
+    return any(
+        torch.isnan(v).any().item() or torch.isinf(v).any().item()
+        for v in state_dict.values()
+        if isinstance(v, torch.Tensor)
+    )
+
+
 SPECTRAL_BANDS = [
     (0.5, 4.0),    # Delta
     (4.0, 8.0),    # Theta
@@ -74,12 +82,16 @@ class CombinedDataset(SetTransformerDataset):
 
     def __getitem__(self, idx):
         target_list, file_path, dset_names, chunk_start, modalities_length = super().__getitem__(idx)
-        signal = target_list[self.spec_idx].numpy()  # [C, T]
+        # Guard NaN/Inf in all modality tensors before they reach the encoder
+        target_list = [torch.nan_to_num(t, nan=0.0, posinf=0.0, neginf=0.0) for t in target_list]
+        signal = target_list[self.spec_idx].numpy()  # [C, T]  (already guarded)
         spectral = self._compute_spectral(signal)    # [C, 5]
         return target_list, torch.from_numpy(spectral).float(), file_path, dset_names, chunk_start, modalities_length
 
     def _compute_spectral(self, signal):
         C, T = signal.shape
+        # Defensive: ensure no NaN/Inf reaches welch
+        signal = np.nan_to_num(signal, nan=0.0, posinf=0.0, neginf=0.0)
         n_patches = T // self.patch_size
         targets = np.zeros((C, 5), dtype=np.float32)
         for c in range(C):
@@ -87,14 +99,15 @@ class CombinedDataset(SetTransformerDataset):
             for w in range(n_patches):
                 patch = signal[c, w * self.patch_size : (w + 1) * self.patch_size]
                 freqs, psd = welch(patch, fs=self.fs, nperseg=128)
-                bp = [
-                    float(psd[(freqs >= lo) & (freqs < hi)].mean())
-                    if ((freqs >= lo) & (freqs < hi)).any() else 0.0
-                    for lo, hi in self.bands
-                ]
+                bp = []
+                for lo, hi in self.bands:
+                    m = (freqs >= lo) & (freqs < hi)
+                    v = float(psd[m].mean()) if m.any() else 0.0
+                    bp.append(0.0 if (np.isnan(v) or np.isinf(v)) else v)
                 window_powers.append(bp)
             targets[c] = np.log1p(np.mean(window_powers, axis=0))
-        return targets
+        # Final guard in case log1p or mean produced NaN
+        return np.nan_to_num(targets, nan=0.0, posinf=0.0, neginf=0.0)
 
 
 def collate_fn_combined(batch):
@@ -125,17 +138,22 @@ def run_combined_iter(
 
     # Move all modality data and masks to device
     modality_data = [d.to(device, dtype=torch.float) for d in batch_data]
+    # Guard any NaN/Inf that slipped through the dataset
+    modality_data = [torch.nan_to_num(d, nan=0.0, posinf=0.0, neginf=0.0) for d in modality_data]
     modality_masks = [m.to(device, dtype=torch.bool) for m in mask_list]
     spectral_targets = spectral_targets_batch.to(device)  # [B, C_spec, 5]
+    spectral_targets = torch.nan_to_num(spectral_targets, nan=0.0, posinf=0.0, neginf=0.0)
 
     # Forward: one pass per modality
     emb_results = [model(d, m) for d, m in zip(modality_data, modality_masks)]
 
     # Raw (unnormalized) spectral-modality embedding for spectral loss
-    raw_spec_emb = emb_results[spectral_modality_idx][0]  # [B, E]
+    raw_spec_emb = torch.nan_to_num(
+        emb_results[spectral_modality_idx][0], nan=0.0, posinf=0.0, neginf=0.0
+    )  # [B, E]
 
     # Normalized embeddings for contrastive loss
-    emb = [F.normalize(e[0]) for e in emb_results]
+    emb = [F.normalize(torch.nan_to_num(e[0], nan=0.0, posinf=0.0, neginf=0.0)) for e in emb_results]
 
     # ── Contrastive loss ──────────────────────────────────────────────────────
     if mode == "pairwise":
@@ -295,17 +313,29 @@ def pretrain_combined(config_path, channel_groups_path, checkpoint_path, use_wan
     best_loss = math.inf
 
     ckpt_file = os.path.join(output, "checkpoint.pt")
+    best_file = os.path.join(output, "best.pt")
     if os.path.isfile(ckpt_file):
         ckpt = torch.load(ckpt_file, map_location=device)
-        model.load_state_dict(ckpt["state_dict"])
-        spectral_decoder.load_state_dict(ckpt["decoder_state_dict"])
-        with torch.no_grad():
-            temperature.fill_(ckpt["temperature"])
-        optim.load_state_dict(ckpt["optim_dict"])
-        scheduler.load_state_dict(ckpt["scheduler_dict"])
-        epoch_resume = ckpt["epoch"] + 1
-        best_loss = ckpt["best_loss"]
-        logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+        if _has_nan_or_inf(ckpt.get("state_dict", {})):
+            logger.warning("checkpoint.pt has NaN/Inf weights")
+            if os.path.isfile(best_file):
+                logger.warning("  → falling back to best.pt")
+                ckpt = torch.load(best_file, map_location=device)
+            else:
+                logger.warning("  → no best.pt found, starting fresh")
+                ckpt = None
+        if ckpt is not None:
+            model.load_state_dict(ckpt["state_dict"])
+            spectral_decoder.load_state_dict(ckpt["decoder_state_dict"])
+            with torch.no_grad():
+                temperature.fill_(ckpt["temperature"])
+            optim.load_state_dict(ckpt["optim_dict"])
+            scheduler.load_state_dict(ckpt["scheduler_dict"])
+            epoch_resume = ckpt["epoch"] + 1
+            best_loss = ckpt["best_loss"]
+            logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+        else:
+            logger.info("Starting fresh (checkpoint discarded)")
     else:
         logger.info("Starting fresh")
 
@@ -339,65 +369,75 @@ def pretrain_combined(config_path, channel_groups_path, checkpoint_path, use_wan
 
             with tqdm.tqdm(total=len(dataloader)) as pbar:
                 for batch in dataloader:
-                    loss, c_loss, s_loss, pairwise, correct, pairs = run_combined_iter(
-                        batch, num_modalities, model, spectral_decoder, device,
-                        mode, temperature, batch_size, ij,
-                        spectral_modality_idx, lambda_spectral,
-                    )
-                    B = batch[0][0].size(0)
-                    total_loss += loss.item()
-                    total_contrastive += c_loss.item() if torch.is_tensor(c_loss) else c_loss
-                    total_spectral += s_loss.item()
-                    total_pairwise += pairwise
-                    total_correct += correct
-                    total_n += B
-                    total_pairs += pairs
+                    try:
+                        loss, c_loss, s_loss, pairwise, correct, pairs = run_combined_iter(
+                            batch, num_modalities, model, spectral_decoder, device,
+                            mode, temperature, batch_size, ij,
+                            spectral_modality_idx, lambda_spectral,
+                        )
 
-                    loss_per_item = loss / B
-                    optim.zero_grad()
-                    loss_per_item.backward()
-                    optim.step()
+                        if torch.isnan(loss) or torch.isinf(loss):
+                            logger.warning("NaN/Inf total loss — skipping batch")
+                        else:
+                            B = batch[0][0].size(0)
+                            total_loss += loss.item()
+                            total_contrastive += c_loss.item() if torch.is_tensor(c_loss) else c_loss
+                            total_spectral += s_loss.item()
+                            total_pairwise += pairwise
+                            total_correct += correct
+                            total_n += B
+                            total_pairs += pairs
 
-                    if temperature < 0:
-                        with torch.no_grad():
-                            temperature.fill_(0)
+                            loss_per_item = loss / B
+                            optim.zero_grad()
+                            loss_per_item.backward()
+                            optim.step()
 
-                    pbar.set_postfix_str(
-                        f"total={total_loss/total_n:.4f} "
-                        f"(c={total_contrastive/total_n:.4f} "
-                        f"s={total_spectral/total_n:.4f}) "
-                        f"T={temperature.item():.3f}"
-                    )
+                            if temperature < 0:
+                                with torch.no_grad():
+                                    temperature.fill_(0)
 
-                    if count_iter % config["save_iter"] == 0:
-                        save = {
-                            "epoch": epoch,
-                            "temperature": temperature.item(),
-                            "optim_dict": optim.state_dict(),
-                            "scheduler_dict": scheduler.state_dict(),
-                            "best_loss": best_loss,
-                            "loss": total_loss / max(total_n, 1),
-                            "state_dict": model.state_dict(),
-                            "decoder_state_dict": spectral_decoder.state_dict(),
-                        }
-                        torch.save(save, ckpt_file)
-                        save_data(config, os.path.join(output, "config.json"))
+                            pbar.set_postfix_str(
+                                f"total={total_loss/max(total_n,1):.4f} "
+                                f"(c={total_contrastive/max(total_n,1):.4f} "
+                                f"s={total_spectral/max(total_n,1):.4f}) "
+                                f"T={temperature.item():.3f}"
+                            )
 
-                    count_iter += 1
+                            if count_iter % config["save_iter"] == 0:
+                                save = {
+                                    "epoch": epoch,
+                                    "temperature": temperature.item(),
+                                    "optim_dict": optim.state_dict(),
+                                    "scheduler_dict": scheduler.state_dict(),
+                                    "best_loss": best_loss,
+                                    "loss": total_loss / max(total_n, 1),
+                                    "state_dict": model.state_dict(),
+                                    "decoder_state_dict": spectral_decoder.state_dict(),
+                                }
+                                torch.save(save, ckpt_file)
+                                save_data(config, os.path.join(output, "config.json"))
+
+                            count_iter += 1
+
+                    except Exception as exc:
+                        logger.warning(f"batch error ({exc}) — skipping")
+
                     pbar.update()
 
+            n = max(total_n, 1)
             log_f.write(
                 f"{epoch}\t{split}\t"
-                f"{total_loss/total_n:.6f}\t"
-                f"{total_contrastive/total_n:.6f}\t"
-                f"{total_spectral/total_n:.6f}\t"
+                f"{total_loss/n:.6f}\t"
+                f"{total_contrastive/n:.6f}\t"
+                f"{total_spectral/n:.6f}\t"
                 f"{temperature.item():.6f}\n"
             )
             log_f.flush()
 
             scheduler.step()
 
-            epoch_loss = total_loss / total_n
+            epoch_loss = total_loss / n
             is_best = epoch_loss < best_loss
             if is_best:
                 best_loss = epoch_loss
@@ -419,8 +459,8 @@ def pretrain_combined(config_path, channel_groups_path, checkpoint_path, use_wan
 
             logger.info(
                 f"Epoch {epoch}: total={epoch_loss:.6f} "
-                f"contrastive={total_contrastive/total_n:.6f} "
-                f"spectral={total_spectral/total_n:.6f}"
+                f"contrastive={total_contrastive/n:.6f} "
+                f"spectral={total_spectral/n:.6f}"
                 + (" [best]" if is_best else "")
             )
 

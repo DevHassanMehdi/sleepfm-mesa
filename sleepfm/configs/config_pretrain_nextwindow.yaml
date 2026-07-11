@@ -21,7 +21,7 @@ split_path: 'sleepfm/configs/dataset_split_fromscratch.json'
 save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/nextwindow'
 
 # next-window specific
-ema_momentum: 0.996
+ema_momentum: 0.99
 patience: 10
 nextwindow_modality: "BAS"
 BAS_CHANNELS: 10
