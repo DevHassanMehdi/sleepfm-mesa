@@ -161,8 +161,12 @@ def run_epoch(
     optimizer, device, split, ema_momentum,
 ):
     is_train = split == "pretrain"
-    online_encoder.train(is_train)
-    prediction_head.train(is_train)
+    if not is_train:
+        online_encoder.eval()
+        prediction_head.eval()
+    else:
+        online_encoder.train()
+        prediction_head.train()
     target_encoder.eval()  # always eval; updated only via EMA, never backprop
 
     total_loss = 0.0
@@ -220,6 +224,10 @@ def run_epoch(
 
                 pbar.set_postfix_str(f"loss={total_loss / max(total_n, 1):.5f}")
                 pbar.update()
+
+    if not is_train:
+        online_encoder.train()
+        prediction_head.train()
 
     return total_loss / max(total_n, 1)
 
