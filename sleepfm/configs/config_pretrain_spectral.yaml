@@ -1,29 +1,33 @@
-# Spectral reconstruction pretraining — predict log1p EEG band power per channel.
+# SetTransformer architecture (same as config_pretrain_fromscratch.yaml)
+seed: 42
 model: 'SetTransformer'
 in_channels: 1
-batch_size: 128
-max_epochs: 100
-lr: 0.001
-weight_decay: 0.0001
-num_workers: 8
 embed_dim: 128
 num_heads: 8
 num_layers: 6
 pooling_head: 8
 dropout: 0.3
 
+# training
+batch_size: 128
+max_epochs: 100
+num_workers: 8
+
+# spectral-specific optimizer (Adam, not SGD)
+spectral_lr: 0.001
+spectral_weight_decay: 0.0001
+patience: 10
+
+# data
 data_path: 'data/mesa/hdf5'
 split_path: 'sleepfm/configs/dataset_split_fromscratch.json'
 save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/spectral'
 
-# early stopping patience (epochs with no val improvement)
-patience: 10
+# channel configuration
+max_channels: 10
+BAS_CHANNELS: 5
 
-# modality whose channels are used for spectral pretraining
-spectral_modality: "BAS"
-BAS_CHANNELS: 10
-
-# spectral band boundaries in Hz: [Delta, Theta, Alpha, Sigma, Beta]
+# spectral reconstruction targets: log10(power + 1e-8) per band
 spectral_bands:
   - [0.5, 4.0]
   - [4.0, 8.0]
@@ -31,9 +35,7 @@ spectral_bands:
   - [12.0, 15.0]
   - [15.0, 30.0]
 
-# dataloader / chunking
-max_files: null
+# dataloader
 val_size: 100
-sampling_duration: 5
 sampling_freq: 128
 patch_size: 640

@@ -1,15 +1,17 @@
 """Spectral reconstruction pretraining for SleepFM SetTransformer encoder.
 
-Each channel is processed independently through the encoder; a small MLP
-decoder predicts the log1p mean band power in 5 EEG spectral bands.
+BAS channels (EEG1, EEG2, EEG3, EOG-L, EOG-R) are processed per-channel
+through the encoder. A small MLP decoder predicts log10 mean band power in
+5 EEG spectral bands (delta/theta/alpha/sigma/beta) per channel.
+
+Targets use log10(power + 1e-8) rather than log1p, giving values in the
+range roughly -5 to -1 that the decoder can meaningfully learn to predict.
 """
 
 import datetime
 import math
 import os
-import random
 import sys
-import time
 
 import click
 import h5py
@@ -25,6 +27,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.models import SetTransformer
 from utils import load_config, load_data, save_data
 
+
+BAS_CHANNELS = ["EEG1", "EEG2", "EEG3", "EOG-L", "EOG-R"]
+WINDOW_SIZE = 640   # 5 seconds at 128 Hz
+FS = 128
+DEFAULT_BANDS = [(0.5, 4.0), (4.0, 8.0), (8.0, 12.0), (12.0, 15.0), (15.0, 30.0)]
+
+
 def _has_nan_or_inf(state_dict):
     return any(
         torch.isnan(v).any().item() or torch.isinf(v).any().item()
@@ -33,74 +42,58 @@ def _has_nan_or_inf(state_dict):
     )
 
 
-SPECTRAL_BANDS = [
-    (0.5, 4.0),   # Delta
-    (4.0, 8.0),   # Theta
-    (8.0, 12.0),  # Alpha
-    (12.0, 15.0), # Sigma
-    (15.0, 30.0), # Beta
-]
-
-
 class SpectralDecoder(nn.Module):
-    def __init__(self, embed_dim, n_bands=5):
+    """MLP: Linear(embed_dim, 128) -> ReLU -> Linear(128, 5)."""
+
+    def __init__(self, embed_dim=128, n_bands=5):
         super().__init__()
-        self.mlp = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Linear(embed_dim, 128),
             nn.ReLU(),
             nn.Linear(128, n_bands),
         )
 
     def forward(self, x):
-        return self.mlp(x)
+        return self.net(x)
 
 
 class SpectralDataset(torch.utils.data.Dataset):
-    """HDF5 dataset that yields (raw_signal, spectral_targets, channel_mask).
+    """HDF5 dataset yielding (signal_window, spectral_targets, channel_mask).
 
-    raw_signal:       [max_channels, T]  float32, padded with zeros
-    spectral_targets: [max_channels, 5]  float32, log1p mean band power
-    channel_mask:     [max_channels]     float32, 1=padded 0=real
+    signal_window:     [max_channels, 640]  float32  (zero-padded)
+    spectral_targets:  [max_channels, 5]   float32  log10(power + 1e-8)
+    channel_mask:      [max_channels]       bool     True = padded channel
     """
 
-    def __init__(self, config, channel_groups, hdf5_paths=None, split="pretrain"):
-        self.fs = config["sampling_freq"]
-        self.patch_size = config["patch_size"]
-        self.samples_per_chunk = config["sampling_duration"] * 60 * config["sampling_freq"]
-        self.modality = config["spectral_modality"]
-        self.max_channels = config[f"{self.modality}_CHANNELS"]
-        self.channel_like = set(channel_groups[self.modality])
-        self.bands = [tuple(b) for b in config.get("spectral_bands", SPECTRAL_BANDS)]
+    def __init__(self, config, split="pretrain"):
+        self.window_size = WINDOW_SIZE
+        self.max_channels = config.get("max_channels", 10)
+        raw_bands = config.get("spectral_bands", DEFAULT_BANDS)
+        self.bands = [tuple(b) for b in raw_bands]
 
-        if hdf5_paths is None:
-            all_paths = load_data(config["split_path"])[split]
-            hdf5_paths = [os.path.join(config["data_path"], p) for p in all_paths]
-
-        if split == "pretrain":
-            random.shuffle(hdf5_paths)
-        if config.get("max_files"):
-            hdf5_paths = hdf5_paths[: config["max_files"]]
+        all_paths = load_data(config["split_path"])[split]
+        hdf5_paths = [os.path.join(config["data_path"], p) for p in all_paths]
         if split == "validation":
-            hdf5_paths = hdf5_paths[: config["val_size"]]
+            hdf5_paths = hdf5_paths[:config.get("val_size", 100)]
 
         self.index_map = self._build_index(hdf5_paths)
-        logger.info(f"SpectralDataset [{split}]: {len(self.index_map)} chunks from {len(hdf5_paths)} files")
+        logger.info(
+            f"SpectralDataset [{split}]: {len(self.index_map)} windows "
+            f"from {len(hdf5_paths)} files"
+        )
 
     def _build_index(self, paths):
         index_map = []
         for path in paths:
             try:
-                with h5py.File(path, "r", rdcc_nbytes=300 * 512 * 8 * 2) as hf:
-                    ch_names = [
-                        k for k in hf.keys()
-                        if k in self.channel_like and isinstance(hf[k], h5py.Dataset)
-                    ]
-                    if not ch_names:
+                with h5py.File(path, "r") as hf:
+                    available = [ch for ch in BAS_CHANNELS if ch in hf]
+                    if not available:
                         continue
-                    n_samples = hf[ch_names[0]].shape[0]
-                    n_chunks = n_samples // self.samples_per_chunk
-                    for i in range(n_chunks):
-                        index_map.append((path, ch_names, i * self.samples_per_chunk))
+                    n_samples = hf[available[0]].shape[0]
+                    n_windows = n_samples // self.window_size
+                    for i in range(n_windows):
+                        index_map.append((path, available, i * self.window_size))
             except (OSError, AttributeError):
                 pass
         return index_map
@@ -109,48 +102,37 @@ class SpectralDataset(torch.utils.data.Dataset):
         return len(self.index_map)
 
     def __getitem__(self, idx):
-        file_path, ch_names, chunk_start = self.index_map[idx]
-        C_actual = min(len(ch_names), self.max_channels)
+        file_path, available, window_start = self.index_map[idx]
 
-        raw = np.zeros((self.max_channels, self.samples_per_chunk), dtype=np.float32)
-        mask = np.ones(self.max_channels, dtype=np.float32)
-        mask[:C_actual] = 0.0
+        raw = np.zeros((self.max_channels, self.window_size), dtype=np.float32)
+        spectral = np.zeros((self.max_channels, 5), dtype=np.float32)
+        mask = np.ones(self.max_channels, dtype=bool)  # True = padded
 
-        with h5py.File(file_path, "r", rdcc_nbytes=300 * 512 * 8 * 2) as hf:
-            for i, name in enumerate(ch_names[:C_actual]):
-                raw[i] = hf[name][chunk_start : chunk_start + self.samples_per_chunk].astype(np.float32)
-
-        # Safety net after explicit float32 cast
-        raw = np.nan_to_num(raw, nan=0.0, posinf=0.0, neginf=0.0)
-
-        spectral = self._compute_spectral(raw[:C_actual])
-        spectral_padded = np.zeros((self.max_channels, 5), dtype=np.float32)
-        spectral_padded[:C_actual] = spectral
+        with h5py.File(file_path, "r") as hf:
+            for i, ch in enumerate(available[:self.max_channels]):
+                sig = hf[ch][window_start:window_start + self.window_size].astype(np.float32)
+                sig = np.nan_to_num(sig, nan=0.0, posinf=0.0, neginf=0.0)
+                raw[i] = sig
+                spectral[i] = self._compute_spectral_log10(sig)
+                mask[i] = False
 
         return (
             torch.from_numpy(raw),
-            torch.from_numpy(spectral_padded),
+            torch.from_numpy(spectral),
             torch.from_numpy(mask),
         )
 
-    def _compute_spectral(self, signal):
-        C, T = signal.shape
-        n_patches = T // self.patch_size
-        targets = np.zeros((C, 5), dtype=np.float32)
-        for c in range(C):
-            window_powers = []
-            for w in range(n_patches):
-                patch = signal[c, w * self.patch_size : (w + 1) * self.patch_size]
-                freqs, psd = welch(patch, fs=self.fs, nperseg=128)
-                bp = []
-                for lo, hi in self.bands:
-                    m = (freqs >= lo) & (freqs < hi)
-                    v = float(psd[m].mean()) if m.any() else 0.0
-                    bp.append(0.0 if (np.isnan(v) or np.isinf(v)) else v)
-                window_powers.append(bp)
-            targets[c] = np.log1p(np.mean(window_powers, axis=0))
-        # Final guard in case log1p or mean produced NaN
-        return np.nan_to_num(targets, nan=0.0, posinf=0.0, neginf=0.0)
+    def _compute_spectral_log10(self, signal):
+        """log10(mean_band_power + 1e-8) for each of 5 spectral bands."""
+        freqs, psd = welch(signal, fs=FS, nperseg=128)
+        targets = np.zeros(5, dtype=np.float32)
+        for j, (lo, hi) in enumerate(self.bands):
+            m = (freqs >= lo) & (freqs < hi)
+            power = float(psd[m].mean()) if m.any() else 0.0
+            if np.isnan(power) or np.isinf(power):
+                power = 0.0
+            targets[j] = np.log10(power + 1e-8)
+        return targets
 
 
 def run_epoch(loader, encoder, decoder, optimizer, device, split):
@@ -171,18 +153,16 @@ def run_epoch(loader, encoder, decoder, optimizer, device, split):
                 try:
                     raw_data = raw_data.to(device)
                     spectral_targets = spectral_targets.to(device)
-                    mask = mask.to(device, dtype=torch.bool)
+                    mask = mask.to(device)  # bool, True = padded
 
                     B, C, T = raw_data.shape
-
-                    # process each channel independently as a 1-channel modality
                     x = raw_data.view(B * C, 1, T)
                     ch_mask = torch.zeros(B * C, 1, device=device, dtype=torch.bool)
 
-                    emb, _ = encoder(x, ch_mask)  # [B*C, embed_dim]
+                    emb, _ = encoder(x, ch_mask)        # [B*C, embed_dim]
                     pred = decoder(emb).view(B, C, -1)  # [B, C, 5]
 
-                    # ignore padded channels
+                    # masked MSE — ignore padded channels
                     valid = (~mask).float().unsqueeze(-1)  # [B, C, 1]
                     sq_err = ((pred - spectral_targets) ** 2) * valid
                     n_valid = valid.sum().clamp(min=1)
@@ -214,12 +194,11 @@ def run_epoch(loader, encoder, decoder, optimizer, device, split):
 
 
 @click.command("pretrain_spectral")
-@click.option("--config_path", type=str, default="sleepfm/configs/config_pretrain_spectral.yaml")
-@click.option("--channel_groups_path", type=str, default="sleepfm/configs/channel_groups.json")
-@click.option("--checkpoint_path", type=str, default=None)
+@click.option("--config_path", default="sleepfm/configs/config_pretrain_spectral.yaml")
+@click.option("--channel_groups_path", default="sleepfm/configs/channel_groups.json")
+@click.option("--checkpoint_path", default=None)
 def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
     config = load_config(config_path)
-    channel_groups = load_data(channel_groups_path)
 
     if checkpoint_path:
         output = checkpoint_path
@@ -240,10 +219,7 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
     )
     logger.info(f"Device: {device}")
 
-    dataset = {
-        split: SpectralDataset(config, channel_groups, split=split)
-        for split in ["pretrain", "validation"]
-    }
+    dataset = {s: SpectralDataset(config, split=s) for s in ["pretrain", "validation"]}
 
     encoder = SetTransformer(
         config["in_channels"],
@@ -254,27 +230,29 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
         pooling_head=config["pooling_head"],
         dropout=config["dropout"],
     )
-    decoder = SpectralDecoder(config["embed_dim"], n_bands=5)
+    decoder = SpectralDecoder(embed_dim=config["embed_dim"], n_bands=5)
 
     if device.type == "cuda":
         encoder = torch.nn.DataParallel(encoder)
     encoder.to(device)
     decoder.to(device)
 
-    total_enc = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
-    total_dec = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
-    logger.info(f"Encoder params: {total_enc / 1e6:.2f}M  |  Decoder params: {total_dec / 1e6:.2f}M")
+    n_enc = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
+    n_dec = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
+    logger.info(f"Encoder: {n_enc/1e6:.2f}M params  |  Decoder: {n_dec/1e3:.1f}K params")
 
+    lr = config.get("spectral_lr", config.get("lr", 1e-3))
+    wd = config.get("spectral_weight_decay", config.get("weight_decay", 1e-4))
     optimizer = torch.optim.Adam(
         list(encoder.parameters()) + list(decoder.parameters()),
-        lr=config["lr"],
-        weight_decay=config.get("weight_decay", 0.0),
+        lr=lr,
+        weight_decay=wd,
     )
 
     max_epochs = config.get("max_epochs", 100)
     patience = config.get("patience", 10)
-    num_workers = config["num_workers"]
     batch_size = config["batch_size"]
+    num_workers = config["num_workers"]
 
     epoch_resume = 0
     best_loss = math.inf
@@ -282,6 +260,7 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
 
     ckpt_file = os.path.join(output, "checkpoint.pt")
     best_file = os.path.join(output, "best.pt")
+
     if os.path.isfile(ckpt_file):
         ckpt = torch.load(ckpt_file, map_location=device)
         if _has_nan_or_inf(ckpt.get("state_dict", {})):
@@ -294,7 +273,8 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
                 ckpt = None
         if ckpt is not None:
             encoder.load_state_dict(ckpt["state_dict"])
-            decoder.load_state_dict(ckpt["decoder_state_dict"])
+            if "decoder_state_dict" in ckpt:
+                decoder.load_state_dict(ckpt["decoder_state_dict"])
             optimizer.load_state_dict(ckpt["optim_dict"])
             epoch_resume = ckpt["epoch"] + 1
             best_loss = ckpt["best_loss"]
@@ -316,23 +296,16 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
         logger.info(f"Epoch {epoch}/{max_epochs - 1}")
 
         train_loader = torch.utils.data.DataLoader(
-            dataset["pretrain"],
-            batch_size=batch_size,
-            num_workers=num_workers,
-            shuffle=True,
-            drop_last=True,
+            dataset["pretrain"], batch_size=batch_size,
+            num_workers=num_workers, shuffle=True, drop_last=True,
         )
         train_loss = run_epoch(train_loader, encoder, decoder, optimizer, device, "pretrain")
-        logger.info(f"  train loss: {train_loss:.6f}")
 
         val_loader = torch.utils.data.DataLoader(
-            dataset["validation"],
-            batch_size=batch_size,
-            num_workers=num_workers,
-            shuffle=False,
+            dataset["validation"], batch_size=batch_size,
+            num_workers=num_workers, shuffle=False,
         )
         val_loss = run_epoch(val_loader, encoder, decoder, None, device, "validation")
-        logger.info(f"  val   loss: {val_loss:.6f}")
 
         with open(log_tsv, "a") as f:
             f.write(f"{epoch}\ttrain\t{train_loss:.6f}\n")
@@ -344,22 +317,23 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
             patience_counter = 0
         else:
             patience_counter += 1
-            logger.info(f"  no improvement ({patience_counter}/{patience})")
 
+        # required keys match pretrain.py checkpoint format for generate_embeddings.py
         save = {
             "epoch": epoch,
             "state_dict": encoder.state_dict(),
-            "decoder_state_dict": decoder.state_dict(),
-            "optim_dict": optimizer.state_dict(),
             "best_loss": best_loss,
-            "loss": val_loss,
+            "optim_dict": optimizer.state_dict(),
+            "decoder_state_dict": decoder.state_dict(),
             "patience_counter": patience_counter,
         }
         torch.save(save, ckpt_file)
         save_data(config, os.path.join(output, "config.json"))
-
         if is_best:
-            torch.save(save, os.path.join(output, "best.pt"))
+            torch.save(save, best_file)
+
+        suffix = " [best]" if is_best else f" (patience {patience_counter}/{patience})"
+        logger.info(f"Epoch {epoch}: train={train_loss:.6f} val={val_loss:.6f}{suffix}")
 
         if patience_counter >= patience:
             logger.info(f"Early stopping at epoch {epoch}")
