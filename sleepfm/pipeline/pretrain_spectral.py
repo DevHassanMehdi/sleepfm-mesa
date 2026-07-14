@@ -137,12 +137,8 @@ class SpectralDataset(torch.utils.data.Dataset):
 
 def run_epoch(loader, encoder, decoder, optimizer, device, split):
     is_train = split == "pretrain"
-    if not is_train:
-        encoder.eval()
-        decoder.eval()
-    else:
-        encoder.train()
-        decoder.train()
+    encoder.train()
+    decoder.train()
 
     total_loss = 0.0
     total_n = 0
@@ -185,10 +181,6 @@ def run_epoch(loader, encoder, decoder, optimizer, device, split):
 
                 pbar.set_postfix_str(f"loss={total_loss / max(total_n, 1):.5f}")
                 pbar.update()
-
-    if not is_train:
-        encoder.train()
-        decoder.train()
 
     return total_loss / max(total_n, 1)
 
