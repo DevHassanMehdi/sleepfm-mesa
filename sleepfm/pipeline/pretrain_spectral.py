@@ -93,28 +93,43 @@ class SpectralDataset(torch.utils.data.Dataset):
                     n_samples = hf[available[0]].shape[0]
                     n_windows = n_samples // self.window_size
                     for i in range(n_windows):
-                        index_map.append((path, available, i * self.window_size))
+                        start = i * self.window_size
+                        # Pre-compute spectral targets now so __getitem__ is HDF5-read only
+                        targets = np.zeros((len(available), 5), dtype=np.float32)
+                        for ci, ch in enumerate(available):
+                            sig = hf[ch][start:start + self.window_size].astype(np.float32)
+                            sig = np.nan_to_num(sig, nan=0.0, posinf=0.0, neginf=0.0)
+                            targets[ci] = self._compute_spectral_log10(sig)
+                        index_map.append((path, available, start, targets))
             except (OSError, AttributeError):
                 pass
+
+        if index_map:
+            all_t = np.concatenate([t for (_, _, _, t) in index_map], axis=0)
+            logger.info(
+                f"Spectral targets: mean={all_t.mean():.4f} std={all_t.std():.4f} "
+                f"min={all_t.min():.4f} max={all_t.max():.4f}"
+            )
         return index_map
 
     def __len__(self):
         return len(self.index_map)
 
     def __getitem__(self, idx):
-        file_path, available, window_start = self.index_map[idx]
+        file_path, available, window_start, precomputed = self.index_map[idx]
 
         raw = np.zeros((self.max_channels, self.window_size), dtype=np.float32)
         spectral = np.zeros((self.max_channels, 5), dtype=np.float32)
         mask = np.ones(self.max_channels, dtype=bool)  # True = padded
 
+        n_real = min(len(available), self.max_channels)
         with h5py.File(file_path, "r") as hf:
-            for i, ch in enumerate(available[:self.max_channels]):
+            for i, ch in enumerate(available[:n_real]):
                 sig = hf[ch][window_start:window_start + self.window_size].astype(np.float32)
-                sig = np.nan_to_num(sig, nan=0.0, posinf=0.0, neginf=0.0)
-                raw[i] = sig
-                spectral[i] = self._compute_spectral_log10(sig)
+                raw[i] = np.nan_to_num(sig, nan=0.0, posinf=0.0, neginf=0.0)
                 mask[i] = False
+
+        spectral[:n_real] = precomputed[:n_real]
 
         return (
             torch.from_numpy(raw),
