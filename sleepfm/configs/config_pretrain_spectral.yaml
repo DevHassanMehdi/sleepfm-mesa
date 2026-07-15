@@ -22,6 +22,7 @@ patience: 10
 data_path: 'data/mesa/hdf5'
 split_path: 'sleepfm/configs/dataset_split_fromscratch.json'
 save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/spectral'
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data'
 
 # channel configuration
 max_channels: 10

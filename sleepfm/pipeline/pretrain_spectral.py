@@ -14,13 +14,11 @@ import os
 import sys
 
 import click
-import h5py
 import numpy as np
 import torch
 import torch.nn.functional as F
 import tqdm
 from loguru import logger
-from scipy.signal import welch
 from torch import nn
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -58,96 +56,61 @@ class SpectralDecoder(nn.Module):
 
 
 class SpectralDataset(torch.utils.data.Dataset):
-    """HDF5 dataset yielding (signal_window, spectral_targets, channel_mask).
+    """Cache-backed dataset for spectral pretraining.
 
-    signal_window:     [max_channels, 640]  float32  (zero-padded)
-    spectral_targets:  [max_channels, 5]   float32  log10(power + 1e-8)
-    channel_mask:      [max_channels]       bool     True = padded channel
+    Loads pre-built cache files from disk (built by scripts/build_spectral_cache.py):
+      {cache_dir}/spectral_signals_{split}.bin  — [N, max_ch, 640] float32 memmap
+      {cache_dir}/spectral_cache_{split}.npz    — targets [N, max_ch, 5], masks [N, max_ch]
+
+    __getitem__ does no HDF5 I/O and no Welch computation — only array indexing.
     """
 
     def __init__(self, config, split="pretrain"):
-        self.window_size = WINDOW_SIZE
         self.max_channels = config.get("max_channels", 10)
-        raw_bands = config.get("spectral_bands", DEFAULT_BANDS)
-        self.bands = [tuple(b) for b in raw_bands]
+        cache_dir = config.get("spectral_cache_dir", "/scratch/project_2019517/sleepfm-data")
 
-        all_paths = load_data(config["split_path"])[split]
-        hdf5_paths = [os.path.join(config["data_path"], p) for p in all_paths]
-        if split == "validation":
-            hdf5_paths = hdf5_paths[:config.get("val_size", 100)]
+        signals_path = os.path.join(cache_dir, f"spectral_signals_{split}.bin")
+        cache_path = os.path.join(cache_dir, f"spectral_cache_{split}.npz")
 
-        self.index_map = self._build_index(hdf5_paths)
-        logger.info(
-            f"SpectralDataset [{split}]: {len(self.index_map)} windows "
-            f"from {len(hdf5_paths)} files"
+        if not os.path.isfile(signals_path) or not os.path.isfile(cache_path):
+            raise FileNotFoundError(
+                f"Spectral cache not found for split='{split}'.\n"
+                f"  Expected: {signals_path}\n"
+                f"            {cache_path}\n"
+                f"  Run first: sbatch scripts/run_build_spectral_cache.slurm"
+            )
+
+        cache = np.load(cache_path)
+        self.targets = cache["targets"]   # [N, max_ch, 5] float32, fully in RAM
+        self.masks = cache["masks"]       # [N, max_ch]   bool,    fully in RAM
+        N = int(cache["n_windows"])
+
+        # signals memory-mapped — OS reads only requested pages from disk
+        self.signals = np.memmap(
+            signals_path, dtype="float32", mode="r",
+            shape=(N, self.max_channels, WINDOW_SIZE),
         )
 
-    def _build_index(self, paths):
-        index_map = []
-        for path in paths:
-            try:
-                with h5py.File(path, "r") as hf:
-                    available = [ch for ch in BAS_CHANNELS if ch in hf]
-                    if not available:
-                        continue
-                    n_samples = hf[available[0]].shape[0]
-                    n_windows = n_samples // self.window_size
-                    for i in range(n_windows):
-                        start = i * self.window_size
-                        # Pre-compute spectral targets now so __getitem__ is HDF5-read only
-                        targets = np.zeros((len(available), 5), dtype=np.float32)
-                        for ci, ch in enumerate(available):
-                            sig = hf[ch][start:start + self.window_size].astype(np.float32)
-                            sig = np.nan_to_num(sig, nan=0.0, posinf=0.0, neginf=0.0)
-                            targets[ci] = self._compute_spectral_log10(sig)
-                        index_map.append((path, available, start, targets))
-            except (OSError, AttributeError):
-                pass
-
-        if index_map:
-            all_t = np.concatenate([t for (_, _, _, t) in index_map], axis=0)
-            logger.info(
-                f"Spectral targets: mean={all_t.mean():.4f} std={all_t.std():.4f} "
-                f"min={all_t.min():.4f} max={all_t.max():.4f}"
-            )
-        return index_map
+        logger.info(f"SpectralDataset [{split}]: {N} windows loaded from cache")
+        all_t = self.targets[~self.masks]
+        logger.info(
+            f"Spectral targets: mean={all_t.mean():.4f}  std={all_t.std():.4f}  "
+            f"min={all_t.min():.4f}  max={all_t.max():.4f}"
+        )
 
     def __len__(self):
-        return len(self.index_map)
+        return len(self.targets)
 
     def __getitem__(self, idx):
-        file_path, available, window_start, precomputed = self.index_map[idx]
-
-        raw = np.zeros((self.max_channels, self.window_size), dtype=np.float32)
-        spectral = np.zeros((self.max_channels, 5), dtype=np.float32)
-        mask = np.ones(self.max_channels, dtype=bool)  # True = padded
-
-        n_real = min(len(available), self.max_channels)
-        with h5py.File(file_path, "r") as hf:
-            for i, ch in enumerate(available[:n_real]):
-                sig = hf[ch][window_start:window_start + self.window_size].astype(np.float32)
-                raw[i] = np.nan_to_num(sig, nan=0.0, posinf=0.0, neginf=0.0)
-                mask[i] = False
-
-        spectral[:n_real] = precomputed[:n_real]
-
+        # np.array() copies the memmap slice — safe for multiprocessing workers
+        raw = np.array(self.signals[idx], dtype=np.float32)
+        spec = self.targets[idx].copy()
+        mask = self.masks[idx].copy()
         return (
             torch.from_numpy(raw),
-            torch.from_numpy(spectral),
+            torch.from_numpy(spec),
             torch.from_numpy(mask),
         )
-
-    def _compute_spectral_log10(self, signal):
-        """log10(mean_band_power + 1e-8) for each of 5 spectral bands."""
-        freqs, psd = welch(signal, fs=FS, nperseg=128)
-        targets = np.zeros(5, dtype=np.float32)
-        for j, (lo, hi) in enumerate(self.bands):
-            m = (freqs >= lo) & (freqs < hi)
-            power = float(psd[m].mean()) if m.any() else 0.0
-            if np.isnan(power) or np.isinf(power):
-                power = 0.0
-            targets[j] = np.log10(power + 1e-8)
-        return targets
 
 
 def run_epoch(loader, encoder, decoder, optimizer, device, split):
