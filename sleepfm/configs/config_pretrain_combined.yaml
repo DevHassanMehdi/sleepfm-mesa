@@ -1,0 +1,54 @@
+# Combined (contrastive + spectral) pretraining config
+# Encoder architecture and contrastive settings match config_pretrain_fromscratch.yaml.
+# Added: lambda_spectral, spectral_cache_dir, patience.
+
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+# optimizer (matches pretrain.py)
+batch_size: 128
+epochs: 100
+lr: 0.001
+lr_step_period: 2
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+weight_decay: 0.0
+
+# contrastive objective
+mode: "leave_one_out"
+save_iter: 5000
+eval_iter: 5000
+log_interval: 100
+use_wandb: false
+
+# spectral auxiliary loss
+lambda_spectral: 0.5
+patience: 10
+
+# data
+data_path: 'data/mesa/hdf5'
+split_path: 'sleepfm/configs/dataset_split_fromscratch.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/combined'
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data'
+
+# channel groups (must match channel_groups.json)
+BAS_CHANNELS: 10
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+modality_types: ["BAS", "RESP", "EKG", "EMG"]
+
+# dataloader
+max_files: null
+val_size: 100
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+num_workers: 8
