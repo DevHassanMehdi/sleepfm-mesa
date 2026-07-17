@@ -6,14 +6,15 @@ leave_one_out contrastive objective from pretrain.py.
 total_loss = contrastive_loss + lambda_spectral * spectral_loss
 
 The spectral loss predicts log10(mean_band_power + 1e-8) for 5 EEG frequency
-bands per BAS channel, using the first 640-sample window of each 5-minute
-contrastive chunk. Targets are read from the pre-built disk cache (see
-scripts/build_spectral_cache.py).
+bands per BAS channel, using a randomly sampled 640-sample (5-second) window
+from within each 5-minute contrastive chunk. Targets are read from the
+pre-built disk cache (see scripts/build_spectral_cache.py).
 """
 
 import datetime
 import math
 import os
+import random
 import sys
 import time
 
@@ -156,7 +157,11 @@ class CombinedDataset(torch.utils.data.Dataset):
 
         spec_sig, spec_tgt, spec_msk = (None, None, None)
         if self._cache is not None:
-            spec_sig, spec_tgt, spec_msk = self._cache.get(file_path, chunk_start)
+            # Pick a random 5-second window within the 5-minute chunk so that
+            # the spectral loss sees all 60 windows uniformly rather than always
+            # using only the first one (which wastes 59/60 of the cache).
+            offset = random.randrange(60) * SPECTRAL_WINDOW
+            spec_sig, spec_tgt, spec_msk = self._cache.get(file_path, chunk_start + offset)
 
         return target_list, file_path, dset_names, chunk_start, mod_len, spec_sig, spec_tgt, spec_msk
 

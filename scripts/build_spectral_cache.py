@@ -70,14 +70,14 @@ def scan_windows(hdf5_paths):
     return index
 
 
-def build_split_cache(split, config, cache_dir, val_size):
+def build_split_cache(split, config, cache_dir, val_size, suffix=""):
     all_names = load_data(config["split_path"])[split]
     hdf5_paths = [os.path.join(config["data_path"], p) for p in all_names]
     if split == "validation":
         hdf5_paths = hdf5_paths[:val_size]
 
-    signals_path = os.path.join(cache_dir, f"spectral_signals_{split}.bin")
-    cache_path = os.path.join(cache_dir, f"spectral_cache_{split}.npz")
+    signals_path = os.path.join(cache_dir, f"spectral_signals_{split}{suffix}.bin")
+    cache_path = os.path.join(cache_dir, f"spectral_cache_{split}{suffix}.npz")
 
     if os.path.isfile(signals_path) and os.path.isfile(cache_path):
         logger.info(f"[{split}] Cache already exists — skipping (delete files to rebuild)")
@@ -133,12 +133,19 @@ def build_split_cache(split, config, cache_dir, val_size):
         f"min={all_t.min():.4f}  max={all_t.max():.4f}"
     )
 
+    # Save scan index so pretrain_combined.py can build a fast lookup without
+    # re-opening HDF5 files.
+    file_paths_arr = np.array([path.encode() for path, _, _ in index])
+    window_starts_arr = np.array([start for _, _, start in index], dtype=np.int64)
+
     np.savez_compressed(
         cache_path,
         targets=targets,
         masks=masks,
         n_windows=np.array(N),
         n_files=np.array(len(hdf5_paths)),
+        file_paths=file_paths_arr,
+        window_starts=window_starts_arr,
     )
 
     logger.info(f"[{split}] Wrote {signals_path}  ({signals_gb:.1f} GB)")
@@ -156,12 +163,17 @@ def main():
         default="/scratch/project_2019517/sleepfm-data",
     )
     parser.add_argument("--val_size", type=int, default=100)
+    parser.add_argument(
+        "--suffix",
+        default="",
+        help='String appended to output filenames before the extension, e.g. "_v2"',
+    )
     args = parser.parse_args()
 
     config = load_config(args.config_path)
 
     for split in ["pretrain", "validation"]:
-        build_split_cache(split, config, args.cache_dir, args.val_size)
+        build_split_cache(split, config, args.cache_dir, args.val_size, suffix=args.suffix)
 
     logger.info("Cache build complete.")
 
