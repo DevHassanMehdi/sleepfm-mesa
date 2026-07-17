@@ -26,6 +26,10 @@ from models.dataset import SleepEventClassificationDataset as Dataset
 from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn
 from tqdm import tqdm
 
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
+torch.backends.cuda.enable_math_sdp(True)
+
 
 @click.command("evaluate_sleep_staging")
 @click.option("--config_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/config_finetune_sleep_events.yaml"))

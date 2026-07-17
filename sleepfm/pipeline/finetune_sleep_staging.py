@@ -28,6 +28,10 @@ import numpy as np
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
 
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
+torch.backends.cuda.enable_math_sdp(True)
+
 
 def masked_cross_entropy_loss(outputs, y_data, mask, device):
     # Reshape outputs and labels to (B * seq_len, num_classes) and (B * seq_len,)

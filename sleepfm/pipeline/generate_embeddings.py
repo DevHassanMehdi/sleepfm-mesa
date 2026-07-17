@@ -21,6 +21,10 @@ import shutil
 import wandb
 import h5py
 
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
+torch.backends.cuda.enable_math_sdp(True)
+
 
 @click.command("generate_embeddings")
 @click.option("--model_path", type=str, default='path')

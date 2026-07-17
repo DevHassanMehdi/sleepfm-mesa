@@ -32,6 +32,10 @@ from models.models import SetTransformer
 from models.dataset import SetTransformerDataset, collate_fn
 from utils import load_config, load_data, save_data, count_parameters
 
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
+torch.backends.cuda.enable_math_sdp(True)
+
 
 BAS_CHANNELS = ["EEG1", "EEG2", "EEG3", "EOG-L", "EOG-R"]
 SPECTRAL_WINDOW = 640   # 5 seconds at 128 Hz

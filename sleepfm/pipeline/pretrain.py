@@ -18,6 +18,10 @@ import shutil
 import wandb
 from torch.optim import AdamW
 
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
+torch.backends.cuda.enable_math_sdp(True)
+
 
 def run_iter(batch, num_modalities, model, device, mode, temperature, batch_size, ij):
     batch_data, mask_list, *_ = batch
