@@ -1,0 +1,76 @@
+SleepFM SPECTRAL PRETRAINED + FINE-TUNED — MESA held-out test split (fold_0)
+Pretrained checkpoint: spectral_128_patch_size_640/best.pt (epoch 2, spectral reconstruction pretraining)
+Encoder: frozen — No. Full end-to-end fine-tuning of encoder + classifier head.
+Split: same 270/30/50 train/val/test as SleepFM from-scratch experiments
+Generated: 2026-07-18
+==================================================
+
+Modality         | Macro F1 | Accuracy | Wake   | N1     | N2     | N3     | REM
+-----------------+----------+----------+--------+--------+--------+--------+--------
+EEG_ONLY         | 0.6971   | 0.8042   | 0.9237 | 0.3628 | 0.7788 | 0.6389 | 0.7811
+ECG_ONLY         | 0.2603   | 0.4216   | 0.6808 | 0.0000 | 0.2645 | 0.1502 | 0.2062
+EEG_ECG          | 0.6875   | 0.7916   | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726
+
+==================================================
+INDIVIDUAL MODALITY RESULTS
+==================================================
+
+SleepFM SPECTRAL PRETRAINED (EEG_ONLY) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3
+Pretrained: spectral_128_patch_size_640/best.pt
+
+Macro F1:  0.6971
+Accuracy:  0.8042
+
+              precision    recall  f1-score   support
+
+        Wake     0.9229    0.9244    0.9237     26007
+          N1     0.4977    0.2855    0.3628      4943
+          N2     0.7832    0.7744    0.7788     19255
+          N3     0.5591    0.7453    0.6389      3891
+         REM     0.7274    0.8434    0.7811      6189
+
+    accuracy                         0.8042     60285
+   macro avg     0.6981    0.7146    0.6971     60285
+weighted avg     0.7999    0.8042    0.7984     60285
+SleepFM SPECTRAL PRETRAINED (ECG_ONLY) — MESA held-out test split
+==================================================
+Channels: EKG
+Pretrained: spectral_128_patch_size_640/best.pt
+Note: spectral pretraining used only EEG/EOG (BAS) channels, never ECG.
+      ECG_ONLY performance reflects zero-shot transfer of a non-ECG encoder.
+
+Macro F1:  0.2603
+Accuracy:  0.4216
+
+              precision    recall  f1-score   support
+
+        Wake     0.6457    0.7200    0.6808     26007
+          N1     0.0000    0.0000    0.0000      4943
+          N2     0.4370    0.1897    0.2645     19255
+          N3     0.1076    0.2485    0.1502      3891
+         REM     0.1489    0.3353    0.2062      6189
+
+    accuracy                         0.4216     60285
+   macro avg     0.2678    0.2987    0.2603     60285
+weighted avg     0.4403    0.4216    0.4090     60285
+SleepFM SPECTRAL PRETRAINED (EEG_ECG) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EKG
+Pretrained: spectral_128_patch_size_640/best.pt
+
+Macro F1:  0.6875
+Accuracy:  0.7916
+
+              precision    recall  f1-score   support
+
+        Wake     0.9223    0.9044    0.9133     26007
+          N1     0.4877    0.2956    0.3681      4943
+          N2     0.7697    0.7586    0.7641     19255
+          N3     0.5331    0.7394    0.6195      3891
+         REM     0.7089    0.8489    0.7726      6189
+
+    accuracy                         0.7916     60285
+   macro avg     0.6843    0.7094    0.6875     60285
+weighted avg     0.7909    0.7916    0.7875     60285

@@ -63,7 +63,7 @@ def main():
     print(f'Accuracy:  {accuracy_score(all_targets, all_preds):.4f}')
     print()
     print(classification_report(all_targets, all_preds,
-        target_names=['Wake', 'N1', 'N2', 'N3', 'REM'], zero_division=0))
+        target_names=['Wake', 'N1', 'N2', 'N3', 'REM'], zero_division=0, digits=4))
 
 
 if __name__ == '__main__':
