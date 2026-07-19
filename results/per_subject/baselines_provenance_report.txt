@@ -1,0 +1,97 @@
+Baseline Per-Subject Evaluation — Provenance Report
+============================================================
+Run date: 2026-07-18T09:42:36
+Device: cuda
+
+=== BIOT / EEG_ONLY ===
+  Checkpoint: /scratch/project_2019517/biot/checkpoints/EEG_ONLY/fold_0/best.pth
+  mtime: 2026-07-01T04:56:27
+  Aggregate macro F1: 0.7237 | expected: 0.7237 | MATCH
+  Aggregate accuracy: 0.8004  n_epochs: 60,705
+
+=== BIOT / ECG_ONLY ===
+  Checkpoint: /scratch/project_2019517/biot/checkpoints/ECG_ONLY/fold_0/best.pth
+  mtime: 2026-07-01T01:26:32
+  Aggregate macro F1: 0.3091 | expected: 0.3086 | MATCH
+  Aggregate accuracy: 0.4302  n_epochs: 60,705
+
+=== BIOT / EEG_ECG ===
+  Checkpoint: /scratch/project_2019517/biot/checkpoints/EEG_ECG/fold_0/best.pth
+  mtime: 2026-07-01T09:04:58
+  Aggregate macro F1: 0.7025 | expected: 0.7023 | MATCH
+  Aggregate accuracy: 0.7973  n_epochs: 60,705
+
+Files written (BIOT):
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/biot_eeg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/biot_ecg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/biot_eeg_ecg_per_subject.csv  (50 subjects)
+
+=== LaBraM / EEG_ONLY ===
+  Checkpoint: /scratch/project_2019517/labram/checkpoints/EEG_ONLY/fold_0/best.pth
+  mtime: 2026-07-02T02:06:14
+  Aggregate macro F1: 0.6836 | expected: 0.6835 | MATCH
+  Aggregate accuracy: 0.7734  n_epochs: 60,705
+
+=== LaBraM / ECG_ONLY ===
+  Checkpoint: /scratch/project_2019517/labram/checkpoints/ECG_ONLY/fold_0/best.pth
+  mtime: 2026-07-03T02:32:34
+  Aggregate macro F1: 0.2805 | expected: 0.2803 | MATCH
+  Aggregate accuracy: 0.4090  n_epochs: 60,705
+
+=== LaBraM / EEG_ECG ===
+  Checkpoint: /scratch/project_2019517/labram/checkpoints/EEG_ECG/fold_0/best.pth
+  mtime: 2026-07-03T00:39:16
+  Aggregate macro F1: 0.6527 | expected: 0.6524 | MATCH
+  Aggregate accuracy: 0.7563  n_epochs: 60,705
+
+Files written (LaBraM):
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/labram_eeg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/labram_ecg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/labram_eeg_ecg_per_subject.csv  (50 subjects)
+
+=== MOMENT / EEG_ONLY ===
+  Checkpoint: /scratch/project_2019517/moment/checkpoints/EEG_ONLY/fold_0/best.pth
+  mtime: 2026-07-04T16:20:05
+  Aggregate macro F1: 0.5894 | expected: 0.5894 | MATCH
+  Aggregate accuracy: 0.6742  n_epochs: 60,705
+
+=== MOMENT / ECG_ONLY ===
+  Checkpoint: /scratch/project_2019517/moment/checkpoints/ECG_ONLY/fold_0/best.pth
+  mtime: 2026-07-02T21:50:53
+  Aggregate macro F1: 0.3098 | expected: 0.3096 | MATCH
+  Aggregate accuracy: 0.4189  n_epochs: 60,705
+
+=== MOMENT / EEG_ECG ===
+  Checkpoint: /scratch/project_2019517/moment/checkpoints/EEG_ECG/fold_0/best.pth
+  mtime: 2026-07-04T23:39:57
+  Aggregate macro F1: 0.5955 | expected: 0.5953 | MATCH
+  Aggregate accuracy: 0.6915  n_epochs: 60,705
+
+Files written (MOMENT):
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/moment_eeg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/moment_ecg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/moment_eeg_ecg_per_subject.csv  (50 subjects)
+
+=== SensorLM / EEG_ONLY ===
+  Checkpoint: /scratch/project_2019517/sensorlm/checkpoints/EEG_ONLY/fold_0/best.pth
+  mtime: 2026-07-03T02:14:44
+  Aggregate macro F1: 0.6265 | expected: 0.6264 | MATCH
+  Aggregate accuracy: 0.7232  n_epochs: 60,705
+
+=== SensorLM / ECG_ONLY ===
+  Checkpoint: /scratch/project_2019517/sensorlm/checkpoints/ECG_ONLY/fold_0/best.pth
+  mtime: 2026-07-02T21:59:59
+  Aggregate macro F1: 0.2824 | expected: 0.2821 | MATCH
+  Aggregate accuracy: 0.3693  n_epochs: 60,705
+
+=== SensorLM / EEG_ECG ===
+  Checkpoint: /scratch/project_2019517/sensorlm/checkpoints/EEG_ECG/fold_0/best.pth
+  mtime: 2026-07-03T02:55:44
+  Aggregate macro F1: 0.6080 | expected: 0.6077 | MATCH
+  Aggregate accuracy: 0.7060  n_epochs: 60,705
+
+Files written (SensorLM):
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/sensorlm_eeg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/sensorlm_ecg_only_per_subject.csv  (50 subjects)
+  /users/hamehdi/projects/sleepfm-mesa/results/per_subject/sensorlm_eeg_ecg_per_subject.csv  (50 subjects)
+  Combined: /users/hamehdi/projects/sleepfm-mesa/results/per_subject/baselines_per_subject_combined.csv  (600 rows total)
