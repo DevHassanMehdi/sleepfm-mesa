@@ -64,7 +64,10 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
 @click.option("--split_path", type=str, default=None)
 @click.option("--train_split", type=str, default="train")
 @click.option("--fold", type=int, default=0)
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold):
+@click.option("--pretrain_approach", type=str, default=None,
+              help="Encoder pretraining approach (e.g. spectral, combined, fromscratch). "
+                   "Auto-detected from model_path if omitted, but explicit is strongly preferred.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold, pretrain_approach):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -101,9 +104,27 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         output = checkpoint_path
         config = load_data(os.path.join(output, "config.json"))
     else:
+        if pretrain_approach is None:
+            mp = config.get("model_path", "")
+            if "fromscratch_eegonly" in mp or "fromscratch" in mp:
+                pretrain_approach = "fromscratch"
+            elif "spectral" in mp:
+                pretrain_approach = "spectral"
+            elif "combined" in mp:
+                pretrain_approach = "combined"
+            else:
+                pretrain_approach = "unknown"
+            logger.warning(
+                f"--pretrain_approach not provided; auto-detected '{pretrain_approach}' "
+                f"from model_path. Pass --pretrain_approach explicitly to suppress this warning."
+            )
+        run_ts = datetime.now().strftime('%Y-%m-%d_%H%M')
         scratch_base = "/scratch/project_2019517/sleepfm-data/checkpoints"
-        output = os.path.join(scratch_base, f"{config['model']}_{dataset_prefix}_{prefix}_{channel_like_string}", f"fold_{fold}")
+        output = os.path.join(scratch_base, "finetuned", pretrain_approach,
+                              channel_like_string, f"run_{run_ts}", f"fold_{fold}")
         os.makedirs(output, exist_ok=True)
+        print(f"\n>>> OUTPUT PATH: {output}\n", flush=True)
+        logger.info(f"Output path: {output}")
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")

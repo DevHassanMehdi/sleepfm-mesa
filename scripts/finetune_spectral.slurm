@@ -22,20 +22,23 @@ python sleepfm/pipeline/finetune_sleep_staging.py \
   --config_path sleepfm/configs/config_ft_spectral_EEG_ONLY.yaml \
   --channel_groups_path ${CHANNELS} \
   --split_path ${SPLIT} \
-  --fold 0
+  --fold 0 \
+  --pretrain_approach spectral
 
 echo "===== ECG-only fine-tuning ====="
 python sleepfm/pipeline/finetune_sleep_staging.py \
   --config_path sleepfm/configs/config_ft_spectral_ECG_ONLY.yaml \
   --channel_groups_path ${CHANNELS} \
   --split_path ${SPLIT} \
-  --fold 0
+  --fold 0 \
+  --pretrain_approach spectral
 
 echo "===== EEG+ECG fine-tuning ====="
 python sleepfm/pipeline/finetune_sleep_staging.py \
   --config_path sleepfm/configs/config_ft_spectral_EEG_ECG.yaml \
   --channel_groups_path ${CHANNELS} \
   --split_path ${SPLIT} \
-  --fold 0
+  --fold 0 \
+  --pretrain_approach spectral
 
 echo "========== DONE =========="

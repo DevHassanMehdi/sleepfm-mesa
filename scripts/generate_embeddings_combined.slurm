@@ -14,7 +14,7 @@ export HDF5_USE_FILE_LOCKING=FALSE
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
 
-MODEL_PATH=/scratch/project_2019517/sleepfm-data/checkpoints/combined/SetTransformer/combined_128_patch_size_640
+MODEL_PATH=/scratch/project_2019517/sleepfm-data/checkpoints/encoders/combined/SetTransformer/combined_128_patch_size_640
 CHANNELS=sleepfm/configs/channel_groups.json
 SPLIT=sleepfm/configs/dataset_split_fromscratch_fold.json
 

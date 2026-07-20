@@ -5,15 +5,15 @@
 #SBATCH --time=02:00:00
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
-#SBATCH --job-name=eval_spectral
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/eval_spectral_%j.log
+#SBATCH --job-name=eval_combined
+#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/eval_combined_%j.log
 
-# Evaluate the most recent spectral fine-tuned run for each modality.
+# Evaluate the most recent combined fine-tuned run for each modality.
 # Each modality's latest run_YYYY-MM-DD_HHMM folder is auto-detected.
 # evaluate_sleep_staging.py appends /fold_0 internally; pickles land in
 #   {run_dir}/fold_0/mesa/test/
 # To evaluate a specific run instead of the latest, set RUN_OVERRIDE:
-#   RUN_OVERRIDE=/scratch/.../finetuned/spectral/EEG_ONLY/run_2026-07-20_1200
+#   RUN_OVERRIDE=/scratch/.../finetuned/combined/EEG_ONLY/run_2026-07-20_1200
 
 cd /users/hamehdi/projects/sleepfm-mesa
 export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
@@ -22,7 +22,7 @@ source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
 
 CKPT=/scratch/project_2019517/sleepfm-data/checkpoints
-PRETRAIN=spectral
+PRETRAIN=combined
 
 for MODALITY in EEG_ONLY ECG_ONLY EEG_ECG; do
     if [ -n "${RUN_OVERRIDE}" ]; then
