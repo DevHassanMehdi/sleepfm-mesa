@@ -1,0 +1,24 @@
+YASA Per-Subject Evaluation — Provenance Report
+============================================================
+Run date: 2026-07-19T18:19:40
+Modality run: EEG_ONLY
+Split: /users/hamehdi/projects/sleepfm-mesa/sleepfm/configs/dataset_split_fromscratch_staging.json
+Fold: fold_0
+
+Subjects in split: 50
+Subjects evaluated: 50
+Subjects skipped: 0  []
+
+IMPORTANT — Subject-set mismatch vs. other models:
+  YASA has 49 subjects; BIOT/LaBraM/MOMENT/SensorLM all have 50.
+  mesa-sleep-0555 is absent from YASA because its HDF5 file is
+  missing on disk.  Any join on subject_id with other per-subject
+  CSVs will silently drop this subject for YASA.
+
+Aggregate macro F1: 0.4715 | expected: 0.4720 | MATCH
+Aggregate accuracy: 0.6677  n_epochs: 60,705
+
+EEG_ECG note:
+  yasa_eeg_ecg_per_subject.csv is a deliberate copy of
+  yasa_eeg_only_per_subject.csv with condition=EEG_ECG.
+  YASA uses only EEG1 regardless of modality label; ECG is ignored.

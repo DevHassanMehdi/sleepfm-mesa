@@ -1,0 +1,35 @@
+SleepFM SPECTRAL Encoder — Per-Subject Extraction Provenance Report
+======================================================================
+Run date: 2026-07-20T08:13:41
+
+=== Condition: EEG_ONLY (EEG_ONLY) ===
+  Directory: /scratch/project_2019517/sleepfm-data/checkpoints/SleepEventLSTMClassifier_mesa_labels_EEG_ONLY/fold_0/mesa/test
+  all_outputs.pickle: size=1,390,323B  mtime=2026-07-20T08:05:47
+  all_targets.pickle: size=278,536B  mtime=2026-07-20T08:05:47
+  all_masks.pickle: size=278,536B  mtime=2026-07-20T08:05:47
+  all_paths.pickle: size=7,368B  mtime=2026-07-20T08:05:47
+  Subjects in file: 50
+  Aggregate macro F1: 0.6581 | expected: 0.6971 | MISMATCH
+  Aggregate accuracy: 0.7761  n_valid_windows: 60,285
+
+=== Condition: EKG (ECG_ONLY) ===
+  Directory: /scratch/project_2019517/sleepfm-data/checkpoints/SleepEventLSTMClassifier_mesa_labels_EKG/fold_0/mesa/test
+  all_outputs.pickle: size=1,390,323B  mtime=2026-07-20T08:06:22
+  all_targets.pickle: size=278,536B  mtime=2026-07-20T08:06:22
+  all_masks.pickle: size=278,536B  mtime=2026-07-20T08:06:22
+  all_paths.pickle: size=7,368B  mtime=2026-07-20T08:06:22
+  Subjects in file: 50
+  Aggregate macro F1: 0.3543 | expected: 0.2603 | MISMATCH
+  Aggregate accuracy: 0.5288  n_valid_windows: 60,285
+
+=== Condition: EEG_ONLY_EKG (EEG_ECG) ===
+  Directory: /scratch/project_2019517/sleepfm-data/checkpoints/SleepEventLSTMClassifier_mesa_labels_EEG_ONLY_EKG/fold_0/mesa/test
+  all_outputs.pickle: size=1,390,323B  mtime=2026-07-20T08:06:28
+  all_targets.pickle: size=278,536B  mtime=2026-07-20T08:06:28
+  all_masks.pickle: size=278,536B  mtime=2026-07-20T08:06:28
+  all_paths.pickle: size=7,368B  mtime=2026-07-20T08:06:28
+  Subjects in file: 50
+  Aggregate macro F1: 0.6573 | expected: 0.6875 | MISMATCH
+  Aggregate accuracy: 0.7783  n_valid_windows: 60,285
+
+RESULT: MISMATCH detected — no CSVs written.
