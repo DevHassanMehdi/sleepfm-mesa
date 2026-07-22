@@ -2,7 +2,7 @@
 #SBATCH --account=project_2019517
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:v100:1
-#SBATCH --time=02:00:00
+#SBATCH --time=04:00:00
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=eval_combined
@@ -24,7 +24,7 @@ conda activate sleepfm_env
 CKPT=/scratch/project_2019517/sleepfm-data/checkpoints
 PRETRAIN=combined
 
-for MODALITY in EEG_ONLY ECG_ONLY EEG_ECG; do
+for MODALITY in EKG EEG_ONLY_EKG; do
     if [ -n "${RUN_OVERRIDE}" ]; then
         RUN_DIR="${RUN_OVERRIDE}"
     else

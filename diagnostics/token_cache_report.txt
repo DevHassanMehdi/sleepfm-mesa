@@ -1,0 +1,70 @@
+======================================================================
+TOKEN CACHE BUILD — k-means codebook for next-window prediction
+n_clusters=512  batch_size=10000  SPECTRAL_WINDOW=640
+======================================================================
+
+[Step 1] Loading spectral caches from /scratch/project_2019517/sleepfm-data/
+  Pretrain  : 2,284,093 windows  targets=(2284093, 10, 5)
+  Validation: 223,073 windows  targets=(223073, 10, 5)
+  Load time : 8.0s
+
+[Step 2] Building per-window feature vectors [N, 5]
+  Aggregation: mean over valid (unmasked) channels — matches diagnostic script
+  Pretrain k-means features : (2284093, 5)  dtype=float32
+  Feature stats: mean=-4.2017  std=1.0590  min=-7.5910  max=1.7838
+  Build time: 1.2s
+
+[Step 3] Fitting MiniBatchKMeans on pretrain split ONLY
+  (Validation is withheld to avoid leakage — assigned only)
+  partial_fit batch    1 |   0.4% | 3s elapsed
+  partial_fit batch   50 |  21.9% | 4s elapsed
+  partial_fit batch  100 |  43.8% | 4s elapsed
+  partial_fit batch  150 |  65.7% | 4s elapsed
+  partial_fit batch  200 |  87.6% | 5s elapsed
+  KMeans fit complete in 4.9s
+
+[Step 4] Assigning tokens
+  Pretrain  : 2,284,093 / 2,284,093 windows assigned
+  Validation: 223,073 / 223,073 windows assigned
+  Assignment time: 0.9s
+  Empty cluster check: PASSED — all 512 clusters populated
+
+[Step 5] Building consecutive within-file pairs
+  Definition: (fps[i], ws[i]+640) must exist in same split's cache
+  Both the current and next window must have label >= 0
+  Pretrain  : 2,283,793 valid pairs  (0.0% excluded by file boundaries / masking)
+  Validation: 223,043 valid pairs  (0.0% excluded)
+  Pair build time: 11.0s
+
+[Step 6] Saving outputs to /scratch/project_2019517/sleepfm-data/
+  token_codebook.npy                       shape=(512, 5)  dtype=float32
+  token_assignments_pretrain.npy           shape=(2284093,)  dtype=int32
+  token_assignments_validation.npy         shape=(223073,)  dtype=int32
+  token_pairs_pretrain.npy                 shape=(2283793, 2)  dtype=int64
+  token_pairs_validation.npy               shape=(223043, 2)  dtype=int64
+  Save time: 0.1s
+
+[Step 7] Token distribution and entropy
+
+  Pretrain   entropy: 8.6582 / 9.00 bits (96.2% of max)
+  Validation entropy: 8.7026 / 9.00 bits (96.7% of max)
+
+  Entropy gap (|val - pre|): 0.0444 bits — distributions consistent.
+
+  Self-transition rate:
+    pretrain  : 17.04%  (389,249 / 2,283,793 pairs)
+    validation: 14.73%  (32,858 / 223,043 pairs)
+
+    CONFIRMED: matches diagnostic's 17.04% within 1 pp (diff=0.00 pp)
+
+======================================================================
+=== TOKEN CACHE BUILD SUMMARY ===
+  Pretrain  : 2,284,093 windows | 2,283,793 valid pairs (0.0% excluded)
+  Validation: 223,073 windows | 223,043 valid pairs (0.0% excluded)
+  Codebook  : 512 clusters, 0 empty (checked on pretrain)
+  Entropy   : pretrain=8.66 bits, validation=8.70 bits (max=9.00)
+  Self-trans: pretrain=17.04% (diagnostic ref: 17.04%)
+  Total time: 26.1s
+======================================================================
+
+Report: diagnostics/token_cache_report.txt
