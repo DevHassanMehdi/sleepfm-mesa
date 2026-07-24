@@ -1,0 +1,68 @@
+# SetTransformer architecture — identical to spectral/combined/fromscratch configs
+# Random init: NOT warm-started from any other checkpoint
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+# Training
+batch_size: 128
+epochs: 100
+num_workers: 8
+
+# Adam optimizer (same as spectral pretraining)
+lr: 0.001
+weight_decay: 0.0001
+patience: 10
+
+# Keys required by generate_embeddings.py and finetune_sleep_staging.py
+# (present for downstream compatibility; some are unused by next-token pretraining itself)
+lr_step_period: null
+gamma: null
+temperature: null
+momentum: null
+mode: 'next_token'
+save_iter: 5000
+eval_iter: 5000
+log_interval: 100
+use_wandb: false
+
+# Token prediction
+n_clusters: 512  # must match token_codebook.npy shape[0] — validated at startup
+token_codebook_path: '/scratch/project_2019517/sleepfm-data/token_codebook.npy'
+token_pairs_pretrain_path: '/scratch/project_2019517/sleepfm-data/token_pairs_pretrain.npy'
+token_pairs_validation_path: '/scratch/project_2019517/sleepfm-data/token_pairs_validation.npy'
+
+# Signal data — reuse spectral cache, do NOT duplicate
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data'
+spectral_signals_path_pretrain: '/scratch/project_2019517/sleepfm-data/spectral_signals_pretrain.bin'
+spectral_signals_path_validation: '/scratch/project_2019517/sleepfm-data/spectral_signals_validation.bin'
+max_channels: 10
+
+# Checkpoint output (encoders/ hierarchy from July 2026 restructuring)
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/nexttoken'
+
+# Data split — required by generate_embeddings.py when loading this config.json
+# data_path must NOT end with hdf5/ — generate_embeddings.py appends hdf5/ itself
+data_path: 'data/mesa'
+split_path: 'sleepfm/configs/dataset_split_fromscratch.json'
+
+# Channel counts — required by generate_embeddings.py and finetune_sleep_staging.py
+BAS_CHANNELS: 10
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+EEG_ONLY_CHANNELS: 3
+modality_types:
+  - 'EEG_ONLY'
+max_files: null
+val_size: 100
+
+# Window / patch
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
