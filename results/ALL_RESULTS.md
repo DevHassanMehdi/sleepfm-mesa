@@ -63,6 +63,16 @@ Encoder pretrained with combined contrastive + spectral reconstruction (lambda_s
 | ECG only | 0.3380 | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
 | EEG+ECG | 0.6054 | 0.7412 | 0.8720 | 0.1761 | 0.7165 | 0.5745 | 0.6877 |
 
+### 2.5 Next-Token Encoder (next-window token prediction pretraining)
+
+Encoder pretrained to predict the next 5-second window's k-means spectral token (512-cluster codebook, cross-entropy loss). EEG/EOG (BAS) channel signals used for pretraining via spectral cache. ECG_ONLY reflects fine-tuned transfer from a non-ECG encoder.
+
+| Modality | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
+|---|---|---|---|---|---|---|---|
+| EEG only | 0.7024 | 0.8143 | 0.9334 | 0.3473 | 0.7904 | 0.6515 | 0.7896 |
+| ECG only | 0.3614 | 0.5451 | 0.8095 | 0.0048 | 0.4666 | 0.2252 | 0.3010 |
+| EEG+ECG | 0.7026 | 0.8072 | 0.9267 | 0.3722 | 0.7801 | 0.6386 | 0.7953 |
+
 ---
 
 ## Section 3: Main Comparison - All Models on EEG, ECG, EEG+ECG
@@ -76,8 +86,9 @@ SleepFM From-Scratch uses the EEG_ONLY encoder for these 3 modalities.
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| BIOT (fine-tuned) | **0.7237** | 0.8007 | **0.9325** | **0.5327** | 0.7639 | **0.6594** | 0.7301 |
-| SleepFM Spectral | 0.6971 | **0.8042** | 0.9237 | 0.3628 | **0.7788** | 0.6389 | **0.7811** |
+| BIOT (fine-tuned) | **0.7237** | 0.8007 | 0.9325 | **0.5327** | 0.7639 | **0.6594** | 0.7301 |
+| SleepFM Next-Token | 0.7024 | **0.8143** | **0.9334** | 0.3473 | **0.7904** | 0.6515 | **0.7896** |
+| SleepFM Spectral | 0.6971 | 0.8042 | 0.9237 | 0.3628 | 0.7788 | 0.6389 | 0.7811 |
 | LaBraM (fine-tuned) | 0.6835 | 0.7737 | 0.9203 | 0.4257 | 0.7511 | 0.6557 | 0.6647 |
 | SleepFM From-Scratch | 0.6582 | 0.7757 | 0.8941 | 0.2952 | 0.7653 | 0.6464 | 0.7201 |
 | SensorLM (from scratch) | 0.6264 | 0.7235 | 0.9132 | 0.3549 | 0.6657 | 0.6344 | 0.5639 |
@@ -89,9 +100,10 @@ SleepFM From-Scratch uses the EEG_ONLY encoder for these 3 modalities.
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| SleepFM Combined | **0.3380** | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
-| SleepFM From-Scratch | 0.3353 | **0.5268** | **0.7566** | 0.0000 | 0.4148 | **0.2188** | **0.3165** |
-| MOMENT (frozen) | 0.3096 | 0.4191 | 0.6239 | **0.1850** | **0.4467** | 0.1498 | 0.1427 |
+| SleepFM Next-Token | **0.3614** | **0.5451** | **0.8095** | 0.0048 | **0.4666** | **0.2252** | 0.3010 |
+| SleepFM Combined | 0.3380 | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
+| SleepFM From-Scratch | 0.3353 | 0.5268 | 0.7566 | 0.0000 | 0.4148 | 0.2188 | **0.3165** |
+| MOMENT (frozen) | 0.3096 | 0.4191 | 0.6239 | **0.1850** | 0.4467 | 0.1498 | 0.1427 |
 | BIOT (fine-tuned) | 0.3086 | 0.4302 | 0.6815 | 0.1239 | 0.3933 | 0.1391 | 0.2051 |
 | SensorLM (from scratch) | 0.2821 | 0.3695 | 0.6257 | 0.1330 | 0.3307 | 0.1296 | 0.1914 |
 | LaBraM (fine-tuned) | 0.2803 | 0.4092 | 0.6211 | 0.1049 | 0.3920 | 0.1045 | 0.1792 |
@@ -99,13 +111,15 @@ SleepFM From-Scratch uses the EEG_ONLY encoder for these 3 modalities.
 | YASA | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
 Spectral pretraining used only EEG/EOG (BAS) channels, never ECG. ECG_ONLY result reflects zero-shot transfer from a non-ECG encoder.
+Next-token pretraining also used EEG/EOG (BAS) channel signals (via spectral cache). ECG_ONLY result likewise reflects fine-tuned transfer from a non-ECG encoder.
 
 ### EEG + ECG
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| BIOT (fine-tuned) | **0.7023** | **0.7975** | **0.9345** | **0.5001** | **0.7724** | 0.5733 | 0.7311 |
-| SleepFM Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | **0.7726** |
+| SleepFM Next-Token | **0.7026** | **0.8072** | 0.9267 | 0.3722 | **0.7801** | 0.6386 | **0.7953** |
+| BIOT (fine-tuned) | 0.7023 | 0.7975 | **0.9345** | **0.5001** | 0.7724 | 0.5733 | 0.7311 |
+| SleepFM Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726 |
 | SleepFM From-Scratch | 0.6529 | 0.7765 | 0.9069 | 0.2411 | 0.7542 | 0.6309 | 0.7415 |
 | LaBraM (fine-tuned) | 0.6524 | 0.7566 | 0.9203 | 0.3594 | 0.7431 | **0.6457** | 0.5935 |
 | SensorLM (from scratch) | 0.6077 | 0.7062 | 0.8935 | 0.3337 | 0.6891 | 0.6155 | 0.5068 |
@@ -521,6 +535,56 @@ Macro F1: 0.6054 | Accuracy: 0.7412
     accuracy                         0.7412     60285
    macro avg     0.6119    0.6257    0.6054     60285
 weighted avg     0.7243    0.7412    0.7272     60285
+```
+
+### SleepFM Next-Token Pretrained (next-window token prediction, fine-tuned end-to-end)
+
+```
+===== EEG_ONLY =====
+Macro F1: 0.7024 | Accuracy: 0.8143
+
+              precision    recall  f1-score   support
+
+        Wake     0.9267    0.9402    0.9334     26007
+          N1     0.4909    0.2687    0.3473      4943
+          N2     0.7952    0.7857    0.7904     19255
+          N3     0.5888    0.7291    0.6515      3891
+         REM     0.7272    0.8636    0.7896      6189
+
+    accuracy                         0.8143     60285
+   macro avg     0.7058    0.7175    0.7024     60285
+weighted avg     0.8068    0.8143    0.8068     60285
+
+===== ECG_ONLY =====
+Macro F1: 0.3614 | Accuracy: 0.5451
+Note: next-token pretraining used EEG/EOG (BAS) channel signals (via spectral cache). ECG_ONLY reflects fine-tuned transfer from a non-ECG encoder.
+
+              precision    recall  f1-score   support
+
+        Wake     0.8295    0.7905    0.8095     26007
+          N1     0.2449    0.0024    0.0048      4943
+          N2     0.4995    0.4378    0.4666     19255
+          N3     0.1672    0.3446    0.2252      3891
+         REM     0.2388    0.4072    0.3010      6189
+
+    accuracy                         0.5451     60285
+   macro avg     0.3960    0.3965    0.3614     60285
+weighted avg     0.5728    0.5451    0.5441     60285
+
+===== EEG+ECG =====
+Macro F1: 0.7026 | Accuracy: 0.8072
+
+              precision    recall  f1-score   support
+
+        Wake     0.9294    0.9239    0.9267     26007
+          N1     0.4811    0.3035    0.3722      4943
+          N2     0.7817    0.7784    0.7801     19255
+          N3     0.5727    0.7217    0.6386      3891
+         REM     0.7377    0.8627    0.7953      6189
+
+    accuracy                         0.8072     60285
+   macro avg     0.7005    0.7180    0.7026     60285
+weighted avg     0.8028    0.8072    0.8023     60285
 ```
 
 ### U-Sleep (training failure at test time)
