@@ -2,7 +2,7 @@
 #SBATCH --account=project_2019517
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:v100:1
-#SBATCH --time=48:00:00
+#SBATCH --time=72:00:00
 #SBATCH --mem=128G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=mesa_nexttoken_pretrain
