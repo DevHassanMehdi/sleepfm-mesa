@@ -6,30 +6,70 @@ Usage:
 """
 
 import argparse
+import json
 import os
+import re
 import shutil
+import ssl
 import subprocess
 import sys
+import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Iterator, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-NSRR_BIN = "/scratch/project_2019517/miniconda3/share/rubygems/bin/nsrr"
+NSRR_BIN = "/users/hamehdi/.local/share/x86_64/gem/ruby/3.4.0/bin/nsrr"
+NSRR_RUBY_BINDIR = "/scratch/project_2019517/miniconda3/bin"
 NSRR_GEM_ENV = {
-    "GEM_HOME": "/scratch/project_2019517/miniconda3/share/rubygems",
-    "GEM_PATH": "/scratch/project_2019517/miniconda3/share/rubygems",
+    "PATH": NSRR_RUBY_BINDIR + os.pathsep + os.environ.get("PATH", ""),
 }
 
-EDF_MIN_BYTES = 50 * 1024 * 1024
+EDF_MIN_BYTES = 20 * 1024 * 1024
 
-# All known site prefixes (2-letter codes).  IDs are {prefix}{num:04d}.
-MROS_PREFIXES = ["aa", "ab", "ac", "ad", "ae", "af", "ag", "ah",
-                 "ai", "aj", "ak", "al", "am", "an", "ao", "ap"]
-# Upper bound on subject number within a single prefix.  Real counts are
-# much lower (~200–400 per prefix) so the loop exits at target, not here.
-MROS_MAX_NUM = 9999
+NSRR_FILES_API = "https://sleepdata.org/api/v1/datasets/mros/files.json"
+
+
+def fetch_real_ids(visit: int, token: str) -> list:
+    """Query NSRR's file-listing API for the real subject IDs in a visit.
+
+    Replaces brute-force ID guessing (previously MROS_PREFIXES x
+    MROS_MAX_NUM) with the dataset's actual file list -- confirmed via a
+    live query that MrOS only ever uses the "aa" prefix (2907 real
+    subjects in visit1, 1026 in visit2), so the old 16-prefix x 9999
+    scan wasted the overwhelming majority of its requests on IDs that
+    can never exist.
+    """
+    # sleepdata.org's TLS chain fails strict verification (confirmed via
+    # openssl s_client -- server sends an incomplete chain, not a Roihu
+    # config issue). The nsrr gem itself sets VERIFY_NONE for the same API
+    # host (lib/nsrr/helpers/json_request.rb); matching that here.
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    # Response time for this endpoint is highly variable (observed 6s-77s
+    # for the identical request from the same compute node) -- generous
+    # timeout plus a few retries rather than a single short-timeout attempt.
+    url = f"{NSRR_FILES_API}?auth_token={token}&path=polysomnography/edfs/visit{visit}"
+    last_error = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=120, context=ctx) as resp:
+                files = json.load(resp)
+            break
+        except Exception as e:
+            last_error = e
+            print(f"[WARN] fetch_real_ids attempt {attempt + 1}/3 failed: {e}")
+    else:
+        raise RuntimeError(f"fetch_real_ids: all attempts failed for visit {visit}") from last_error
+    ids = []
+    for f in files:
+        m = re.match(rf"mros-visit{visit}-([a-z]{{2}}\d{{4}})\.edf$", f["file_name"])
+        if m:
+            ids.append(m.group(1))
+    return sorted(ids)
+
 
 STAGE_MAP = {
     "wake": 0, "w": 0,
@@ -131,33 +171,6 @@ def scan_existing(visit: int) -> list:
     return ids
 
 
-def _next_mros_id(sid: str) -> Optional[str]:
-    """Return the ID that follows sid in iteration order, or None if exhausted."""
-    prefix, num = sid[:2], int(sid[2:])
-    if num < MROS_MAX_NUM:
-        return f"{prefix}{num + 1:04d}"
-    prefix_idx = MROS_PREFIXES.index(prefix)
-    if prefix_idx + 1 < len(MROS_PREFIXES):
-        return f"{MROS_PREFIXES[prefix_idx + 1]}0001"
-    return None
-
-
-def _iter_mros_ids(start_sid: str = "aa0001") -> Iterator[str]:
-    """Yield all MrOS IDs in order starting from (and including) start_sid."""
-    # Locate starting prefix and number
-    start_prefix = start_sid[:2]
-    start_num    = int(start_sid[2:])
-    started      = False
-    for prefix in MROS_PREFIXES:
-        for num in range(1, MROS_MAX_NUM + 1):
-            if not started:
-                if prefix == start_prefix and num == start_num:
-                    started = True
-                else:
-                    continue
-            yield f"{prefix}{num:04d}"
-
-
 def process_subject(sid: str, visit: int, token: str) -> tuple:
     """Download (or reuse) one subject for the given visit.
 
@@ -198,6 +211,7 @@ def process_subject(sid: str, visit: int, token: str) -> tuple:
 
     if not nsrr_download(annot_remote, token, annot_path):
         print(f"[WARN] Annotation not found for {stem}")
+        edf_path.unlink()
         return "not_found", label_generated
 
     try:
@@ -244,23 +258,16 @@ def main():
     not_found        = 0
     labels_generated = 0
 
-    for visit, pre_existing in [(1, pre_v1), (2, pre_v2)]:
+    for visit in [1, 2]:
         if completed >= target:
             break
 
         visit_str = f"visit{visit}"
 
-        if pre_existing:
-            start_sid = _next_mros_id(max(pre_existing))
-        else:
-            start_sid = "aa0001"
+        real_ids = fetch_real_ids(visit, token)
+        print(f"  Visit {visit} (mros-{visit_str}): {len(real_ids)} real subjects per NSRR's file listing")
 
-        if start_sid is None:
-            print(f"  Visit {visit}: {len(pre_existing)} subjects already on disk, all IDs exhausted")
-            continue
-        print(f"  Visit {visit} (mros-{visit_str}): resuming from {start_sid}")
-
-        for sid in _iter_mros_ids(start_sid):
+        for sid in real_ids:
             if completed >= target:
                 break
             status, lgen = process_subject(sid, visit, token)

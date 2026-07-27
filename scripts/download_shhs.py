@@ -15,13 +15,13 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-NSRR_BIN = "/scratch/project_2019517/miniconda3/share/rubygems/bin/nsrr"
+NSRR_BIN = "/users/hamehdi/.local/share/x86_64/gem/ruby/3.4.0/bin/nsrr"
+NSRR_RUBY_BINDIR = "/scratch/project_2019517/miniconda3/bin"
 NSRR_GEM_ENV = {
-    "GEM_HOME": "/scratch/project_2019517/miniconda3/share/rubygems",
-    "GEM_PATH": "/scratch/project_2019517/miniconda3/share/rubygems",
+    "PATH": NSRR_RUBY_BINDIR + os.pathsep + os.environ.get("PATH", ""),
 }
 
-EDF_MIN_BYTES = 50 * 1024 * 1024
+EDF_MIN_BYTES = 20 * 1024 * 1024
 
 # ID ranges (inclusive); not all IDs in range exist on NSRR
 SHHS_V1_ID_START = 200001
@@ -167,6 +167,7 @@ def process_subject(sid: str, visit: int, token: str) -> tuple:
 
     if not nsrr_download(annot_remote, token, annot_path):
         print(f"[WARN] Annotation not found for {prefix}-{sid}")
+        edf_path.unlink()
         return "not_found", label_generated
 
     try:

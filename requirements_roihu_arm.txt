@@ -1,0 +1,219 @@
+# Roihu (aarch64/GH200) package list for a `venv --system-site-packages`
+# built on top of the `python-pytorch/2.10` module.
+#
+# Derived from environment.yml (the Puhti x86_64 export, kept unmodified as
+# historical reference). Removed relative to that file:
+#   - torch, torchvision, triton          -> provided by the python-pytorch/2.10
+#                                            module's container (CUDA 13, arm64)
+#   - nvidia-*-cu11 (11 packages)          -> x86_64 CUDA 11.7 wheels, meaningless
+#                                            once torch comes from the module
+#   - cmake, lit                           -> were only present as triton/torch
+#                                            build-time deps; not needed here
+#
+# Everything else below is carried over with the same version pins as
+# environment.yml. Packages flagged with a trailing comment are ones I could
+# not confirm have aarch64/manylinux_aarch64 wheels on PyPI at these exact
+# pinned versions -- verify these first (see report).
+#
+# Additionally REMOVED after checking actual versions bundled in the
+# python-pytorch/2.10 module container on a real GH200 node (2026-07-24):
+#   - numpy (was 1.25.2)         -> module ships numpy 2.4.3. No legacy
+#                                   numpy 1.x alias usage (np.float_ etc.)
+#                                   found in sleepfm/ or scripts/, so no
+#                                   reason to fight the module's version.
+#   - polars, polars-runtime-32   -> both already present in the module
+#     (was 1.41.2)                  (1.39.3, confirmed a real aarch64
+#                                   package, not an x86 artifact as
+#                                   originally suspected).
+#   - transformers (was 4.33.3)  -> module ships 5.3.0. Zero direct
+#                                   `import transformers` usage anywhere
+#                                   in sleepfm/ or scripts/.
+#   - tokenizers (was 0.13.3)    -> paired with transformers above; module
+#                                   ships 0.22.2.
+#   - wandb (was 0.16.4)         -> module ships 0.25.0. Only wandb.init/
+#                                   .log/.finish used in this repo -- a
+#                                   very stable, version-tolerant API.
+
+absl-py==2.4.0
+adagio==0.2.6
+antropy==0.2.2
+anyio==4.13.0
+appdirs==1.4.4
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
+arrow==1.4.0
+asttokens==3.0.1
+async-lru==2.3.0
+attrs==26.1.0
+axial-positional-embedding==0.3.12
+babel==2.18.0
+beautifulsoup4==4.15.0
+bleach==6.4.0
+certifi==2026.5.20
+cffi==2.0.0
+charset-normalizer==3.4.7
+click==8.4.1
+colt5-attention==0.11.1
+comm==0.2.3
+contourpy==1.3.2
+cryptography==49.0.0
+cycler==0.12.1
+debugpy==1.8.21
+decorator==5.3.1
+defusedxml==0.7.1
+docker-pycreds==0.4.0
+einops>=0.8.1  # was pinned 0.7.0, but axial-positional-embedding/colt5-attention/
+               # hyper-connections/local-attention/torch-einops-utils all declare
+               # einops>=0.8.x -- discovered as a hard pip resolver conflict on the
+               # actual build (not ARM-specific, this pin was already broken)
+exceptiongroup==1.3.1
+executing==2.2.1
+fastjsonschema==2.21.2
+filelock==3.29.4
+fonttools==4.63.0
+fqdn==1.5.1
+fsspec==2026.4.0
+fugue==0.9.7
+gitdb==4.0.12
+gitpython==3.1.50
+google-auth==2.54.0
+google-auth-oauthlib==1.0.0
+grpcio==1.81.1
+h11==0.16.0
+h5py>=3.12  # was pinned 3.11.0, which has no manylinux_aarch64 wheel for
+            # cp312 and fails building from source (libhdf5.so not found in
+            # the module's build environment) -- 3.12+ ships prebuilt wheels
+httpcore==1.0.9
+httpx==0.28.1
+huggingface-hub>=1.3.0  # was pinned 0.24.0, but the module's transformers==5.3.0
+                        # requires huggingface-hub<2.0,>=1.3.0 -- discovered as a
+                        # hard pip resolver conflict on the actual build
+hyper-connections==0.4.11
+idna==3.18
+importlib-resources==7.1.0
+ipykernel==6.26.0
+ipython==8.39.0
+ipywidgets==8.1.1
+isoduration==20.11.0
+jedi==0.20.0
+jinja2==3.1.6
+joblib==1.5.3
+json5==0.14.0
+jsonpointer==3.1.1
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+jupyter-client==8.9.1
+jupyter-core==5.9.1
+jupyter-events==0.12.1
+jupyter-lsp==2.3.1
+jupyter-server==2.19.0
+jupyter-server-terminals==0.5.4
+jupyterlab==4.5.8
+jupyterlab-pygments==0.3.0
+jupyterlab-server==2.28.0
+jupyterlab-widgets==3.0.16
+kiwisolver==1.5.0
+lark==1.3.1
+lazy-loader==0.5
+lightgbm==4.6.0
+linear-attention-transformer==0.19.1
+linformer==0.2.3
+llvmlite==0.47.0  # verify aarch64 wheel exists at this exact version
+local-attention==1.11.2
+loguru==0.7.2
+lspopt==1.4.0
+markdown==3.10.2
+markupsafe==3.0.3
+matplotlib==3.8.0
+matplotlib-inline==0.2.2
+mistune==3.2.1
+mne==1.7.0
+# momentfm==0.1.4 removed from this file -- its own metadata hard-pins
+# numpy==1.25.2 (an sdist with no cp312 wheel, fails to build under Python
+# 3.12 due to old setuptools/pkg_resources using pkgutil.ImpImporter, which
+# Python 3.12 removed). Install separately with --no-deps instead:
+#   pip install --no-deps momentfm==0.1.4
+mpmath==1.3.0
+nbclient==0.11.0
+nbconvert==7.17.1
+nbformat==5.10.4
+nest-asyncio==1.6.0
+networkx==3.4.2
+notebook==7.0.6
+notebook-shim==0.2.4
+numba==0.65.1  # verify aarch64 wheel exists at this exact version (paired with llvmlite)
+oauthlib==3.3.1
+overrides==7.7.0
+pandas==2.1.1
+pandocfilters==1.5.1
+parso==0.8.7
+patsy==1.0.2
+pexpect==4.9.0
+pillow==12.2.0
+pkgutil-resolve-name==1.3.10
+platformdirs==4.10.0
+pooch==1.9.0
+product-key-memory==0.3.0
+prometheus-client==0.25.0
+prompt-toolkit==3.0.52
+protobuf==4.25.9
+psutil==7.2.2
+ptyprocess==0.7.0
+pure-eval==0.2.3
+pyasn1==0.6.3
+pyasn1-modules==0.4.2
+pycparser==3.0
+pyedflib==0.1.37
+pygments==2.20.0
+pyparsing==3.3.2
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.0
+python-json-logger==4.1.0
+pytz==2026.2
+pyyaml==6.0.3
+referencing==0.37.0
+regex==2026.5.9
+requests==2.34.2
+requests-oauthlib==2.0.0
+rfc3339-validator==0.1.4
+rfc3986-validator==0.1.1
+rfc3987-syntax==1.1.0
+rotary-embedding-torch==0.9.1
+rpds-py==0.30.0
+ruff==0.15.19
+safetensors==0.8.0
+scikit-learn==1.3.1
+scipy==1.11.3
+seaborn==0.13.2
+send2trash==2.1.0
+sentry-sdk==2.62.0
+setproctitle==1.3.7
+setuptools==82.0.1
+six==1.17.0
+smmap==5.0.3
+soupsieve==2.8.4
+stack-data==0.6.3
+statsforecast==1.6.0
+statsmodels==0.14.0
+sympy==1.14.0
+tensorboard==2.14.0
+tensorboard-data-server==0.7.2  # verify aarch64 wheel exists at this exact version
+terminado==0.18.1
+threadpoolctl==3.6.0
+timm==0.4.12
+tinycss2==1.5.1
+tornado==6.5.7
+tqdm==4.66.2
+traitlets==5.15.1
+triad==1.0.2
+typing-extensions==4.15.0
+tzdata==2026.2
+uri-template==1.3.0
+urllib3==2.7.0
+wcwidth==0.8.1
+webcolors==25.10.0
+webencodings==0.5.1
+websocket-client==1.9.0
+werkzeug==3.1.8
+widgetsnbextension==4.0.15
+yasa==0.7.0
