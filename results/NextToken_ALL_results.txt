@@ -1,0 +1,77 @@
+SleepFM NEXT-TOKEN PRETRAINED + FINE-TUNED — MESA held-out test split (fold_0)
+Pretrained checkpoint: nexttoken_128_patch_size_640/best.pt (epoch 18, manually stopped after plateau at ~val CE 3.57), next-window token classification pretraining (512-cluster k-means codebook on spectral features, cross-entropy loss, no collapse — random baseline=6.2383 nats, copy-previous baseline=1.7694 nats)
+Fine-tuned checkpoint: checkpoints/finetuned/nexttoken/{modality}/run_2026-07-27_*/
+Encoder: frozen — No. Full end-to-end fine-tuning of encoder + classifier head.
+Split: same 270/30/50 train/val/test as SleepFM from-scratch experiments
+Generated: 2026-07-27
+==================================================
+
+Modality         | Macro F1 | Accuracy | Wake   | N1     | N2     | N3     | REM
+-----------------+----------+----------+--------+--------+--------+--------+--------
+EEG_ONLY         | 0.7024   | 0.8143   | 0.9334 | 0.3473 | 0.7904 | 0.6515 | 0.7896
+ECG_ONLY         | 0.3614   | 0.5451   | 0.8095 | 0.0048 | 0.4666 | 0.2252 | 0.3010
+EEG_ECG          | 0.7026   | 0.8072   | 0.9267 | 0.3722 | 0.7801 | 0.6386 | 0.7953
+
+==================================================
+INDIVIDUAL MODALITY RESULTS
+==================================================
+
+SleepFM NEXT-TOKEN PRETRAINED (EEG_ONLY) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3
+Pretrained: nexttoken_128_patch_size_640/best.pt
+
+Macro F1:  0.7024
+Accuracy:  0.8143
+
+              precision    recall  f1-score   support
+
+        Wake     0.9267    0.9402    0.9334     26007
+          N1     0.4909    0.2687    0.3473      4943
+          N2     0.7952    0.7857    0.7904     19255
+          N3     0.5888    0.7291    0.6515      3891
+         REM     0.7272    0.8636    0.7896      6189
+
+    accuracy                         0.8143     60285
+   macro avg     0.7058    0.7175    0.7024     60285
+weighted avg     0.8068    0.8143    0.8068     60285
+SleepFM NEXT-TOKEN PRETRAINED (ECG_ONLY) — MESA held-out test split
+==================================================
+Channels: EKG
+Pretrained: nexttoken_128_patch_size_640/best.pt
+Note: next-token pretraining used EEG/EOG (BAS) channel signals (from spectral cache).
+      ECG_ONLY performance reflects fine-tuned transfer from a non-ECG encoder.
+
+Macro F1:  0.3614
+Accuracy:  0.5451
+
+              precision    recall  f1-score   support
+
+        Wake     0.8295    0.7905    0.8095     26007
+          N1     0.2449    0.0024    0.0048      4943
+          N2     0.4995    0.4378    0.4666     19255
+          N3     0.1672    0.3446    0.2252      3891
+         REM     0.2388    0.4072    0.3010      6189
+
+    accuracy                         0.5451     60285
+   macro avg     0.3960    0.3965    0.3614     60285
+weighted avg     0.5728    0.5451    0.5441     60285
+SleepFM NEXT-TOKEN PRETRAINED (EEG_ECG) — MESA held-out test split
+==================================================
+Channels: EEG1, EEG2, EEG3, EKG
+Pretrained: nexttoken_128_patch_size_640/best.pt
+
+Macro F1:  0.7026
+Accuracy:  0.8072
+
+              precision    recall  f1-score   support
+
+        Wake     0.9294    0.9239    0.9267     26007
+          N1     0.4811    0.3035    0.3722      4943
+          N2     0.7817    0.7784    0.7801     19255
+          N3     0.5727    0.7217    0.6386      3891
+         REM     0.7377    0.8627    0.7953      6189
+
+    accuracy                         0.8072     60285
+   macro avg     0.7005    0.7180    0.7026     60285
+weighted avg     0.8028    0.8072    0.8023     60285
