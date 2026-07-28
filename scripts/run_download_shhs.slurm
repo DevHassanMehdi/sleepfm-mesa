@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=project_2019517
-#SBATCH --partition=small
-#SBATCH --time=48:00:00
+#SBATCH --partition=longrun
+#SBATCH --time=220:00:00
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=2
 #SBATCH --job-name=dl_shhs
