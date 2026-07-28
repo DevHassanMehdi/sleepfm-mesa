@@ -72,7 +72,13 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
               help="Identifies the fold scheme/assignment used, for the "
                    "full_cohort experiment naming scheme. Placeholder "
                    "convention -- exact scheme TBD.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold, pretrain_approach, split_id):
+@click.option("--timestamp", type=str, default=None,
+              help="Override the auto-generated YYYY-MM-DD_HHMM timestamp "
+                   "component of the experiment name, so a caller (e.g. a "
+                   "SLURM script chaining evaluate_sleep_staging.py / "
+                   "compute_metrics.py afterward) knows the exact "
+                   "checkpoint_dir path without parsing stdout.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold, pretrain_approach, split_id, timestamp):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -91,11 +97,19 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             split_path = os.path.join(REPO_ROOT, split_path)
         config["split_path"] = split_path
 
-    # Select the requested fold from the 10-fold split and write it out as a
+    # Select the requested fold from the N-fold split and write it out as a
     # flat {train, validation, test} split for the dataset class to consume.
+    # The intermediate filename must be unique per running process: it used
+    # to be keyed on `fold` alone, so a fold5_v1 run and a fold10_v1 run
+    # sharing the same fold number (e.g. both fold_0) running concurrently
+    # would clobber each other's file and silently train/eval on the wrong
+    # split's data. PID guarantees no collision regardless of which
+    # split_id/fold combinations happen to overlap across concurrent jobs.
     full_split = load_data(config["split_path"])
     fold_split = full_split[f"fold_{fold}"]
-    fold_split_path = os.path.join(REPO_ROOT, "data/mesa", f"dataset_split_10fold_fold{fold}.json")
+    fold_split_path = os.path.join(
+        REPO_ROOT, "data/mesa", f"dataset_split_{split_id}_fold{fold}_{os.getpid()}.json"
+    )
     save_data(fold_split, fold_split_path)
     config["split_path"] = fold_split_path
 
@@ -129,6 +143,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             modality=channel_like_string,
             pretrain_method=pretrain_approach,
             split_id=split_id,
+            timestamp=timestamp,
         )
         output = str(exp.fold_dir(fold))
         os.makedirs(output, exist_ok=True)
@@ -259,6 +274,11 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             torch.save(model.state_dict(), best_model_path)
             save_data(config, os.path.join(output, "config.json"))
             if exp is not None:
+                # link_checkpoint_and_results() looks for a config.json at
+                # the run-level checkpoint_dir (shared across all folds of
+                # this run), not inside fold_N/ -- write a copy there too
+                # so the checkpoint->results cross-link actually fires.
+                save_data(config, str(exp.checkpoint_dir / "config.json"))
                 link_checkpoint_and_results(exp)
         else:
             patience_counter += 1

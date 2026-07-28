@@ -152,10 +152,10 @@ def generate_embeddings(
                                 chunk_start_correct = chunk_start // (embed_dim * 5 * 60)
                                 chunk_end = chunk_start_correct + embeddings_new[modality_idx][i].shape[0]
                                 if dset.shape[0] < chunk_end:
-                                    dset.resize((chunk_end,) + embeddings_new[modality_idx][i].shape[1:])
+                                    dset.resize((chunk_end,) + tuple(embeddings_new[modality_idx][i].shape[1:]))
                                 dset[chunk_start_correct:chunk_end] = embeddings_new[modality_idx][i].cpu().numpy()
                             else:
-                                hdf5_file.create_dataset(modality_type, data=embeddings_new[modality_idx][i].cpu().numpy(), chunks=(embed_dim,) + embeddings_new[modality_idx][i].shape[1:], maxshape=(None,) + embeddings_new[modality_idx][i].shape[1:])
+                                hdf5_file.create_dataset(modality_type, data=embeddings_new[modality_idx][i].cpu().numpy(), chunks=(embed_dim,) + tuple(embeddings_new[modality_idx][i].shape[1:]), maxshape=(None,) + tuple(embeddings_new[modality_idx][i].shape[1:]))
 
                 embeddings_new = [e[1] for e in embeddings]
 
@@ -172,10 +172,10 @@ def generate_embeddings(
                                 chunk_start_correct = chunk_start // (embed_dim * 5)
                                 chunk_end = chunk_start_correct + embeddings_new[modality_idx][i].shape[0]
                                 if dset.shape[0] < chunk_end:
-                                    dset.resize((chunk_end,) + embeddings_new[modality_idx][i].shape[1:])
+                                    dset.resize((chunk_end,) + tuple(embeddings_new[modality_idx][i].shape[1:]))
                                 dset[chunk_start_correct:chunk_end] = embeddings_new[modality_idx][i].cpu().numpy()
                             else:
-                                hdf5_file.create_dataset(modality_type, data=embeddings_new[modality_idx][i].cpu().numpy(), chunks=(embed_dim,) + embeddings_new[modality_idx][i].shape[1:], maxshape=(None,) + embeddings_new[modality_idx][i].shape[1:])
+                                hdf5_file.create_dataset(modality_type, data=embeddings_new[modality_idx][i].cpu().numpy(), chunks=(embed_dim,) + tuple(embeddings_new[modality_idx][i].shape[1:]), maxshape=(None,) + tuple(embeddings_new[modality_idx][i].shape[1:]))
                 pbar.update()
 
 

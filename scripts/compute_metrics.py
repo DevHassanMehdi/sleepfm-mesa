@@ -65,7 +65,15 @@ def main():
                          help="A checkpoints/full_cohort/{run_name}/ directory "
                               "(the run_name itself, not a specific fold_N).")
     parser.add_argument('--split', type=str, default='test')
-    parser.add_argument('--n_folds', type=int, default=10)
+    parser.add_argument('--n_folds', type=int, default=10,
+                         help="Aggregate fold_0..fold_{n_folds-1} under checkpoint_dir. "
+                              "Ignored if --fold is given.")
+    parser.add_argument('--fold', type=int, default=None,
+                         help="Process only this single fold index (the actual fold "
+                              "number the run was trained on) instead of assuming "
+                              "folds start at 0. Required when checkpoint_dir holds "
+                              "just one fold_N/ (the full_cohort one-run-per-fold "
+                              "naming scheme).")
     args = parser.parse_args()
 
     exp = experiment_from_checkpoint_dir(args.checkpoint_dir)
@@ -77,7 +85,8 @@ def main():
     per_subject_rows = []
     folds_used = 0
 
-    for fold in range(args.n_folds):
+    folds_to_process = [args.fold] if args.fold is not None else range(args.n_folds)
+    for fold in folds_to_process:
         fold_dir = base / f'fold_{fold}'
         try:
             with open(fold_dir / f'{args.split}_all_outputs.pickle', 'rb') as f:

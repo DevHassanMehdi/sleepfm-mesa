@@ -99,8 +99,13 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
         config["dataset"] = dataset
 
     # New full_cohort scheme stores the 5 pickles directly under fold_N/,
-    # filenames prefixed with the split name (val_*, test_*) so multiple
+    # filenames prefixed with a short split tag (val_*, test_*) so multiple
     # splits' outputs coexist under the same fold_N/ without a subfolder.
+    # The split-file lookup key stays "validation" (matching every existing
+    # split file's convention) -- only the pickle filename prefix is
+    # shortened, since the two must be decoupled: KeyError results if you
+    # pass "val" straight through as the dict key.
+    file_prefix = {"validation": "val"}.get(split, split)
     save_path = output_path
     os.makedirs(save_path, exist_ok=True)
 
@@ -138,11 +143,11 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
             all_paths.append(hdf5_path_list)
 
 
-    targets_path = os.path.join(save_path, f"{split}_all_targets.pickle")
-    outputs_path = os.path.join(save_path, f"{split}_all_outputs.pickle")
-    logits_path = os.path.join(save_path, f"{split}_all_logits.pickle")
-    mask_path = os.path.join(save_path, f"{split}_all_masks.pickle")
-    file_paths = os.path.join(save_path, f"{split}_all_paths.pickle")
+    targets_path = os.path.join(save_path, f"{file_prefix}_all_targets.pickle")
+    outputs_path = os.path.join(save_path, f"{file_prefix}_all_outputs.pickle")
+    logits_path = os.path.join(save_path, f"{file_prefix}_all_logits.pickle")
+    mask_path = os.path.join(save_path, f"{file_prefix}_all_masks.pickle")
+    file_paths = os.path.join(save_path, f"{file_prefix}_all_paths.pickle")
 
     save_data(all_targets, targets_path)
     save_data(all_outputs, outputs_path)
