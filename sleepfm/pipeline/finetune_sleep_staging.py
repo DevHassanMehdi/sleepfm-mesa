@@ -19,6 +19,7 @@ REPO_ROOT = os.path.dirname(SLEEPFM_DIR)
 sys.path.append(SLEEPFM_DIR)
 
 from utils import *
+from experiment_paths import new_experiment, link_checkpoint_and_results
 from models.models import SleepEventLSTMClassifier
 from models.dataset import SleepEventClassificationDataset as Dataset
 from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn
@@ -67,7 +68,11 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
 @click.option("--pretrain_approach", type=str, default=None,
               help="Encoder pretraining approach (e.g. spectral, combined, fromscratch). "
                    "Auto-detected from model_path if omitted, but explicit is strongly preferred.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold, pretrain_approach):
+@click.option("--split_id", type=str, default="fold10_v1",
+              help="Identifies the fold scheme/assignment used, for the "
+                   "full_cohort experiment naming scheme. Placeholder "
+                   "convention -- exact scheme TBD.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold, pretrain_approach, split_id):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -103,6 +108,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     if checkpoint_path:
         output = checkpoint_path
         config = load_data(os.path.join(output, "config.json"))
+        exp = None
     else:
         if pretrain_approach is None:
             mp = config.get("model_path", "")
@@ -118,12 +124,16 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
                 f"--pretrain_approach not provided; auto-detected '{pretrain_approach}' "
                 f"from model_path. Pass --pretrain_approach explicitly to suppress this warning."
             )
-        run_ts = datetime.now().strftime('%Y-%m-%d_%H%M')
-        scratch_base = "/scratch/project_2019517/sleepfm-data/checkpoints"
-        output = os.path.join(scratch_base, "finetuned", pretrain_approach,
-                              channel_like_string, f"run_{run_ts}", f"fold_{fold}")
+        exp = new_experiment(
+            model="sleepfm",
+            modality=channel_like_string,
+            pretrain_method=pretrain_approach,
+            split_id=split_id,
+        )
+        output = str(exp.fold_dir(fold))
         os.makedirs(output, exist_ok=True)
         print(f"\n>>> OUTPUT PATH: {output}\n", flush=True)
+        print(f">>> RESULTS DIR: {exp.results_dir}\n", flush=True)
         logger.info(f"Output path: {output}")
 
     # Set device
@@ -248,6 +258,8 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             best_model_path = os.path.join(output, "best.pth")
             torch.save(model.state_dict(), best_model_path)
             save_data(config, os.path.join(output, "config.json"))
+            if exp is not None:
+                link_checkpoint_and_results(exp)
         else:
             patience_counter += 1
             if patience_counter >= patience:

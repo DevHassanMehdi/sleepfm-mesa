@@ -151,4 +151,4 @@ class LaBraMSleepDataset(Dataset):
                 x[i, :len(signal)] = signal
         x = resample(x, LABRAM_SAMPLES, axis=-1)
         x = torch.from_numpy(x.astype(np.float32))
-        return x, stage
+        return x, stage, hdf5_path

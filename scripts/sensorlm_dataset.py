@@ -65,4 +65,4 @@ class SensorLMSleepDataset(Dataset):
             for i, ch in enumerate(self.channels):
                 sig = hf[ch][start:end]
                 x[i, :len(sig)] = sig
-        return torch.from_numpy(x), stage
+        return torch.from_numpy(x), stage, hdf5_path

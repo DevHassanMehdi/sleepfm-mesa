@@ -34,6 +34,9 @@ sys.path.insert(0, "/scratch/project_2019517/BIOT")
 # Must be set before h5py is imported (via biot_dataset) to take effect.
 os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 
+sys.path.insert(0, str(REPO_ROOT) + "/sleepfm")
+from experiment_paths import new_experiment, experiment_from_checkpoint_dir, link_checkpoint_and_results
+
 from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS
 from model.biot import BIOTClassifier
 
@@ -45,7 +48,6 @@ PRETRAINED_PATH = "/scratch/project_2019517/BIOT/pretrained-models/EEG-SHHS+PRES
 # -- this is how the BIOT paper itself transfers across differently
 # instrumented datasets).
 CKPT_BIOT_N_CHANNELS = 18
-CKPT_ROOT = "/scratch/project_2019517/biot/checkpoints"
 
 STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
 
@@ -75,7 +77,7 @@ def run_epoch(model, loader, device, optimizer=None, class_weights=None):
     total_loss = 0.0
     all_preds, all_targets = [], []
     with torch.set_grad_enabled(train):
-        for x, y in tqdm(loader, leave=False):
+        for x, y, _ in tqdm(loader, leave=False):
             x, y = x.to(device), y.to(device)
             logits = model(x)
             loss = nn.functional.cross_entropy(logits, y, weight=class_weights)
@@ -103,12 +105,28 @@ def main():
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--pretrained_path", default=PRETRAINED_PATH)
+    parser.add_argument("--split_id", type=str, default="fold10_v1",
+                         help="Identifies the fold scheme/assignment used, for "
+                              "the full_cohort experiment naming scheme. "
+                              "Placeholder convention -- exact scheme TBD.")
+    parser.add_argument("--checkpoint_dir", type=str, default=None,
+                         help="Resume an existing full_cohort experiment "
+                              "folder (e.g. after a SLURM timeout) instead of "
+                              "starting a new timestamped run.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    out_dir = os.path.join(CKPT_ROOT, args.modality, args.fold_key)
+    fold_num = int(args.fold_key.replace("fold_", ""))
+    if args.checkpoint_dir:
+        exp = experiment_from_checkpoint_dir(args.checkpoint_dir)
+    else:
+        exp = new_experiment(model="biot", modality=args.modality,
+                              pretrain_method="finetuned", split_id=args.split_id)
+    out_dir = str(exp.fold_dir(fold_num))
     os.makedirs(out_dir, exist_ok=True)
+    print(f">>> OUTPUT PATH: {out_dir}", flush=True)
+    print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
     train_ds = BIOTSleepDataset(SPLIT_PATH, "train", args.modality, fold_key=args.fold_key)
     val_ds = BIOTSleepDataset(SPLIT_PATH, "validation", args.modality, fold_key=args.fold_key)
@@ -157,6 +175,7 @@ def main():
             torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump(vars(args), f, indent=2)
+            link_checkpoint_and_results(exp)
             marker = " *"
         else:
             patience_counter += 1

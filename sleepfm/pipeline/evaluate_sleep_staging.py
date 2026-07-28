@@ -98,9 +98,10 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
     if dataset:
         config["dataset"] = dataset
 
-    dataset_prefix = "_".join(config["dataset"].split(","))
-
-    save_path = os.path.join(output_path, dataset_prefix, split)
+    # New full_cohort scheme stores the 5 pickles directly under fold_N/,
+    # filenames prefixed with the split name (val_*, test_*) so multiple
+    # splits' outputs coexist under the same fold_N/ without a subfolder.
+    save_path = output_path
     os.makedirs(save_path, exist_ok=True)
 
     # Initialize dataset and dataloaders
@@ -137,11 +138,11 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
             all_paths.append(hdf5_path_list)
 
 
-    targets_path = os.path.join(save_path, "all_targets.pickle")
-    outputs_path = os.path.join(save_path, "all_outputs.pickle")
-    logits_path = os.path.join(save_path, "all_logits.pickle")
-    mask_path = os.path.join(save_path, "all_masks.pickle")
-    file_paths = os.path.join(save_path, "all_paths.pickle")
+    targets_path = os.path.join(save_path, f"{split}_all_targets.pickle")
+    outputs_path = os.path.join(save_path, f"{split}_all_outputs.pickle")
+    logits_path = os.path.join(save_path, f"{split}_all_logits.pickle")
+    mask_path = os.path.join(save_path, f"{split}_all_masks.pickle")
+    file_paths = os.path.join(save_path, f"{split}_all_paths.pickle")
 
     save_data(all_targets, targets_path)
     save_data(all_outputs, outputs_path)
