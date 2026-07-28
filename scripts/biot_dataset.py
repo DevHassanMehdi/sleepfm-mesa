@@ -101,4 +101,4 @@ class BIOTSleepDataset(Dataset):
         x = resample(x, BIOT_SAMPLES, axis=-1)
         x = _normalize(x)
         x = torch.from_numpy(x.astype(np.float32))
-        return x, stage
+        return x, stage, hdf5_path
