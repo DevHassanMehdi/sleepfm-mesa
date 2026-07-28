@@ -37,7 +37,7 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 sys.path.insert(0, str(REPO_ROOT) + "/sleepfm")
 from experiment_paths import new_experiment, experiment_from_checkpoint_dir, link_checkpoint_and_results
 
-from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS
+from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS, HDF5_DIR
 from model.biot import BIOTClassifier
 
 SPLIT_PATH = os.path.join(REPO_ROOT, "sleepfm/configs/dataset_split_fromscratch_staging.json")
@@ -104,6 +104,11 @@ def main():
     parser.add_argument("--patience", type=int, default=20)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=8)
+    parser.add_argument("--hdf5_dir", type=str, default=HDF5_DIR,
+                         help="Override the MESA HDF5 directory (default: "
+                              "biot_dataset.py's built-in 350-subject "
+                              "Puhti-era path). Pass the full-cohort path "
+                              "for full-cohort fine-tuning.")
     parser.add_argument("--pretrained_path", default=PRETRAINED_PATH)
     parser.add_argument("--split_id", type=str, default="fold10_v1",
                          help="Identifies the fold scheme/assignment used, for "
@@ -128,8 +133,10 @@ def main():
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
-    train_ds = BIOTSleepDataset(SPLIT_PATH, "train", args.modality, fold_key=args.fold_key)
-    val_ds = BIOTSleepDataset(SPLIT_PATH, "validation", args.modality, fold_key=args.fold_key)
+    train_ds = BIOTSleepDataset(SPLIT_PATH, "train", args.modality, fold_key=args.fold_key,
+                                 hdf5_dir=args.hdf5_dir)
+    val_ds = BIOTSleepDataset(SPLIT_PATH, "validation", args.modality, fold_key=args.fold_key,
+                               hdf5_dir=args.hdf5_dir)
     print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
 
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,

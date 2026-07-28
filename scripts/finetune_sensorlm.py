@@ -26,7 +26,7 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 sys.path.insert(0, os.path.join(REPO_ROOT, "sleepfm"))
 from experiment_paths import new_experiment, experiment_from_checkpoint_dir, link_checkpoint_and_results
 
-from sensorlm_dataset import MODALITY_CHANNELS, SensorLMSleepDataset
+from sensorlm_dataset import MODALITY_CHANNELS, SensorLMSleepDataset, HDF5_DIR
 from sensorlm_model import SensorLMEncoder
 
 SPLIT_PATH = os.path.join(
@@ -81,6 +81,11 @@ def main():
     parser.add_argument("--lr",          type=float, default=1e-4)
     parser.add_argument("--batch_size",  type=int,   default=64)
     parser.add_argument("--num_workers", type=int,   default=8)
+    parser.add_argument("--hdf5_dir", type=str, default=HDF5_DIR,
+                         help="Override the MESA HDF5 directory (default: "
+                              "sensorlm_dataset.py's built-in 350-subject "
+                              "Puhti-era path). Pass the full-cohort path "
+                              "for full-cohort fine-tuning.")
     parser.add_argument("--split_id", type=str, default="fold10_v1",
                          help="Identifies the fold scheme/assignment used, for "
                               "the full_cohort experiment naming scheme. "
@@ -103,8 +108,10 @@ def main():
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
-    train_ds = SensorLMSleepDataset(SPLIT_PATH, "train", args.modality, args.fold_key)
-    val_ds   = SensorLMSleepDataset(SPLIT_PATH, "val",   args.modality, args.fold_key)
+    train_ds = SensorLMSleepDataset(SPLIT_PATH, "train", args.modality, args.fold_key,
+                                     hdf5_dir=args.hdf5_dir)
+    val_ds   = SensorLMSleepDataset(SPLIT_PATH, "val",   args.modality, args.fold_key,
+                                     hdf5_dir=args.hdf5_dir)
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
                               num_workers=args.num_workers, pin_memory=True)
     val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False,
