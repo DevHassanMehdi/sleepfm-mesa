@@ -24,16 +24,17 @@ LABEL_DIR = REPO_ROOT / "data/mesa/labels"
 LOGS_DIR = REPO_ROOT / "logs"
 SPLIT_OUT = REPO_ROOT / "data/mesa/dataset_split_10fold.json"
 
-NSRR_BIN = "/scratch/project_2019517/miniconda3/share/rubygems/bin/nsrr"
+NSRR_BIN = "/users/hamehdi/.local/share/x86_64/gem/ruby/3.4.0/bin/nsrr"
+NSRR_RUBY_BINDIR = "/scratch/project_2019517/miniconda3/bin"
 NSRR_GEM_ENV = {
-    "GEM_HOME": "/scratch/project_2019517/miniconda3/share/rubygems",
-    "GEM_PATH": "/scratch/project_2019517/miniconda3/share/rubygems",
+    "PATH": NSRR_RUBY_BINDIR + os.pathsep + os.environ.get("PATH", ""),
 }
 
 MESA_EDF_REMOTE = "mesa/polysomnography/edfs"
 MESA_ANNOT_REMOTE = "mesa/polysomnography/annotations-events-nsrr"
 EDF_MIN_BYTES = 50 * 1024 * 1024
 MAX_SUBJECT_ID = 9999
+EPOCH_SEC = 30.0
 
 STAGE_MAP = {
     "wake": 0, "w": 0,
@@ -62,7 +63,7 @@ def load_token() -> str:
 def parse_mesa_xml(xml_path: Path) -> list:
     tree = ET.parse(xml_path)
     root = tree.getroot()
-    rows = []
+    events = []
     for event in root.iter("ScoredEvent"):
         type_el = event.find("EventType")
         concept_el = event.find("EventConcept")
@@ -76,15 +77,28 @@ def parse_mesa_xml(xml_path: Path) -> list:
         raw_concept = (concept_el.text or "").strip()
         stage_name = raw_concept.split("|")[0].strip()
         stage_num = STAGE_MAP.get(stage_name.lower(), -1)
+        if stage_num < 0:
+            continue
         start = float(start_el.text)
-        stop = start + float(dur_el.text)
-        rows.append({
-            "Start": start,
-            "Stop": stop,
-            "StageName": stage_name,
-            "StageNumber": stage_num,
-        })
-    return [r for r in rows if r["StageNumber"] >= 0]
+        dur = float(dur_el.text)
+        events.append((start, dur, stage_name, stage_num))
+
+    # Expand each (possibly multi-epoch) scored event into one row per
+    # 30-second epoch -- MESA's XML run-length-encodes consecutive
+    # same-stage epochs into a single event with a longer Duration.
+    rows = []
+    for start, dur, stage_name, stage_num in events:
+        n_epochs = int(round(dur / EPOCH_SEC))
+        for e in range(n_epochs):
+            ep_start = start + e * EPOCH_SEC
+            ep_stop = ep_start + EPOCH_SEC
+            rows.append({
+                "Start": ep_start,
+                "Stop": ep_stop,
+                "StageName": stage_name,
+                "StageNumber": stage_num,
+            })
+    return rows
 
 
 def save_label_csv(rows: list, csv_path: Path) -> None:
@@ -147,21 +161,25 @@ def process_subject(sid: str, token: str):
     edf_remote = f"{MESA_EDF_REMOTE}/mesa-sleep-{sid}.edf"
     annot_remote = f"{MESA_ANNOT_REMOTE}/mesa-sleep-{sid}-nsrr.xml"
 
-    print(f"[INFO] Downloading subject {sid}...")
+    if not edf_ok:
+        print(f"[INFO] Downloading subject {sid}...")
 
-    edf_success = nsrr_download(edf_remote, token, edf_path)
-    if not edf_success:
-        print(f"[WARN] EDF not found for subject {sid}")
-        return "not_found", label_generated
+        edf_success = nsrr_download(edf_remote, token, edf_path)
+        if not edf_success:
+            print(f"[WARN] EDF not found for subject {sid}")
+            return "not_found", label_generated
 
-    if edf_path.stat().st_size < EDF_MIN_BYTES:
-        print(f"[WARN] EDF for subject {sid} is too small, removing")
-        edf_path.unlink()
-        return "not_found", label_generated
+        if edf_path.stat().st_size < EDF_MIN_BYTES:
+            print(f"[WARN] EDF for subject {sid} is too small, removing")
+            edf_path.unlink()
+            return "not_found", label_generated
+    else:
+        print(f"[INFO] Re-fetching missing annotation for subject {sid}...")
 
     annot_success = nsrr_download(annot_remote, token, annot_path)
     if not annot_success:
-        print(f"[WARN] Annotation not found for subject {sid}")
+        print(f"[WARN] Annotation not found for subject {sid}, removing orphaned EDF")
+        edf_path.unlink()
         return "not_found", label_generated
 
     try:
