@@ -192,3 +192,9 @@ data/
 # Logs
 logs/
 problem_hdf5.txt
+
+# Dataset directories that should live on /scratch, not in the repo
+shhs/
+mros/
+mesa/
+data/
