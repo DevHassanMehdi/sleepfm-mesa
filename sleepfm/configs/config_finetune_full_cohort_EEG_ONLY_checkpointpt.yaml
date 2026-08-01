@@ -1,0 +1,43 @@
+# Identical to config_finetune_full_cohort.yaml in every respect except
+# model_path, which points at a wrapper directory whose "mesa" entry is a
+# symlink to the checkpoint.pt-derived embeddings cache (epoch 99, final)
+# instead of the best.pt-derived cache (epoch 28, training-loss-selected).
+# Used for a single-fold A/B test: does the encoder's final checkpoint
+# produce a materially different fine-tuning result than the training-loss
+# "best" checkpoint? See results/full_cohort/ for the existing best.pt-based
+# fold5_v1/fold_0 EEG_ONLY result this is being compared against.
+model_params:
+  embed_dim: 128
+  num_heads: 4
+  num_layers: 2
+  num_classes: 5
+  pooling_head: 4
+  dropout: 0.3
+  max_seq_length: 1500
+
+max_channels: 4
+context: -1
+seed: 42
+model: "SleepEventLSTMClassifier"
+dataset: "mesa"
+batch_size: 16
+epochs: 500
+lr: 0.0001
+num_workers: 2
+early_stopping_patience: 50
+
+data_path: "/scratch/project_2019517/sleepfm-data/mesa/hdf5_full"
+model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly_fullcohort_checkpointpt_view"
+split_path: "sleepfm/configs/dataset_split_fold5_v1.json"
+labels_path: "/scratch/project_2019517/sleepfm-data/mesa/labels"
+save_iter: 1000
+eval_iter: 1000
+log_interval: 10
+accumulation_steps: 16
+use_wandb: false
+
+# dataloader configs
+max_files: null
+sampling_freq: 128
+
+channel_like: ["EEG_ONLY"]

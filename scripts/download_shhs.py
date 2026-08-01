@@ -152,18 +152,21 @@ def process_subject(sid: str, visit: int, token: str) -> tuple:
                 print(f"[ERROR] XML parse failed for {prefix}-{sid}: {e}")
         return "skipped", label_generated
 
-    print(f"[INFO] Downloading {prefix}-{sid}...")
-
     edf_remote   = f"shhs/polysomnography/edfs/{prefix}/{prefix}-{sid}.edf"
     annot_remote = f"shhs/polysomnography/annotations-events-nsrr/{prefix}/{prefix}-{sid}-nsrr.xml"
 
-    if not nsrr_download(edf_remote, token, edf_path):
-        return "not_found", label_generated
+    if not edf_ok:
+        print(f"[INFO] Downloading {prefix}-{sid}...")
 
-    if edf_path.stat().st_size < EDF_MIN_BYTES:
-        print(f"[WARN] EDF for {prefix}-{sid} is too small, removing")
-        edf_path.unlink()
-        return "not_found", label_generated
+        if not nsrr_download(edf_remote, token, edf_path):
+            return "not_found", label_generated
+
+        if edf_path.stat().st_size < EDF_MIN_BYTES:
+            print(f"[WARN] EDF for {prefix}-{sid} is too small, removing")
+            edf_path.unlink()
+            return "not_found", label_generated
+    else:
+        print(f"[INFO] Re-fetching missing annotation for {prefix}-{sid}...")
 
     if not nsrr_download(annot_remote, token, annot_path):
         print(f"[WARN] Annotation not found for {prefix}-{sid}")

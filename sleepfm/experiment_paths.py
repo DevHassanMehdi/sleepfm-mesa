@@ -19,9 +19,13 @@ Naming scheme:
                      (e.g. "fold5_v1", "fold10_v1").
     timestamp:       YYYY-MM-DD_HHMM
 
-This only affects NEW writes under */full_cohort/ -- the existing
-results/ and checkpoints/ trees (350-subject Puhti-era data) are untouched
-by anything in this module.
+This only affects NEW writes under checkpoints/full_cohort/ and
+experiments_full_cohort/full_cohort/ -- the existing results/ and
+checkpoints/ trees (350-subject Puhti-era data) are untouched by anything
+in this module. Detailed per-run full-cohort artifacts live under
+experiments_full_cohort/full_cohort/ (not results/full_cohort/ -- that
+path was retired in favor of flat, human-readable summaries directly in
+results/, e.g. FS_fullcohort_ALL_results.txt, ALL_RESULTS_FULL.md).
 """
 import csv
 import json
@@ -74,7 +78,7 @@ class ExperimentID:
 
     @property
     def results_dir(self) -> Path:
-        return REPO_ROOT / "results" / "full_cohort" / self.run_name
+        return REPO_ROOT / "experiments_full_cohort" / "full_cohort" / self.run_name
 
     def fold_dir(self, fold: int) -> Path:
         return self.checkpoint_dir / f"fold_{fold}"

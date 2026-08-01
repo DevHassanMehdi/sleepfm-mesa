@@ -35,6 +35,7 @@ torch.backends.cuda.enable_math_sdp(True)
 @click.option("--num_workers", type=int, default=16)
 @click.option("--batch_size", type=int, default=128)
 @click.option("--fold", type=int, default=0)
+@click.option("--checkpoint_file", type=str, default="best.pt")
 def generate_embeddings(
     model_path,
     dataset_name,
@@ -43,7 +44,8 @@ def generate_embeddings(
     splits,
     num_workers,
     batch_size,
-    fold
+    fold,
+    checkpoint_file
 ):
     config_path = os.path.join(model_path, "config.json")
     config = load_config(config_path)
@@ -53,8 +55,11 @@ def generate_embeddings(
 
     dataset_name = dataset_name.lower()
 
-    output = os.path.join(model_path, f"{dataset_name}")
-    output_5min_agg = os.path.join(model_path, f"{dataset_name}_5min_agg")
+    # Non-default checkpoint files get their own output subdir so they never
+    # collide with the standard best.pt-derived embeddings cache.
+    output_suffix = "" if checkpoint_file == "best.pt" else f"_{os.path.splitext(checkpoint_file)[0]}"
+    output = os.path.join(model_path, f"{dataset_name}{output_suffix}")
+    output_5min_agg = os.path.join(model_path, f"{dataset_name}_5min_agg{output_suffix}")
     os.makedirs(output, exist_ok=True)
     os.makedirs(output_5min_agg, exist_ok=True)
 
@@ -69,6 +74,7 @@ def generate_embeddings(
 
     data_path = config["data_path"]
 
+    logger.info(f"Checkpoint File: {checkpoint_file}")
     logger.info(f"Output Path: {output}")
     logger.info(f"Output 5 Min Agg Path: {output_5min_agg}")
     logger.info(f"modality_types: {modality_types}")
@@ -115,7 +121,7 @@ def generate_embeddings(
     logger.info(f'Trainable parameters: {total_params / 1e6:.2f} million')
     logger.info(f'Number of layers: {total_layers}')
 
-    checkpoint = torch.load(os.path.join(model_path, "best.pt"), map_location=device)
+    checkpoint = torch.load(os.path.join(model_path, checkpoint_file), map_location=device)
     state_dict = checkpoint["state_dict"]
     has_module_prefix = any(k.startswith("module.") for k in state_dict.keys())
     model_has_module = isinstance(model, torch.nn.DataParallel)

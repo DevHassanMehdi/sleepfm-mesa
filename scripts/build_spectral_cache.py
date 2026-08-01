@@ -14,6 +14,7 @@ Run once on a small (CPU) node before launching pretrain_spectral.py:
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -28,10 +29,21 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils import load_config, load_data
 
 
-BAS_CHANNELS = ["EEG1", "EEG2", "EEG3", "EOG-L", "EOG-R"]
+# EEG (EEG1/2/3) + EKG only -- narrowed from the earlier EEG-only scope to
+# match the From-Scratch encoder's scope for a fair 3-way pretraining-method
+# comparison, and deliberately NOT the full EEG+RESP+EKG+EMG scope (that
+# would need MAX_CHANNELS=16 and was estimated at ~874GB / ~65h -- see
+# PIPELINE_VALIDATION_FINDINGS.md Section 7).
+MODALITY_TYPES = ["EEG_ONLY", "EKG"]
+CHANNEL_GROUPS_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "sleepfm", "configs", "channel_groups.json"
+)
+with open(CHANNEL_GROUPS_PATH) as _f:
+    CHANNEL_GROUPS = json.load(_f)
+
 WINDOW_SIZE = 640
 FS = 128
-MAX_CHANNELS = 10
+MAX_CHANNELS = 5  # EEG_ONLY(3) + EKG(2) -- matches config EEG_ONLY_CHANNELS/EKG_CHANNELS
 BANDS = [(0.5, 4.0), (4.0, 8.0), (8.0, 12.0), (12.0, 15.0), (15.0, 30.0)]
 
 
@@ -54,7 +66,13 @@ def scan_windows(hdf5_paths):
     for path in hdf5_paths:
         try:
             with h5py.File(path, "r") as hf:
-                available = [ch for ch in BAS_CHANNELS if ch in hf]
+                # Mirrors dataset.py's index_file_helper: scan the file's actual
+                # dataset names and keep whichever belong to a target modality
+                # group, rather than assuming a fixed channel-name list.
+                available = [
+                    ch for ch in hf.keys()
+                    if any(ch in CHANNEL_GROUPS[g] for g in MODALITY_TYPES)
+                ]
                 if not available:
                     skipped += 1
                     continue
@@ -66,7 +84,7 @@ def scan_windows(hdf5_paths):
             logger.warning(f"Skipping {path}: {e}")
             skipped += 1
     if skipped:
-        logger.warning(f"Skipped {skipped} files (no BAS channels or unreadable)")
+        logger.warning(f"Skipped {skipped} files (no EEG_ONLY/EKG channels or unreadable)")
     return index
 
 

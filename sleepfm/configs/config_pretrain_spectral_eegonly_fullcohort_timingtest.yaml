@@ -1,0 +1,48 @@
+# TIMING-TEST ONLY variant of config_pretrain_spectral_eegonly_fullcohort.yaml
+# -- max_epochs capped low (2) purely to measure real per-epoch wall-clock
+# cost of pretrain_spectral.py against the REAL, now-complete full-cohort
+# spectral cache (spectral_cache_eegonly_fullcohort/, 1944 subjects) before
+# committing to the real 100-epoch run. Writes to a SEPARATE save_path so it
+# can never be confused with (or overwrite) the real production checkpoint.
+#
+# (This filename previously held a DIFFERENT, now-obsolete timing test -- one
+# that measured build_spectral_cache.py's cache-BUILD cost against a tiny
+# 25+10 subject split. That test's cache_dir was deleted once the real cache
+# build was confirmed healthy; this file has been repurposed for the
+# pretraining-epoch timing test described above, now that the real cache
+# exists to test against.)
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+batch_size: 128
+max_epochs: 2
+num_workers: 8
+
+spectral_lr: 0.001
+spectral_weight_decay: 0.0001
+patience: 10
+
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_fromscratch_fullcohort.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/spectral_eegonly_fullcohort_timingtest'
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort'
+
+max_channels: 10
+EEG_ONLY_CHANNELS: 3
+
+spectral_bands:
+  - [0.5, 4.0]
+  - [4.0, 8.0]
+  - [8.0, 12.0]
+  - [12.0, 15.0]
+  - [15.0, 30.0]
+
+val_size: 100
+sampling_freq: 128
+patch_size: 640

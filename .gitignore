@@ -198,3 +198,12 @@ shhs/
 mros/
 mesa/
 data/
+sleepfm-data/
+
+# Detailed per-run full-cohort experiment artifacts (metrics.json,
+# classification_report.txt, per_subject_results.csv, config.json per
+# run) -- provenance data, not code. Summarized in results/*.md/*.txt.
+experiments_full_cohort/
+
+# Diagnostic script output (token cache reports etc.) -- regenerable, not code.
+diagnostics/

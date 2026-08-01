@@ -13,6 +13,7 @@ import shutil
 import ssl
 import subprocess
 import sys
+import time
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -136,18 +137,63 @@ def save_label_csv(rows: list, csv_path: Path) -> None:
             f.write(f"{r['Start']},{r['Stop']},{r['StageName']},{r['StageNumber']}\n")
 
 
-def nsrr_download(remote_path: str, token: str, dest_path: Path) -> bool:
+def _looks_like_html_error_page(path: Path) -> bool:
+    """NSRR sometimes returns exit code 0 with an unparseable HTML error
+    page (e.g. "The dataset mros was not found") instead of a real file --
+    the nsrr gem doesn't treat this as a failure. Detect it by content
+    signature, not just size, so legitimately-small XML annotation files
+    (which also start with '<') aren't misclassified."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(256).lstrip().lower()
+    except OSError:
+        return False
+    return head.startswith(b"<!doctype html") or head.startswith(b"<html")
+
+
+def nsrr_download(remote_path: str, token: str, dest_path: Path, max_attempts: int = 3) -> bool:
+    """Download one file via the nsrr gem, with retry/backoff mirroring
+    fetch_real_ids()'s pattern. Unlike fetch_real_ids (which relies on a
+    generous 120s per-attempt timeout instead of an inter-attempt delay),
+    each nsrr download subprocess call returns quickly even on failure, so
+    a real backoff sleep between attempts is used here to avoid hammering
+    an already-struggling server.
+    """
     env = {**os.environ, **NSRR_GEM_ENV}
     cmd = [NSRR_BIN, "download", remote_path, f"--token={token}"]
-    result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env)
-    if result.returncode != 0:
-        return False
     downloaded_path = REPO_ROOT / remote_path
-    if not downloaded_path.exists():
-        return False
-    dest_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(downloaded_path), str(dest_path))
-    return True
+
+    for attempt in range(1, max_attempts + 1):
+        result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env)
+
+        if result.returncode != 0:
+            stderr_snippet = (result.stderr or "").strip()[:200]
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"returncode={result.returncode} stderr={stderr_snippet!r}")
+        elif not downloaded_path.exists():
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"returncode=0 but file not found at {downloaded_path}")
+        elif downloaded_path.stat().st_size == 0:
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"downloaded file is empty -- discarding")
+            downloaded_path.unlink(missing_ok=True)
+        elif _looks_like_html_error_page(downloaded_path):
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"returncode=0 but downloaded file looks like an HTML error page "
+                  f"({downloaded_path.stat().st_size} bytes) -- discarding")
+            downloaded_path.unlink(missing_ok=True)
+        else:
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(downloaded_path), str(dest_path))
+            return True
+
+        if attempt < max_attempts:
+            backoff_s = 2 ** attempt  # 2s, 4s, ...
+            print(f"[INFO] nsrr download {remote_path}: retrying in {backoff_s}s "
+                  f"(attempt {attempt + 1}/{max_attempts})")
+            time.sleep(backoff_s)
+
+    return False
 
 
 def scan_existing(visit: int) -> list:

@@ -27,7 +27,7 @@ early_stopping_patience: 50
 # label-match check); the actual training data comes from model_path's
 # embeddings cache (see sleepfm/models/dataset.py SleepEventClassificationDataset).
 data_path: "/scratch/project_2019517/sleepfm-data/mesa/hdf5_full"
-model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly/SetTransformer/leave_one_out_128_patch_size_640"
+model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly_fullcohort/SetTransformer/leave_one_out_128_patch_size_640"
 split_path: "sleepfm/configs/dataset_split_fold5_v1.json"
 labels_path: "/scratch/project_2019517/sleepfm-data/mesa/labels"
 save_iter: 1000

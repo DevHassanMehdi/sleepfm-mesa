@@ -15,6 +15,7 @@ Run on a CPU interactive/small node (NOT the login node):
     python scripts/build_token_cache.py
 """
 
+import argparse
 import os
 import sys
 import time
@@ -149,8 +150,20 @@ def entropy_bits(labels, n_clusters):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cache_dir", default=CACHE_DIR,
+                         help="Directory holding spectral_cache_{pretrain,validation}.npz "
+                              "and where token_codebook.npy etc. will be written. "
+                              "Default is the 350-subject Puhti-era location.")
+    parser.add_argument("--report_name", default="token_cache_report.txt",
+                         help="Filename (under diagnostics/) for the build report. "
+                              "Change this when pointing at a different cache_dir so "
+                              "the historical report isn't overwritten.")
+    args = parser.parse_args()
+
+    cache_dir = args.cache_dir
     os.makedirs(REPORT_DIR, exist_ok=True)
-    report_path = os.path.join(REPORT_DIR, "token_cache_report.txt")
+    report_path = os.path.join(REPORT_DIR, args.report_name)
 
     lines = []
 
@@ -167,10 +180,10 @@ def main():
     log("=" * 70)
 
     # ── 1. Load both caches ───────────────────────────────────────────────────
-    log(f"\n[Step 1] Loading spectral caches from {CACHE_DIR}/")
+    log(f"\n[Step 1] Loading spectral caches from {cache_dir}/")
 
-    pretrain_path = os.path.join(CACHE_DIR, "spectral_cache_pretrain.npz")
-    val_path = os.path.join(CACHE_DIR, "spectral_cache_validation.npz")
+    pretrain_path = os.path.join(cache_dir, "spectral_cache_pretrain.npz")
+    val_path = os.path.join(cache_dir, "spectral_cache_validation.npz")
 
     t0 = time.time()
     targets_pre, masks_pre, fps_pre, ws_pre, N_pre = load_and_validate_cache(
@@ -273,7 +286,7 @@ def main():
     log(f"  Pair build time: {time.time() - t0:.1f}s")
 
     # ── 6. Save outputs ───────────────────────────────────────────────────────
-    log(f"\n[Step 6] Saving outputs to {CACHE_DIR}/")
+    log(f"\n[Step 6] Saving outputs to {cache_dir}/")
 
     t0 = time.time()
     paths = {
@@ -284,7 +297,7 @@ def main():
         "token_pairs_validation.npy":       pairs_val,
     }
     for fname, arr in paths.items():
-        fpath = os.path.join(CACHE_DIR, fname)
+        fpath = os.path.join(cache_dir, fname)
         np.save(fpath, arr)
         log(f"  {fname:<40} shape={arr.shape}  dtype={arr.dtype}")
     log(f"  Save time: {time.time() - t0:.1f}s")

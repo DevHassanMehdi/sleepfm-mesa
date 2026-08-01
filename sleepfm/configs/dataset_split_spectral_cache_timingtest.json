@@ -1,0 +1,41 @@
+{
+  "pretrain": [
+    "mesa-sleep-3204.hdf5",
+    "mesa-sleep-2305.hdf5",
+    "mesa-sleep-4496.hdf5",
+    "mesa-sleep-0248.hdf5",
+    "mesa-sleep-4116.hdf5",
+    "mesa-sleep-1311.hdf5",
+    "mesa-sleep-5759.hdf5",
+    "mesa-sleep-5298.hdf5",
+    "mesa-sleep-6072.hdf5",
+    "mesa-sleep-5287.hdf5",
+    "mesa-sleep-5073.hdf5",
+    "mesa-sleep-3153.hdf5",
+    "mesa-sleep-4322.hdf5",
+    "mesa-sleep-2572.hdf5",
+    "mesa-sleep-0328.hdf5",
+    "mesa-sleep-2233.hdf5",
+    "mesa-sleep-2941.hdf5",
+    "mesa-sleep-6071.hdf5",
+    "mesa-sleep-5381.hdf5",
+    "mesa-sleep-3852.hdf5",
+    "mesa-sleep-5695.hdf5",
+    "mesa-sleep-2349.hdf5",
+    "mesa-sleep-0416.hdf5",
+    "mesa-sleep-1892.hdf5",
+    "mesa-sleep-5203.hdf5"
+  ],
+  "validation": [
+    "mesa-sleep-1435.hdf5",
+    "mesa-sleep-5243.hdf5",
+    "mesa-sleep-6075.hdf5",
+    "mesa-sleep-3457.hdf5",
+    "mesa-sleep-5660.hdf5",
+    "mesa-sleep-4995.hdf5",
+    "mesa-sleep-1563.hdf5",
+    "mesa-sleep-4895.hdf5",
+    "mesa-sleep-4830.hdf5",
+    "mesa-sleep-5854.hdf5"
+  ]
+}

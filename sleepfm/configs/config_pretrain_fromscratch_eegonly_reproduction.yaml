@@ -1,0 +1,43 @@
+# Fresh, from-random-init reproduction of the original 350-subject
+# From-Scratch EEG_ONLY encoder (config_pretrain_eegonly.yaml, which
+# trained the June 2026 encoder currently at checkpoints/encoders/
+# fromscratch_eegonly/...). Identical in every field except save_path,
+# which points at a new, distinct output directory so the original
+# June encoder is never touched. Purpose: confirm the historical 0.658
+# EEG_ONLY result reproduces from a genuinely new pretraining run, not
+# just from reusing the original encoder's specific weights.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+batch_size: 128
+epochs: 100
+lr: 0.001
+lr_step_period: 2
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+num_workers: 8
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+data_path: 'data/mesa/hdf5'
+split_path: 'sleepfm/configs/dataset_split_fromscratch.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly_reproduction'
+weight_decay: 0.0
+mode: "leave_one_out"
+save_iter: 5000
+eval_iter: 5000
+log_interval: 100
+use_wandb: false
+EEG_ONLY_CHANNELS: 3
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+max_files: null
+val_size: 100
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+modality_types: ["EEG_ONLY", "RESP", "EKG", "EMG"]

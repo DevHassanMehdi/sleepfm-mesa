@@ -1,0 +1,42 @@
+# Experiment C: reproduce the historical 350-subject EEG_ONLY result
+# (0.6582) using a FRESH, from-random-init encoder (checkpoints/encoders/
+# fromscratch_eegonly_reproduction/...), trained via the current pipeline
+# on the identical 350-subject data/config, then fine-tuned on the same
+# verified-identical 300/30/50 historical train/validation/test split.
+# Same hyperparameters as config_finetune_historical_reproduction_EEG_ONLY.yaml
+# (Experiment B) -- only model_path differs (fresh encoder vs the reused
+# June encoder).
+model_params:
+  embed_dim: 128
+  num_heads: 4
+  num_layers: 2
+  num_classes: 5
+  pooling_head: 4
+  dropout: 0.3
+  max_seq_length: 1500
+
+max_channels: 4
+context: -1
+seed: 42
+model: "SleepEventLSTMClassifier"
+dataset: "mesa"
+batch_size: 16
+epochs: 500
+lr: 0.0001
+num_workers: 2
+early_stopping_patience: 50
+
+data_path: "/users/hamehdi/projects/sleepfm-mesa/data/mesa/hdf5"
+model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly_reproduction/SetTransformer/leave_one_out_128_patch_size_640"
+split_path: "sleepfm/configs/dataset_split_fromscratch_historical_as_fold0.json"
+labels_path: "/users/hamehdi/projects/sleepfm-mesa/data/mesa/labels"
+save_iter: 1000
+eval_iter: 1000
+log_interval: 10
+accumulation_steps: 16
+use_wandb: false
+
+max_files: null
+sampling_freq: 128
+
+channel_like: ["EEG_ONLY"]

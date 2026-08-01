@@ -1,0 +1,71 @@
+# Full-cohort (1944-subject) Spectral encoder pretraining -- EEG_ONLY-atomic
+# variant. Same architecture/hyperparameters as config_pretrain_spectral.yaml
+# -- data_path/split_path point at the full cohort instead of the 350-subject
+# Puhti-era baseline, and the underlying cache (built by build_spectral_cache.py,
+# now edited to scan EEG_ONLY_CHANNELS = ["EEG1","EEG2","EEG3"] instead of the
+# old BAS_CHANNELS 5-channel list) lives in its own dedicated directory so it
+# can never collide with or overwrite the existing 350-subject cache.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+# training
+batch_size: 128
+max_epochs: 100
+num_workers: 8
+
+# spectral-specific optimizer (Adam, not SGD)
+spectral_lr: 0.001
+spectral_weight_decay: 0.0001
+patience: 10
+
+# data
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_fromscratch_fullcohort.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/spectral_eegonly_fullcohort'
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort'
+
+# channel configuration (EEG_ONLY_CHANNELS count carried forward for
+# consistency with config_pretrain_spectral.yaml's BAS_CHANNELS field --
+# unused by build_spectral_cache.py/pretrain_spectral.py, both of which
+# hardcode their own channel list/count)
+max_channels: 10
+EEG_ONLY_CHANNELS: 3
+
+# Keys required by generate_embeddings.py and finetune_sleep_staging.py
+# (present for downstream compatibility; unused by spectral pretraining
+# itself, which hardcodes EEG_ONLY_CHANNELS in build_spectral_cache.py).
+# This encoder was pretrained on EEG signal ONLY -- modality_types has a
+# single entry, matching the reconstruction cache's actual scope. It has
+# no EKG/RESP/EMG channels to offer downstream fine-tuning configs.
+modality_types:
+  - 'EEG_ONLY'
+BAS_CHANNELS: 10
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+
+# sampling_duration (minutes) -- chunk size generate_embeddings.py's shared
+# SetTransformerDataset uses to window raw signal for embedding extraction.
+# Independent of how this encoder was pretrained (single 640-sample spectral
+# windows); this only governs the downstream embedding-generation pass.
+sampling_duration: 5
+max_files: null
+
+# spectral reconstruction targets: log10(power + 1e-8) per band
+spectral_bands:
+  - [0.5, 4.0]
+  - [4.0, 8.0]
+  - [8.0, 12.0]
+  - [12.0, 15.0]
+  - [15.0, 30.0]
+
+# dataloader
+val_size: 100
+sampling_freq: 128
+patch_size: 640
