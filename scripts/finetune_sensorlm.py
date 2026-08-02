@@ -87,9 +87,10 @@ def main():
                               "Puhti-era path). Pass the full-cohort path "
                               "for full-cohort fine-tuning.")
     parser.add_argument("--split_id", type=str, default="fold10_v1",
-                         help="Identifies the fold scheme/assignment used, for "
-                              "the full_cohort experiment naming scheme. "
-                              "Placeholder convention -- exact scheme TBD.")
+                         help="Selects which split file to use -- resolves to "
+                              "sleepfm/configs/dataset_split_{split_id}.json "
+                              "(e.g. 'fold5_v1' -> dataset_split_fold5_v1.json). "
+                              "Also used for the full_cohort experiment naming scheme.")
     parser.add_argument("--checkpoint_dir", type=str, default=None,
                          help="Resume an existing full_cohort experiment "
                               "folder (e.g. after a SLURM timeout) instead of "
@@ -108,9 +109,13 @@ def main():
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
-    train_ds = SensorLMSleepDataset(SPLIT_PATH, "train", args.modality, args.fold_key,
+    # Derived from exp.split_id (not args.split_id directly) so a resumed
+    # run (--checkpoint_dir) keeps using the split file it actually started
+    # with, even if --split_id isn't re-passed on resume.
+    split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+    train_ds = SensorLMSleepDataset(split_path, "train", args.modality, args.fold_key,
                                      hdf5_dir=args.hdf5_dir)
-    val_ds   = SensorLMSleepDataset(SPLIT_PATH, "val",   args.modality, args.fold_key,
+    val_ds   = SensorLMSleepDataset(split_path, "val",   args.modality, args.fold_key,
                                      hdf5_dir=args.hdf5_dir)
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
                               num_workers=args.num_workers, pin_memory=True)
@@ -158,7 +163,7 @@ def main():
             best_epoch       = epoch
             patience_counter = 0
             torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
-            link_checkpoint_and_results(exp)
+            link_checkpoint_and_results(exp, fold_num)
         else:
             patience_counter += 1
 

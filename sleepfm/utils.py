@@ -1,14 +1,13 @@
-import torch
-import torch.nn as nn
 import sys
 import yaml
 import json
 import pickle
 from typing import Any
 import numpy as np
-from einops import rearrange
 
 def count_parameters(model):
+    # Duck-typed on model.children()/.parameters()/.numel() -- never
+    # references the torch module itself, so no import needed here.
     def count_recursive(module):
         total_params = 0
         num_layers = 0
@@ -86,5 +85,6 @@ def load_data(filename: str) -> Any:
         raise ValueError("Filename must end with .pkl, .pickle, .p, .json, .yaml, or .npy")
 
 def create_causal_mask(seq_len):
+    import torch  # lazy: the only function in this module that needs torch
     causal_mask = torch.triu(torch.ones(seq_len, seq_len) * float('-inf'), diagonal=1)
     return causal_mask

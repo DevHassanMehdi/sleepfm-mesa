@@ -1,0 +1,45 @@
+# SMOKE TEST ONLY -- tiny subject subset (25 pretrain + 10 validation,
+# dataset_split_spectral_cache_timingtest.json), 3 epochs, purely to verify
+# the EEG_ONLY+EKG scope end-to-end before any real full-cohort submission.
+# Writes to a SEPARATE save_path so it can never be confused with or
+# overwrite the real production checkpoint (which doesn't exist yet).
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+batch_size: 8
+epochs: 3
+lr: 0.001
+lr_step_period: 2
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+num_workers: 4
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_spectral_cache_timingtest.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly_smoketest'
+weight_decay: 0.0
+
+mode: "leave_one_out"
+save_iter: 50
+eval_iter: 50
+log_interval: 5
+use_wandb: false
+
+EEG_ONLY_CHANNELS: 3
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+
+max_files: null
+val_size: 10
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+
+modality_types: ["EEG_ONLY", "EKG"]

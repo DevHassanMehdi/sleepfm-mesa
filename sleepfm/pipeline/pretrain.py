@@ -25,27 +25,13 @@ torch.backends.cuda.enable_math_sdp(True)
 
 def run_iter(batch, num_modalities, model, device, mode, temperature, batch_size, ij):
     batch_data, mask_list, *_ = batch
-    (bas, resp, ekg, emg) = batch_data
-    (mask_bas, mask_resp, mask_ekg, mask_emg) = mask_list
 
-    bas = bas.to(device, dtype=torch.float)
-    resp = resp.to(device, dtype=torch.float)
-    ekg = ekg.to(device, dtype=torch.float)
-    emg = emg.to(device, dtype=torch.float)
-
-    mask_bas = mask_bas.to(device, dtype=torch.bool)
-    mask_resp = mask_resp.to(device, dtype=torch.bool)
-    mask_ekg = mask_ekg.to(device, dtype=torch.bool)
-    mask_emg = mask_emg.to(device, dtype=torch.bool)
+    modalities = [m.to(device, dtype=torch.float) for m in batch_data]
+    masks = [m.to(device, dtype=torch.bool) for m in mask_list]
 
     # TODO: might be able to pack CNNs and set transformer to do a single call, rather than separate forward passes
     # Won't work if you have separate CNN params for each modality
-    emb = [
-        model(bas, mask_bas),
-        model(resp, mask_resp),
-        model(ekg, mask_ekg),
-        model(emg, mask_emg),
-    ]
+    emb = [model(m, mk) for m, mk in zip(modalities, masks)]
 
     emb = [e[0] for e in emb]
 

@@ -1,0 +1,50 @@
+# SMOKE TEST ONLY -- Spectral pretraining against the tiny smoke-test cache
+# already built by test 2 (build_spectral_cache.py against
+# dataset_split_spectral_cache_timingtest.json: 25 pretrain + 10 validation
+# subjects), 3 epochs, purely to verify the EEG_ONLY+EKG (4-channel) scope
+# runs end-to-end before any real full-cohort submission. Writes to a
+# SEPARATE save_path so it can never be confused with or overwrite the real
+# production checkpoint.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+# training
+batch_size: 128
+max_epochs: 3
+num_workers: 4
+
+# spectral-specific optimizer (Adam, not SGD)
+spectral_lr: 0.001
+spectral_weight_decay: 0.0001
+patience: 3
+
+# data -- points at the already-built smoke-test cache (test 2), not the
+# real full-cohort spectral_cache_eegonly_fullcohort directory
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/spectral_eegonly_smoketest'
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest'
+
+# channel configuration -- must match build_spectral_cache.py's MAX_CHANNELS
+# (4: EEG_ONLY(3) + EKG(1)) exactly, since that's the shape the smoke-test
+# cache was actually written with.
+max_channels: 4
+EEG_ONLY_CHANNELS: 3
+
+modality_types:
+  - 'EEG_ONLY'
+  - 'EKG'
+BAS_CHANNELS: 10
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+
+sampling_duration: 5
+max_files: null
+val_size: 10
+sampling_freq: 128
+patch_size: 640

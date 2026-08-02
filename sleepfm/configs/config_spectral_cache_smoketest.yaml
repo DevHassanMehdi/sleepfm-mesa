@@ -1,0 +1,11 @@
+# SMOKE TEST ONLY -- minimal config for build_spectral_cache.py against the
+# tiny 25-pretrain + 10-validation subject split
+# (dataset_split_spectral_cache_timingtest.json), to verify the new EEG+EKG
+# (4-channel) scope produces correctly-shaped cache files before committing
+# to the real ~16h/~219GB full-cohort rebuild. build_spectral_cache.py reads
+# only split_path/data_path/val_size from this file -- MODALITY_TYPES and
+# MAX_CHANNELS are hardcoded in the script itself (already fixed to
+# ["EEG_ONLY","EKG"] / 4).
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_spectral_cache_timingtest.json'
+val_size: 10

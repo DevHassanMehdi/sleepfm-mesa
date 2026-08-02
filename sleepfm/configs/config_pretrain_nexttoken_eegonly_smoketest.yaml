@@ -1,0 +1,66 @@
+# SMOKE TEST ONLY -- Next-Token pretraining against the tiny smoke-test
+# spectral cache (test 2) and its token cache (built by build_token_cache.py
+# --cache_dir spectral_cache_smoketest), 3 epochs, purely to verify the
+# EEG_ONLY+EKG (4-channel) scope runs end-to-end before any real full-cohort
+# submission. Writes to a SEPARATE save_path so it can never be confused
+# with or overwrite the real production checkpoint.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+# Training
+batch_size: 128
+epochs: 3
+num_workers: 4
+
+lr: 0.001
+weight_decay: 0.0001
+patience: 3
+
+lr_step_period: null
+gamma: null
+temperature: null
+momentum: null
+mode: 'next_token'
+save_iter: 5000
+eval_iter: 5000
+log_interval: 100
+use_wandb: false
+
+# Token prediction -- outputs of build_token_cache.py --cache_dir spectral_cache_smoketest
+n_clusters: 512
+token_codebook_path: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest/token_codebook.npy'
+token_pairs_pretrain_path: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest/token_pairs_pretrain.npy'
+token_pairs_validation_path: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest/token_pairs_validation.npy'
+
+# Signal data -- reuse the smoke-test EEG+EKG spectral cache
+spectral_cache_dir: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest'
+spectral_signals_path_pretrain: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest/spectral_signals_pretrain.bin'
+spectral_signals_path_validation: '/scratch/project_2019517/sleepfm-data/spectral_cache_smoketest/spectral_signals_validation.bin'
+max_channels: 4
+
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/nexttoken_eegonly_smoketest'
+
+# Keys required by generate_embeddings.py / finetune_sleep_staging.py for
+# downstream compatibility -- unused by next-token pretraining itself.
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_spectral_cache_timingtest.json'
+BAS_CHANNELS: 10
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+EEG_ONLY_CHANNELS: 3
+modality_types:
+  - 'EEG_ONLY'
+  - 'EKG'
+max_files: null
+val_size: 10
+
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640

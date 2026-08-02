@@ -159,6 +159,7 @@ def main():
 
     write_metrics_bundle(
         exp,
+        fold_num=None,
         metrics=metrics,
         classification_report_text=report_text,
         per_subject_rows=per_subject_rows,

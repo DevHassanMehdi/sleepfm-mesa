@@ -123,60 +123,79 @@ def experiment_from_checkpoint_dir(checkpoint_dir) -> ExperimentID:
                          split_id=split_id, timestamp=timestamp)
 
 
-def link_checkpoint_and_results(exp: ExperimentID) -> None:
+def link_checkpoint_and_results(exp: ExperimentID, fold_num: int = None) -> None:
     """Cross-link the two config.json files, once each exists.
 
     Updates whichever side(s) currently exist without clobbering the rest
     of that file's content, and without requiring the other side to exist
     yet -- safe to call from both the training script (right after it
-    saves checkpoint_dir/config.json) and the metrics-writing step (right
-    after it saves results_dir/config.json).
+    saves checkpoint_dir/fold_N/config.json) and the metrics-writing step
+    (right after it saves results_dir/fold_N/config.json).
+
+    fold_num=None targets the experiment-level (cross-fold aggregate)
+    checkpoint_dir/results_dir directly, for callers like compute_metrics.py
+    that summarize across all folds rather than reporting a single fold.
     """
-    ckpt_config_path = exp.checkpoint_dir / "config.json"
-    results_config_path = exp.results_dir / "config.json"
+    ckpt_dir = exp.fold_dir(fold_num) if fold_num is not None else exp.checkpoint_dir
+    results_dir = (exp.results_dir / f"fold_{fold_num}") if fold_num is not None else exp.results_dir
+    ckpt_config_path = ckpt_dir / "config.json"
+    results_config_path = results_dir / "config.json"
 
     if ckpt_config_path.exists():
         with open(ckpt_config_path) as f:
             ckpt_config = json.load(f)
-        ckpt_config["results_dir"] = str(exp.results_dir)
+        ckpt_config["results_dir"] = str(results_dir)
         with open(ckpt_config_path, "w") as f:
             json.dump(ckpt_config, f, indent=2)
 
     if results_config_path.exists():
         with open(results_config_path) as f:
             results_config = json.load(f)
-        results_config["checkpoint_dir"] = str(exp.checkpoint_dir)
+        results_config["checkpoint_dir"] = str(ckpt_dir)
         with open(results_config_path, "w") as f:
             json.dump(results_config, f, indent=2)
 
 
-def write_metrics_bundle(exp: ExperimentID, metrics: dict,
+def write_metrics_bundle(exp: ExperimentID, fold_num: int, metrics: dict,
                           classification_report_text: str,
                           per_subject_rows: list, config: dict) -> None:
-    """Write the four results_dir files (metrics.json, classification_report.txt,
+    """Write the four results files (metrics.json, classification_report.txt,
     per_subject_results.csv, config.json) and cross-link with checkpoint_dir.
+
+    fold_num=None writes directly into the experiment-level results_dir --
+    for cross-fold aggregate summaries (e.g. compute_metrics.py), which are
+    the only writer of that experiment's top-level results and don't collide.
+
+    Any other fold_num writes into results_dir/fold_N/ instead. This
+    namespacing matters because results_dir is experiment-level (shared by
+    every fold of the same model/modality/split_id/timestamp) -- writing a
+    single fold's results directly into results_dir would let concurrently
+    running folds overwrite each other's metrics (they commonly share the
+    same timestamp when submitted in the same minute).
 
     per_subject_rows: list of dicts, each with at least
         {model, condition, subject_id, macro_f1, accuracy, n_valid_windows}
     """
-    exp.results_dir.mkdir(parents=True, exist_ok=True)
+    fold_results_dir = (exp.results_dir / f"fold_{fold_num}") if fold_num is not None else exp.results_dir
+    fold_checkpoint_dir = exp.fold_dir(fold_num) if fold_num is not None else exp.checkpoint_dir
+    fold_results_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(exp.results_dir / "metrics.json", "w") as f:
+    with open(fold_results_dir / "metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
 
-    with open(exp.results_dir / "classification_report.txt", "w") as f:
+    with open(fold_results_dir / "classification_report.txt", "w") as f:
         f.write(classification_report_text)
 
     if per_subject_rows:
         fieldnames = list(per_subject_rows[0].keys())
-        with open(exp.results_dir / "per_subject_results.csv", "w", newline="") as f:
+        with open(fold_results_dir / "per_subject_results.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(per_subject_rows)
 
     config = dict(config)
-    config["checkpoint_dir"] = str(exp.checkpoint_dir)
-    with open(exp.results_dir / "config.json", "w") as f:
+    config["checkpoint_dir"] = str(fold_checkpoint_dir)
+    with open(fold_results_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
 
-    link_checkpoint_and_results(exp)
+    link_checkpoint_and_results(exp, fold_num)

@@ -279,7 +279,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
                 # this run), not inside fold_N/ -- write a copy there too
                 # so the checkpoint->results cross-link actually fires.
                 save_data(config, str(exp.checkpoint_dir / "config.json"))
-                link_checkpoint_and_results(exp)
+                link_checkpoint_and_results(exp, fold_num=None)
         else:
             patience_counter += 1
             if patience_counter >= patience:

@@ -41,11 +41,16 @@ token_codebook_path: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegon
 token_pairs_pretrain_path: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort/token_pairs_pretrain.npy'
 token_pairs_validation_path: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort/token_pairs_validation.npy'
 
-# Signal data — reuse the EEG_ONLY-atomic full-cohort spectral cache, do NOT duplicate
+# Signal data — reuse the EEG+EKG full-cohort spectral cache, do NOT duplicate
 spectral_cache_dir: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort'
 spectral_signals_path_pretrain: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort/spectral_signals_pretrain.bin'
 spectral_signals_path_validation: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort/spectral_signals_validation.bin'
-max_channels: 10
+# max_channels IS read directly by pretrain_nexttoken.py's NextTokenDataset
+# (config.get("max_channels", MAX_CHANNELS), used for the memmap's shape) --
+# must match build_spectral_cache.py's MAX_CHANNELS exactly (4: EEG_ONLY(3) +
+# EKG(1), MESA's actual real channel count -- not the generic EKG_CHANNELS=2
+# config allowance).
+max_channels: 4
 
 # Checkpoint output (encoders/ hierarchy, {variant}_fullcohort naming convention)
 save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/nexttoken_eegonly_fullcohort'
@@ -65,6 +70,7 @@ EMG_CHANNELS: 4
 EEG_ONLY_CHANNELS: 3
 modality_types:
   - 'EEG_ONLY'
+  - 'EKG'
 max_files: null
 val_size: 100
 

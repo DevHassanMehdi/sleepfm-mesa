@@ -20,8 +20,8 @@ sys.path.insert(0, "/scratch/project_2019517/BIOT")
 
 os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 
-from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS
-from finetune_biot import build_model, SPLIT_PATH
+from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS, HDF5_DIR
+from finetune_biot import build_model
 from experiment_paths import experiment_from_checkpoint_dir, write_metrics_bundle
 
 STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
@@ -36,6 +36,13 @@ def main():
                               "produced by finetune_biot.py.")
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=8)
+    parser.add_argument("--hdf5_dir", type=str, default=HDF5_DIR,
+                         help="Override the MESA HDF5 directory (default: "
+                              "biot_dataset.py's built-in 350-subject "
+                              "Puhti-era path). Pass the full-cohort path "
+                              "for full-cohort evaluation -- must match "
+                              "whatever --hdf5_dir the checkpoint was "
+                              "fine-tuned with.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,7 +54,12 @@ def main():
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
 
-    test_ds = BIOTSleepDataset(SPLIT_PATH, "test", args.modality, fold_key=args.fold_key)
+    # Derived from exp.split_id (parsed from checkpoint_dir's own name) so
+    # eval always uses the exact split file that produced this checkpoint --
+    # not a separately-passed, possibly-mismatched --split_id.
+    split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+    test_ds = BIOTSleepDataset(split_path, "test", args.modality, fold_key=args.fold_key,
+                                hdf5_dir=args.hdf5_dir)
     test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False,
                               num_workers=args.num_workers)
     print(f"[{args.modality}] test={len(test_ds)}", flush=True)
@@ -95,17 +107,19 @@ def main():
 
     write_metrics_bundle(
         exp,
+        fold_num,
         metrics={
             "model": "biot", "modality": exp.modality,
             "pretrain_method": exp.pretrain_method, "split_id": exp.split_id,
-            "timestamp": exp.timestamp, "overall_macro_f1": round(float(macro_f1), 6),
+            "timestamp": exp.timestamp, "fold": fold_num,
+            "overall_macro_f1": round(float(macro_f1), 6),
             "overall_accuracy": round(float(acc), 6),
         },
         classification_report_text=report,
         per_subject_rows=per_subject_rows,
         config=config,
     )
-    print(f"\nWritten to {exp.results_dir}")
+    print(f"\nWritten to {exp.results_dir / f'fold_{fold_num}'}")
 
 
 if __name__ == "__main__":

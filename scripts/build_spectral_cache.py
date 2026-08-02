@@ -43,7 +43,14 @@ with open(CHANNEL_GROUPS_PATH) as _f:
 
 WINDOW_SIZE = 640
 FS = 128
-MAX_CHANNELS = 5  # EEG_ONLY(3) + EKG(2) -- matches config EEG_ONLY_CHANNELS/EKG_CHANNELS
+# EEG_ONLY(3) + EKG(1) = 4. This is MESA's actual real channel count, not
+# the generic EKG_CHANNELS=2 config allowance -- verified directly against
+# a raw HDF5 file: MESA has exactly one real "EKG" dataset key ("EKG_Off"
+# is a quality/status flag, not a second signal channel, and correctly
+# doesn't match CHANNEL_GROUPS["EKG"]'s alias list). data_path here is
+# hardcoded to MESA only, so there's no other cohort this cache ever needs
+# headroom for.
+MAX_CHANNELS = 4
 BANDS = [(0.5, 4.0), (4.0, 8.0), (8.0, 12.0), (12.0, 15.0), (15.0, 30.0)]
 
 

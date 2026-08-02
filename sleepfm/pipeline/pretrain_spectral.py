@@ -185,6 +185,7 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
         os.makedirs(output, exist_ok=True)
 
     logger.info(f"Output: {output}")
+    logger.info(f"modality_types: {config.get('modality_types')}")
 
     device = torch.device(
         "cuda" if torch.cuda.is_available()

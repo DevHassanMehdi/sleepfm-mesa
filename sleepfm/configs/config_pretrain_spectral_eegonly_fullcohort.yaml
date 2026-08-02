@@ -30,21 +30,27 @@ split_path: 'sleepfm/configs/dataset_split_fromscratch_fullcohort.json'
 save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/spectral_eegonly_fullcohort'
 spectral_cache_dir: '/scratch/project_2019517/sleepfm-data/spectral_cache_eegonly_fullcohort'
 
-# channel configuration (EEG_ONLY_CHANNELS count carried forward for
-# consistency with config_pretrain_spectral.yaml's BAS_CHANNELS field --
-# unused by build_spectral_cache.py/pretrain_spectral.py, both of which
-# hardcode their own channel list/count)
-max_channels: 10
+# channel configuration. max_channels IS read directly by
+# pretrain_spectral.py (SpectralDataset.__init__: config.get("max_channels",
+# 10), used for the memmap's shape) -- must match build_spectral_cache.py's
+# MAX_CHANNELS exactly (4: EEG_ONLY(3) + EKG(1), MESA's actual real channel
+# count -- not the generic EKG_CHANNELS=2 config allowance) or the cache
+# will be read with the wrong shape.
+max_channels: 4
 EEG_ONLY_CHANNELS: 3
 
 # Keys required by generate_embeddings.py and finetune_sleep_staging.py
 # (present for downstream compatibility; unused by spectral pretraining
 # itself, which hardcodes EEG_ONLY_CHANNELS in build_spectral_cache.py).
-# This encoder was pretrained on EEG signal ONLY -- modality_types has a
-# single entry, matching the reconstruction cache's actual scope. It has
-# no EKG/RESP/EMG channels to offer downstream fine-tuning configs.
+# This encoder was pretrained on EEG+EKG signal (see build_spectral_cache.py's
+# MODALITY_TYPES). modality_types here drives generate_embeddings.py's
+# SetTransformerDataset directly -- it decides which channels get loaded
+# from each subject's raw HDF5 AND which embedding keys get written out.
+# Must list every modality the encoder actually saw during pretraining, or
+# that modality's embeddings silently never get produced downstream.
 modality_types:
   - 'EEG_ONLY'
+  - 'EKG'
 BAS_CHANNELS: 10
 RESP_CHANNELS: 7
 EKG_CHANNELS: 2

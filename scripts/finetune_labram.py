@@ -80,7 +80,11 @@ def build_model(modality, n_classes=5, pretrained_path=PRETRAINED_PATH):
         num_classes=n_classes, in_chans=1, qkv_bias=False, init_values=0.1,
     )
 
-    checkpoint = torch.load(pretrained_path, map_location="cpu")
+    # weights_only=False: PyTorch 2.6+ defaults to weights_only=True, which
+    # rejects this checkpoint's pickled numpy scalar metadata. Safe here --
+    # pretrained_path points at LaBraM's own official checkpoint, committed
+    # directly in the 935963004/LaBraM GitHub repo.
+    checkpoint = torch.load(pretrained_path, map_location="cpu", weights_only=False)
     checkpoint_model = checkpoint["model"]
     new_dict = OrderedDict()
     for k, v in checkpoint_model.items():
@@ -172,9 +176,10 @@ def main():
                               "Puhti-era path). Pass the full-cohort path "
                               "for full-cohort fine-tuning.")
     parser.add_argument("--split_id", type=str, default="fold10_v1",
-                         help="Identifies the fold scheme/assignment used, for "
-                              "the full_cohort experiment naming scheme. "
-                              "Placeholder convention -- exact scheme TBD.")
+                         help="Selects which split file to use -- resolves to "
+                              "sleepfm/configs/dataset_split_{split_id}.json "
+                              "(e.g. 'fold5_v1' -> dataset_split_fold5_v1.json). "
+                              "Also used for the full_cohort experiment naming scheme.")
     parser.add_argument("--checkpoint_dir", type=str, default=None,
                          help="Resume an existing full_cohort experiment "
                               "folder (e.g. after a SLURM timeout) instead of "
@@ -194,9 +199,13 @@ def main():
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
-    train_ds = LaBraMSleepDataset(SPLIT_PATH, "train", args.modality, fold_key=args.fold_key,
+    # Derived from exp.split_id (not args.split_id directly) so a resumed
+    # run (--checkpoint_dir) keeps using the split file it actually started
+    # with, even if --split_id isn't re-passed on resume.
+    split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+    train_ds = LaBraMSleepDataset(split_path, "train", args.modality, fold_key=args.fold_key,
                                    hdf5_dir=args.hdf5_dir)
-    val_ds = LaBraMSleepDataset(SPLIT_PATH, "validation", args.modality, fold_key=args.fold_key,
+    val_ds = LaBraMSleepDataset(split_path, "validation", args.modality, fold_key=args.fold_key,
                                  hdf5_dir=args.hdf5_dir)
     print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
 
@@ -244,7 +253,7 @@ def main():
             torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump(vars(args), f, indent=2)
-            link_checkpoint_and_results(exp)
+            link_checkpoint_and_results(exp, fold_num)
             marker = " *"
         else:
             patience_counter += 1
