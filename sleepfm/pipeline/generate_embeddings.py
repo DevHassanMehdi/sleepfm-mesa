@@ -30,7 +30,17 @@ torch.backends.cuda.enable_math_sdp(True)
 @click.option("--model_path", type=str, default='path')
 @click.option("--dataset_name", type=str, default='mesa')
 @click.option("--channel_groups_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/channel_groups.json"))
-@click.option("--split_path", type=str, default=os.path.join(REPO_ROOT, "data/mesa/dataset_split_10fold.json"))
+@click.option("--split_path", type=str, default=None,
+              help="Explicit split file path. Overrides --split_id if both are given. "
+                   "Default (neither given): the old 10-fold Puhti-era path, unchanged.")
+@click.option("--split_id", type=str, default=None,
+              help="Resolves to sleepfm/configs/dataset_split_{split_id}.json, e.g. "
+                   "'fold5_v1' -> dataset_split_fold5_v1.json. Ignored if --split_path "
+                   "is also given.")
+@click.option("--hdf5_dir", type=str, default=None,
+              help="Override the HDF5 root directory (flat: hdf5_dir/<file>). Default "
+                   "(omitted): use the model config's own data_path with the old nested "
+                   ".../hdf5/<file> layout, unchanged.")
 @click.option("--splits", type=str, default='train,validation,test')
 @click.option("--num_workers", type=int, default=16)
 @click.option("--batch_size", type=int, default=128)
@@ -41,6 +51,8 @@ def generate_embeddings(
     dataset_name,
     channel_groups_path,
     split_path,
+    split_id,
+    hdf5_dir,
     splits,
     num_workers,
     batch_size,
@@ -50,6 +62,13 @@ def generate_embeddings(
     config_path = os.path.join(model_path, "config.json")
     config = load_config(config_path)
     channel_groups = load_data(channel_groups_path)
+
+    if split_path is None:
+        split_path = (
+            os.path.join(SLEEPFM_DIR, f"configs/dataset_split_{split_id}.json")
+            if split_id is not None
+            else os.path.join(REPO_ROOT, "data/mesa/dataset_split_10fold.json")
+        )
 
     current_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -72,9 +91,14 @@ def generate_embeddings(
     pooling_head = config["pooling_head"]
     dropout = 0.0
 
+    # hdf5_dir overrides config's own data_path -- used only for the flat
+    # full-cohort path construction branch below; config["data_path"] is
+    # still used unmodified anywhere else in this function (e.g. SHHS branch).
     data_path = config["data_path"]
 
     logger.info(f"Checkpoint File: {checkpoint_file}")
+    logger.info(f"Split path: {split_path}")
+    logger.info(f"HDF5 dir override: {hdf5_dir if hdf5_dir else '(none -- using config data_path)'}")
     logger.info(f"Output Path: {output}")
     logger.info(f"Output 5 Min Agg Path: {output_5min_agg}")
     logger.info(f"modality_types: {modality_types}")
@@ -97,8 +121,15 @@ def generate_embeddings(
         for split in splits:
             filtered_files = [fp for fp in split_dataset[split] if dataset_name in fp.lower()]
             hdf5_paths += filtered_files
-        
-        hdf5_paths = [os.path.join(data_path, os.path.dirname(file), "hdf5", os.path.basename(file)) for file in hdf5_paths]
+
+        if hdf5_dir:
+            # Flat layout (matches biot_dataset.py/labram_dataset.py/
+            # sensorlm_dataset.py's convention): hdf5_dir/<basename>, no
+            # nested "hdf5/" subfolder -- the full-cohort directory
+            # (.../mesa/hdf5_full/) holds all 1944 files directly.
+            hdf5_paths = [os.path.join(hdf5_dir, os.path.basename(file)) for file in hdf5_paths]
+        else:
+            hdf5_paths = [os.path.join(data_path, os.path.dirname(file), "hdf5", os.path.basename(file)) for file in hdf5_paths]
 
     logger.info(f"Number of files to process: {len(hdf5_paths)}")
 

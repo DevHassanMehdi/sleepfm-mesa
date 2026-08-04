@@ -1,0 +1,43 @@
+# Full-cohort fine-tuning config for the Spectral-pretrained encoder
+# (checkpoints/encoders/spectral_eegonly_fullcohort), ECG_ONLY modality.
+# Same model_params/hyperparameters/model_path as
+# config_finetune_full_cohort_EEG_ONLY_spectral.yaml -- only channel_like
+# differs, selecting the EKG-keyed embeddings instead of EEG_ONLY
+# (channel_groups.json has no separate "ECG_ONLY" key; "EKG" is the correct
+# channel_like value here and canonicalizes to "ECG_ONLY" via
+# experiment_paths.py's _MODALITY_ALIASES).
+model_params:
+  embed_dim: 128
+  num_heads: 4
+  num_layers: 2
+  num_classes: 5
+  pooling_head: 4
+  dropout: 0.3
+  max_seq_length: 1500
+
+max_channels: 4
+context: -1
+seed: 42
+model: "SleepEventLSTMClassifier"
+dataset: "mesa"
+batch_size: 16
+epochs: 500
+lr: 0.0001
+num_workers: 2
+early_stopping_patience: 50
+
+data_path: "/scratch/project_2019517/sleepfm-data/mesa/hdf5_full"
+model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/spectral_eegonly_fullcohort/SetTransformer/spectral_128_patch_size_640"
+split_path: "sleepfm/configs/dataset_split_fold5_v1.json"
+labels_path: "/scratch/project_2019517/sleepfm-data/mesa/labels"
+save_iter: 1000
+eval_iter: 1000
+log_interval: 10
+accumulation_steps: 16
+use_wandb: false
+
+# dataloader configs
+max_files: null
+sampling_freq: 128
+
+channel_like: ["EKG"]

@@ -1,3 +1,13 @@
+*** ARCHIVED — SUPERSEDED, DOES NOT REFLECT THE CURRENT ENCODER ***
+This file describes the OLD 4-modality-group From-Scratch encoder
+(EEG_ONLY/RESP/EKG/EMG as separate groups). That encoder and its
+checkpoints were deleted when all 3 SleepFM variants were narrowed to
+EEG+ECG-only (4-channel) scope. Kept here for historical provenance only
+-- do not cite these numbers as current. The new EEG+ECG-only From-Scratch
+results are pending (pretraining complete, fine-tuning porting underway) --
+see results/ALL_RESULTS_FULL.md's Pending section.
+==================================================
+
 SleepFM FROM-SCRATCH PRETRAINED + FINE-TUNED — Full cohort (1944 subjects), fold5_v1 5-fold CV
 Pretrained checkpoint: fromscratch_eegonly_fullcohort/SetTransformer/leave_one_out_128_patch_size_640/best.pt (epoch 28, training-loss-selected -- see note below)
 Encoder: frozen — No. Full end-to-end fine-tuning of encoder + classifier head.

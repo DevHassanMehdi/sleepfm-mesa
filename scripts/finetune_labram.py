@@ -227,7 +227,12 @@ def main():
 
     latest_path = os.path.join(out_dir, "latest.pth")
     if os.path.exists(latest_path):
-        checkpoint = torch.load(latest_path, map_location=device)
+        # weights_only=False: same PyTorch 2.6+ default-security issue as the
+        # pretrained-checkpoint load above -- val_f1 (sklearn f1_score, a
+        # numpy.float64) gets embedded in this dict via best_val_f1, which
+        # weights_only=True's pickle allowlist rejects. Safe here -- this is
+        # our own checkpoint, written by this same script, not external data.
+        checkpoint = torch.load(latest_path, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_epoch = checkpoint["epoch"] + 1

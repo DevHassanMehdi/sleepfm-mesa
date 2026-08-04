@@ -157,15 +157,24 @@ def main():
     config_path = base / "config.json"
     config = json.load(open(config_path)) if config_path.exists() else {}
 
+    # fold_num=args.fold: when --fold N is given (the full_cohort
+    # one-run-per-fold pattern), this writes into results_dir/fold_N/ so
+    # separate per-fold invocations sharing a checkpoint_dir/timestamp don't
+    # overwrite each other (the same collision class already found and fixed
+    # for BIOT/LaBraM/SensorLM). When --fold is omitted (the multi-fold
+    # --n_folds aggregate mode, all read within this one process), fold_num
+    # stays None and this is a legitimate single write to the top-level
+    # results_dir -- there's no concurrent writer to collide with.
     write_metrics_bundle(
         exp,
-        fold_num=None,
+        fold_num=args.fold,
         metrics=metrics,
         classification_report_text=report_text,
         per_subject_rows=per_subject_rows,
         config=config,
     )
-    print(f"\nWritten to {exp.results_dir}")
+    dest = exp.results_dir / f"fold_{args.fold}" if args.fold is not None else exp.results_dir
+    print(f"\nWritten to {dest}")
 
 
 if __name__ == '__main__':

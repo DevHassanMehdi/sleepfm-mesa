@@ -140,7 +140,10 @@ def main():
 
     latest_path = os.path.join(out_dir, "latest.pth")
     if os.path.exists(latest_path):
-        ckpt = torch.load(latest_path, map_location=device)
+        # weights_only=False: best_val_f1 (sklearn f1_score, a numpy.float64)
+        # is embedded in this dict, which PyTorch 2.6+'s weights_only=True
+        # default rejects. Safe here -- our own checkpoint, not external data.
+        ckpt = torch.load(latest_path, map_location=device, weights_only=False)
         model.load_state_dict(ckpt["model_state_dict"])
         optimizer.load_state_dict(ckpt["optimizer_state_dict"])
         start_epoch      = ckpt["epoch"] + 1

@@ -1,9 +1,8 @@
-# SMOKE-TEST ONLY variant of config_finetune_full_cohort.yaml -- epochs
-# capped low (3) purely to validate the new full_cohort pipeline mechanics
-# (directory writes, config cross-linking, pickles, metrics files) quickly.
-# NOT for real training -- the real From-Scratch/Spectral runs (3 modalities
-# x 5 folds x 2 models = 30 total) must use the real per-modality configs
-# (epochs=500, patience=50) unchanged.
+# Full-cohort fine-tuning config for the Spectral-pretrained encoder
+# (checkpoints/encoders/spectral_eegonly_fullcohort), EEG_ECG modality.
+# Same model_params/hyperparameters/model_path as
+# config_finetune_full_cohort_EEG_ONLY_spectral.yaml -- only channel_like
+# differs, selecting both EEG_ONLY- and EKG-keyed embeddings together.
 model_params:
   embed_dim: 128
   num_heads: 4
@@ -19,13 +18,13 @@ seed: 42
 model: "SleepEventLSTMClassifier"
 dataset: "mesa"
 batch_size: 16
-epochs: 3
+epochs: 500
 lr: 0.0001
 num_workers: 2
 early_stopping_patience: 50
 
 data_path: "/scratch/project_2019517/sleepfm-data/mesa/hdf5_full"
-model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_eegonly_fullcohort/SetTransformer/leave_one_out_128_patch_size_640"
+model_path: "/scratch/project_2019517/sleepfm-data/checkpoints/encoders/spectral_eegonly_fullcohort/SetTransformer/spectral_128_patch_size_640"
 split_path: "sleepfm/configs/dataset_split_fold5_v1.json"
 labels_path: "/scratch/project_2019517/sleepfm-data/mesa/labels"
 save_iter: 1000
@@ -34,7 +33,8 @@ log_interval: 10
 accumulation_steps: 16
 use_wandb: false
 
+# dataloader configs
 max_files: null
 sampling_freq: 128
 
-channel_like: ["EEG_ONLY"]
+channel_like: ["EEG_ONLY", "EKG"]

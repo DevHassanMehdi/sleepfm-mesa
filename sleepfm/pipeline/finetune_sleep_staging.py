@@ -62,23 +62,30 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
 @click.option("--config_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/config_finetune_sleep_events.yaml"))
 @click.option("--channel_groups_path", type=str, default=os.path.join(SLEEPFM_DIR, "configs/channel_groups.json"))
 @click.option("--checkpoint_path", type=str, default=None)
-@click.option("--split_path", type=str, default=None)
+@click.option("--split_path", type=str, default=None,
+              help="Explicit split file path. Overrides --split_id if both are given.")
+@click.option("--hdf5_dir", type=str, default=None,
+              help="Override the MESA HDF5 directory (default: config's own "
+                   "data_path, the 350-subject Puhti-era path). Pass the "
+                   "full-cohort path for full-cohort fine-tuning.")
 @click.option("--train_split", type=str, default="train")
 @click.option("--fold", type=int, default=0)
 @click.option("--pretrain_approach", type=str, default=None,
               help="Encoder pretraining approach (e.g. spectral, combined, fromscratch). "
                    "Auto-detected from model_path if omitted, but explicit is strongly preferred.")
 @click.option("--split_id", type=str, default="fold10_v1",
-              help="Identifies the fold scheme/assignment used, for the "
-                   "full_cohort experiment naming scheme. Placeholder "
-                   "convention -- exact scheme TBD.")
+              help="Selects which split file to use -- resolves to "
+                   "sleepfm/configs/dataset_split_{split_id}.json (e.g. "
+                   "'fold5_v1' -> dataset_split_fold5_v1.json) unless "
+                   "--split_path is also given. Also used for the "
+                   "full_cohort experiment naming scheme.")
 @click.option("--timestamp", type=str, default=None,
               help="Override the auto-generated YYYY-MM-DD_HHMM timestamp "
                    "component of the experiment name, so a caller (e.g. a "
                    "SLURM script chaining evaluate_sleep_staging.py / "
                    "compute_metrics.py afterward) knows the exact "
                    "checkpoint_dir path without parsing stdout.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, train_split, fold, pretrain_approach, split_id, timestamp):
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -89,13 +96,19 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         if config.get(key) and not os.path.isabs(config[key]):
             config[key] = os.path.join(REPO_ROOT, config[key])
 
+    if hdf5_dir:
+        config["data_path"] = hdf5_dir
+
     prefix = config["labels_path"].split("/")[-1]
     current_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if split_path:
-        if not os.path.isabs(split_path):
-            split_path = os.path.join(REPO_ROOT, split_path)
-        config["split_path"] = split_path
+    # --split_id genuinely drives split-file resolution (not just cosmetic
+    # experiment naming) unless --split_path explicitly overrides it.
+    if split_path is None:
+        split_path = os.path.join(SLEEPFM_DIR, f"configs/dataset_split_{split_id}.json")
+    if not os.path.isabs(split_path):
+        split_path = os.path.join(REPO_ROOT, split_path)
+    config["split_path"] = split_path
 
     # Select the requested fold from the N-fold split and write it out as a
     # flat {train, validation, test} split for the dataset class to consume.
@@ -274,12 +287,14 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             torch.save(model.state_dict(), best_model_path)
             save_data(config, os.path.join(output, "config.json"))
             if exp is not None:
-                # link_checkpoint_and_results() looks for a config.json at
-                # the run-level checkpoint_dir (shared across all folds of
-                # this run), not inside fold_N/ -- write a copy there too
-                # so the checkpoint->results cross-link actually fires.
-                save_data(config, str(exp.checkpoint_dir / "config.json"))
-                link_checkpoint_and_results(exp, fold_num=None)
+                # fold_num=fold: results_dir is experiment-level (shared by
+                # every fold of the same model/modality/split_id/timestamp),
+                # so cross-linking at the top level would let concurrently
+                # running folds clobber each other's link -- the same
+                # collision class already found and fixed for
+                # BIOT/LaBraM/SensorLM. fold_dir(fold)/config.json (written
+                # just above) is already the authoritative per-fold copy.
+                link_checkpoint_and_results(exp, fold_num=fold)
         else:
             patience_counter += 1
             if patience_counter >= patience:
