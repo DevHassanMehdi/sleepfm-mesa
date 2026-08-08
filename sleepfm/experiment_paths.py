@@ -45,6 +45,14 @@ _MODALITY_ALIASES = {
     "EKG": "ECG_ONLY",
     "EEG_ECG": "EEG_ECG",
     "EEG_ONLY_EKG": "EEG_ECG",
+    # Leg 1/2 scoping: SleepFM's original BAS-family modality progression
+    # (published-checkpoint/full-multimodal fine-tuning), matching
+    # PUB_SleepFM_results.txt's naming exactly -- already canonical, so
+    # these are identity mappings.
+    "BAS": "BAS",
+    "BAS_EKG": "BAS_EKG",
+    "BAS_EKG_RESP": "BAS_EKG_RESP",
+    "BAS_EKG_RESP_EMG": "BAS_EKG_RESP_EMG",
 }
 
 

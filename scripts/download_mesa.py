@@ -13,6 +13,7 @@ import random
 import shutil
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -116,21 +117,82 @@ def check_nsrr_binary() -> None:
         sys.exit(1)
 
 
-def nsrr_download(remote_path: str, token: str, dest_path: Path) -> bool:
+def _looks_like_html_error_page(path: Path) -> bool:
+    """NSRR sometimes returns exit code 0 with an unparseable HTML error
+    page (e.g. "The dataset mesa was not found") instead of a real file --
+    the nsrr gem doesn't treat this as a failure. Detect it by content
+    signature, not just size, so legitimately-small XML annotation files
+    (which also start with '<') aren't misclassified. Mirrors
+    download_mros.py's fix for the same NSRR failure mode."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(256).lstrip().lower()
+    except OSError:
+        return False
+    return head.startswith(b"<!doctype html") or head.startswith(b"<html")
+
+
+def nsrr_download(remote_path: str, token: str, dest_path: Path, max_attempts: int = 5,
+                   subprocess_timeout_s: int = 300) -> bool:
+    """Download one file via the nsrr gem, with retry/backoff and silent-
+    failure detection mirroring download_mros.py's fixed nsrr_download().
+
+    Diagnosed 2026-08-07: the same `nsrr download` invocation for the same
+    file was reproduced hanging 90s-2min+ on some nodes/attempts and exiting
+    fast with returncode=0-but-no-file on others (subprocess.run had no
+    timeout, so a hang blocked forever; the fast "success" case is likely
+    the gem's own HTTP client giving up quickly and exiting 0 without
+    raising). Adding an explicit subprocess timeout so a hang is treated as
+    a retryable failure instead of blocking indefinitely, and widening
+    attempts/backoff since observed latencies for this endpoint are
+    minutes, not seconds (vs. the files.json API's already-documented
+    6s-77s variability)."""
     env = {**os.environ, **NSRR_GEM_ENV}
     cmd = [NSRR_BIN, "download", remote_path, f"--token={token}"]
-    result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env)
-    if result.returncode != 0:
-        print(f"[ERROR] nsrr download failed for {remote_path}: {result.stderr.strip()}")
-        return False
-
     downloaded_path = REPO_ROOT / remote_path
-    if not downloaded_path.exists():
-        return False
 
-    dest_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(downloaded_path), str(dest_path))
-    return True
+    for attempt in range(1, max_attempts + 1):
+        try:
+            result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True,
+                                     env=env, timeout=subprocess_timeout_s)
+        except subprocess.TimeoutExpired:
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"timed out after {subprocess_timeout_s}s")
+            if attempt < max_attempts:
+                backoff_s = 2 ** attempt
+                print(f"[INFO] nsrr download {remote_path}: retrying in {backoff_s}s "
+                      f"(attempt {attempt + 1}/{max_attempts})")
+                time.sleep(backoff_s)
+            continue
+
+        if result.returncode != 0:
+            stderr_snippet = (result.stderr or "").strip()[:200]
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"returncode={result.returncode} stderr={stderr_snippet!r}")
+        elif not downloaded_path.exists():
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"returncode=0 but file not found at {downloaded_path}")
+        elif downloaded_path.stat().st_size == 0:
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"downloaded file is empty -- discarding")
+            downloaded_path.unlink(missing_ok=True)
+        elif _looks_like_html_error_page(downloaded_path):
+            print(f"[FAIL] nsrr download {remote_path} (attempt {attempt}/{max_attempts}): "
+                  f"returncode=0 but downloaded file looks like an HTML error page "
+                  f"({downloaded_path.stat().st_size} bytes) -- discarding")
+            downloaded_path.unlink(missing_ok=True)
+        else:
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(downloaded_path), str(dest_path))
+            return True
+
+        if attempt < max_attempts:
+            backoff_s = 2 ** attempt  # 2s, 4s, ...
+            print(f"[INFO] nsrr download {remote_path}: retrying in {backoff_s}s "
+                  f"(attempt {attempt + 1}/{max_attempts})")
+            time.sleep(backoff_s)
+
+    return False
 
 
 def process_subject(sid: str, token: str):

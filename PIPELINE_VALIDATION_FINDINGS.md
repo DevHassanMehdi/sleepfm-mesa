@@ -541,6 +541,269 @@ resubmission.
 
 ---
 
+## 9. The label-corruption bug: root cause of the full-cohort F1 gap
+
+**This supersedes Section 5's conclusion for practical purposes.** Section
+5 correctly ruled out every alternative it tested and concluded the
+14-point From-Scratch EEG_ONLY gap was "a real, expected effect of
+evaluating on a much larger... population." That conclusion was reached
+honestly from the evidence available at the time, but the evidence itself
+was compromised: the epoch/label-alignment check in Section 5.2 compared
+predicted epoch counts against **label CSV row counts that were
+themselves corrupted** for 82% of the cohort (see below) — so it was
+checking internal self-consistency between two artifacts derived from the
+same broken labels, not correctness against ground truth. It could not
+have caught this bug by construction. Section 5's population-size effect
+is not wrong — it is real, and still present — but it was a ~1-2 point
+effect hiding underneath a ~20-point one.
+
+### 9.1 Discovery
+
+Raised by the project owner as a direct concern: the SleepFM authors'
+published full-multimodal results sit at **0.70-0.78 macro F1**; this
+project's full-cohort numbers (across every model tested — From-Scratch,
+Spectral, Next-Token, BIOT, LaBraM, SensorLM, and the published-checkpoint
+scoping test in Section 5) all clustered around **0.50-0.54**, a gap far
+larger than Section 5's ~14-point, single-model finding accounted for.
+Initial framing suspected the population-size effect alone was the full
+explanation, given Section 5's conclusion. An explicit adversarial
+re-audit was commissioned instead — "assume something IS wrong until
+proven otherwise, do not conclude clean without direct evidence for each
+check" — targeting cohort completeness, label correctness against raw
+XML, signal/channel integrity, and NSRR documentation, in that order. The
+second check (label re-verification) found the bug on the first pass, on
+a random 15-subject sample, before the remaining checks were even run.
+
+### 9.2 Root cause
+
+Two independent bugs compounded:
+
+**Bug A — no timestamp-based label alignment.**
+`sleepfm/models/dataset.py`, `SleepEventClassificationDataset._try_get_item()`
+(lines 255-318) reads a subject's label CSV and treats **row index** as
+**epoch index**, with no reference to the `Start`/`Stop` timestamp columns
+at all:
+
+```python
+labels_df = pd.read_csv(label_path)
+y_data = labels_df["StageNumber"].to_numpy()          # row i assumed == epoch i
+...
+min_length = min(x_data.shape[1], len(y_data))          # positional truncation
+x_data = x_data[:, :min_length, :]
+y_data = y_data[:min_length]
+```
+
+This is safe only if every label CSV has exactly one row per 30-second
+epoch, in order. It silently breaks for any CSV where a row spans more
+than one epoch.
+
+**Bug B — most label CSVs were never epoch-expanded.** MESA's NSRR XML
+run-length-encodes consecutive same-stage epochs into a single
+`ScoredEvent` (Section 1 describes this same encoding). Two independent
+copies of the epoch-expansion logic existed in this codebase:
+
+- `scripts/generate_labels.py` (standalone regeneration script) — fixed
+  **2026-06-21**, commit `9a83e5f`, "Fix label segment-to-epoch expansion
+  bug masking all staging performance."
+- `scripts/download_mesa.py`'s own inline `parse_mesa_xml()` (runs during
+  download, generates each subject's label CSV as a side effect of
+  `process_subject()`) — a **separate, independent copy** of the same
+  bug, fixed later, **2026-07-28**, commit `e34d913` (Section 1).
+
+The bulk MESA download that populated the majority of the cohort ran
+**2026-07-04 to 2026-07-13** — after the standalone script's fix, but
+three weeks **before** `download_mesa.py`'s own copy was fixed. Every
+label CSV generated inline during that download window inherited the
+still-broken inline logic, regardless of the standalone script already
+being correct. The Jul 28 fix only affects labels generated from that
+point forward — it does not retroactively regenerate files already
+written to disk. Full-population check (see 9.3) confirmed the exact
+split: label CSV file mtimes cluster into two disjoint bands — Jul 4-13
+(the broken inline-generated batch) and Jun 21-Jul 27 (a smaller,
+correctly-expanded batch, presumably from a partial standalone-script
+re-run at some point after the Jun 21 fix).
+
+**Confirmed scope**: **1592 of 1944 (82%)** subjects' label CSVs were
+un-expanded — one row per raw XML `ScoredEvent` (durations up to several
+hundred seconds), not one row per 30-second epoch. Concrete example,
+`mesa-sleep-1995`: a 36000-second (10-hour, 1200-epoch) recording, raw
+XML confirms `sum(stage-event durations) = 36000s`, but its label CSV had
+only **182 rows** — a direct row-count match to the raw XML's 182
+`Stages` `ScoredEvent` count, confirming zero epoch expansion had
+occurred.
+
+**Mechanism of the failure, combining both bugs**: for the 1592 affected
+subjects, `dataset.py`'s `min_length = min(x_epochs, y_epochs)` step
+(Bug A) truncated every sample to its (severely undersized) label row
+count — `mesa-sleep-1995` trained on only its first 182 of ~1200 epochs
+(15% of the night, biased toward sleep onset). Worse, for the portion
+that *was* used, row *i*'s label (spanning an arbitrary multi-epoch,
+often multi-hundred-second block) was matched against signal epoch *i*
+(a fixed 30-second slot) — these diverge after the very first
+non-30-second row, so even the retained epochs carry increasingly
+wrong labels as the recording progresses.
+
+### 9.3 Fix
+
+1. Backed up all 1944 existing label CSVs to
+   `mesa/labels_CORRUPTED_pre_2026-08-06/` (checksum-verified against the
+   live originals before any further changes — kept permanently as the
+   "before" reference, per Section 2's precedent of preserving the
+   350-subject baseline).
+2. Regenerated all label CSVs from raw XML via the confirmed-correct
+   `scripts/generate_labels.py`: 1944/1944 generated, 0 failures.
+3. **Full-population verification — every subject, not a sample.** For
+   each of 1944 (later 2056, after 9.4's cohort-gap fix) subjects,
+   independently re-parsed raw XML and checked: (a) every label row is
+   exactly 30.0s, (b) row count matches `round(sum(stage-event
+   durations)/30)`, (c) 20 random per-subject timestamp spot-checks of
+   `StageNumber` against the raw XML's `ScoredEvent` at that instant.
+   Result: **2055/2055** pass (pre-cohort-gap-fix), later confirmed
+   **2056/2056** (post-fix) — 0 granularity failures, 0 count mismatches,
+   0 spot-check mismatches, across roughly 41,000 total spot-checks.
+
+### 9.4 Related fixes found along the way
+
+- **Cohort gap, 1944 → 2056.** Queried NSRR's file-listing API directly
+  (`https://sleepdata.org/api/v1/datasets/mesa/files.json`) — same method
+  already proven for MrOS (Section 8) — confirming NSRR's true MESA
+  cohort is **2056** subjects with both a valid EDF and annotation (0
+  EDF-only, 0 annotation-only). Of the 112 missing locally: 105 were
+  above the local max subject ID (`download_mesa.py`'s sequential
+  brute-force scan hit its `--subjects` target before reaching them —
+  never attempted); 7 (`mesa-sleep-2762`, `2764`, `3158`, `3469`, `3472`,
+  `6052`, `6053`) were within the scanned range and had silently failed —
+  same failure class as the SHHS false-negative finding in Section 8.
+- **Login-node process reaping.** The first download attempt (bare
+  `nohup` on the login node) was silently killed at 63/112 — process gone,
+  log file empty even post-exit, consistent with a SIGKILL from a
+  login-node resource policy. Fixed by resubmitting as a proper SLURM
+  batch job instead of a bare background process.
+- **`nsrr_download()` had no subprocess timeout.** The SLURM resubmission
+  (job `513647`) then completed with **0/49 downloaded** — reproduced the
+  identical `nsrr download` command hanging 90s-2min+ across three
+  different node contexts for the same file, confirming the NSRR download
+  backend (distinct from the file-listing API) is intermittently very
+  slow right now, and `nsrr_download()`'s `subprocess.run()` call had no
+  `timeout=`, so a stall blocked forever while the existing 3-attempt/
+  2s-4s-backoff retry logic (adequate for MrOS, ported in Section 8) gave
+  up far too fast to matter. Fixed: `subprocess.run(..., timeout=300)`,
+  widened to 5 attempts, in `scripts/download_mesa.py` (uncommitted as of
+  this document — not yet merged). Resubmitted as job `513948`: 48/49
+  succeeded; the last straggler (`mesa-sleep-6734`) succeeded on one more
+  isolated retry (job `516377`), reaching **2056/2056**.
+- **HDF5 rebuild for the 112 new subjects.** Job `521295`: 2056/2056
+  built, 0 conversion failures, ~15 minutes on an ARM/GH200 node
+  (`rg3143`).
+- **`sleepfm_venv_arm` environment-location discovery.** The Python
+  environment used by every proven-working full-cohort GPU job on this
+  cluster is not a conda environment and is not under `/scratch` — it
+  lives at `/projappl/project_2019517/sleepfm_venv_arm` (a
+  `venv --system-site-packages` built on the `python-pytorch/2.10`
+  module, per `requirements_roihu_arm.txt`, commit `4648edd`), and it
+  only runs on actual GH200 ARM nodes (`--partition=gpumedium
+  --gres=gpu:gh200:1`, plus `module use
+  /appl/modulefiles/manual/aida/aarch64; module load
+  python-pytorch/2.10` before activation) — attempting to activate or use
+  it from an x86_64 node fails with an architecture-mismatch container
+  error that looks like a broken environment but isn't. A first attempt
+  at the HDF5 rebuild (job `520943`) used the legacy `sleepfm_env` conda
+  environment referenced by the older `preprocess_mesa.slurm` and failed
+  immediately — that conda environment's `/scratch/project_2019517/
+  miniconda3/envs/` directory is now empty (wiped, apparently, when
+  `miniconda3` was reinstalled around 2026-07-23) and should be
+  considered permanently gone; `sleepfm_venv_arm` is the actual
+  current environment for this class of job.
+
+### 9.5 Validation: Leg 1 re-run on the corrected cohort
+
+Fast validation before committing to the much more expensive
+re-pretraining of all 6 models: re-ran the published-checkpoint scoping
+test from Section 5 (full multimodal `BAS`/`RESP`/`EKG`/`EMG` scope, the
+same test whose ~0.53-0.54 result had been read as supporting the
+population-size explanation) on the corrected, full 2056-subject cohort.
+
+`dataset_split_fold5_v1.json` regenerated for 2056 subjects via the
+existing `scripts/generate_cv_splits.py` (seed=42, unchanged) — old
+1944-subject split preserved at
+`sleepfm/configs/dataset_split_fold5_v1_1944subj_pre_2056fix.json`. New
+per-fold sizes: folds 0-2 train=1234/val=411/test=411, folds 3-4
+train=1233/val=412/411 (remainder distribution) — disjointness assertions
+in `generate_cv_splits.py` passed for all 5 folds.
+
+Embeddings regenerated for the 112 new subjects only (job `523418`,
+~1.5 minutes; existing 1944 subjects' embeddings untouched and reused) —
+`/scratch/project_2019517/sleepfm-data/embeddings/` now 2056/2056,
+structure spot-checked (`BAS`/`EKG`/`EMG`/`RESP` keys, 5-second
+resolution, consistent with the existing 1944).
+
+All 4 modality configs × 5 folds (20 runs total) re-run: jobs `524606`-
+`524625`, shared timestamp `2026-08-08_1533`, run_name
+`sleepfm__{modality}__published__fold5_v1__2026-08-08_1533`. All 20
+COMPLETED, 0 failures.
+
+**Independently verified** (same method as Section 5.1 — plain
+`sklearn.f1_score` recomputed from raw `test_all_outputs.pickle`/
+`test_all_targets.pickle`/`test_all_masks.pickle`, not
+`compute_metrics.py`): **0/20 mismatches** against `metrics.json`.
+Fold-disjointness re-confirmed for all 4 modalities: 5 test sets of
+411/411/411/411/412 subjects each, summing to exactly 2056 unique
+subjects with zero overlap.
+
+| Modality | Macro F1 (mean ± std, 5 folds) |
+|---|---|
+| BAS | 0.7418 ± 0.0022 |
+| BAS+EKG | 0.7424 ± 0.0038 |
+| BAS+EKG+RESP | 0.7476 ± 0.0022 |
+| BAS+EKG+RESP+EMG (full) | 0.7518 ± 0.0022 |
+
+| | Macro F1 |
+|---|---|
+| OLD (corrupted-label, 1944-subject cohort) | ~0.53-0.54 |
+| SleepFM published/leaky range | 0.70-0.78 |
+| **NEW (fixed-label, 2056-subject cohort)** | **0.7418-0.7518 (mean 0.7459, all 20 runs)** |
+
+Every modality now lands **inside** the published range, not merely
+closer to it — a ~20-point absolute improvement from fixing one bug.
+
+### 9.6 Conclusion
+
+The label-corruption bug (9.2), not population-size effects, was the
+**dominant** cause of the full-cohort F1 gap. Section 5's population-size
+finding remains valid as a real, separate, much smaller effect (~1-2
+points, based on Section 5.5's encoder-cohort-size experiment) that was
+compounding underneath this ~20-point bug, not an alternative explanation
+for it — Section 5's own checks could not have detected this bug given
+what they were actually comparing against (9.1).
+
+### 9.7 Status and next steps
+
+**Phase 1 cleanup — completed.** Every full-cohort checkpoint, embedding
+cache, and result built on the corrupted 1944-subject labels has been
+deleted (110 items, **222GB** reclaimed; `/scratch` usage 1.5T→1.2T,
+552G→774G free): the 3 full-cohort encoders (From-Scratch/Spectral/
+Next-Token EEGONLY, 45GB), `spectral_cache_eegonly_fullcohort/`
+(including token-cache artifacts, 150GB), and all 6-model comparison
+checkpoints/results (BIOT, LaBraM, SensorLM, and SleepFM's From-Scratch/
+Spectral/Next-Token fine-tuning runs, ~26.7GB), plus an early fold10_v1
+attempt and several superseded early runs (~1.3GB). **Kept**: the old
+corrupted-label Leg 1 run itself
+(`sleepfm__*__published__fold5_v1__2026-08-06_1238`) as a permanent
+documented "before" reference alongside 9.5's "after" result, matching
+`labels_CORRUPTED_pre_2026-08-06/`'s precedent; the historical-repro
+reproductions (unrelated 350-subject investigation); everything else
+already protected (350-subject baseline, `hdf5_full/`, today's Leg 1
+run and embeddings).
+
+**Not yet started**: all 6 full-cohort models (From-Scratch, Spectral,
+Next-Token, BIOT, LaBraM, SensorLM) need re-pretraining and re-fine-tuning
+from scratch on the corrected, full 2056-subject cohort with correct
+labels. Every number in Sections 4-7 above that depends on full-cohort
+fine-tuning results should be treated as **superseded and pending
+re-validation** once that work is done.
+
+---
+
 ## Provenance
 
 - Detailed per-run artifacts for every full-cohort fine-tuning
