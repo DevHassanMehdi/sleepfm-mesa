@@ -80,7 +80,7 @@ def main():
     parser.add_argument("--patience",    type=int,   default=20)
     parser.add_argument("--lr",          type=float, default=1e-4)
     parser.add_argument("--batch_size",  type=int,   default=64)
-    parser.add_argument("--num_workers", type=int,   default=8)
+    parser.add_argument("--num_workers", type=int,   default=4)
     parser.add_argument("--hdf5_dir", type=str, default=HDF5_DIR,
                          help="Override the MESA HDF5 directory (default: "
                               "sensorlm_dataset.py's built-in 350-subject "
