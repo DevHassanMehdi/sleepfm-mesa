@@ -8,6 +8,7 @@ sys.path.append("../")
 from utils import *
 from models.dataset import SetTransformerDataset, collate_fn
 from models.models import SetTransformer
+from run_tracking import init_run
 import click
 import time
 import math
@@ -164,69 +165,76 @@ def pretrain(
     logger.info(f"modality_types: {modality_types}")
     logger.info(f"Training Mode: {mode}")
 
-    logger.info(f"Batch Size: {batch_size}; Number of Workers: {num_workers}")
-    logger.info(f"Weight Decay: {weight_decay}; Learning Rate: {lr}; Learning Step Period: {lr_step_period}")
+    split_id = os.path.splitext(os.path.basename(config.get("split_path", "unknown")))[0]
+    split_id = split_id.replace("dataset_split_", "")
+    modality_str = "_".join(modality_types)
+    tracker = init_run(model="fromscratch", pretrain_method="pretrain", modality=modality_str,
+                        split_id=split_id, fold=None, metric_name="Retrieval_Accuracy")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-    logger.info(f"Device set to {device}")
+    try:
+      logger.info(f"Batch Size: {batch_size}; Number of Workers: {num_workers}")
+      logger.info(f"Weight Decay: {weight_decay}; Learning Rate: {lr}; Learning Step Period: {lr_step_period}")
 
-    num_modalities = len(modality_types)
-    ij = sum([((i, j), (j, i)) for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))], ())
+      device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+      logger.info(f"Device set to {device}")
 
-    start = time.time()
-    # dataset_class = getattr(sys.modules[__name__], config['dataloader'])
-    dataset = {
-        split: SetTransformerDataset(config, channel_groups, split=split)
-        for split in ["pretrain", "validation"]
-    }
+      num_modalities = len(modality_types)
+      ij = sum([((i, j), (j, i)) for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))], ())
 
-    logger.info(f"Dataset loaded in {time.time() - start:.1f} seconds")
+      start = time.time()
+      # dataset_class = getattr(sys.modules[__name__], config['dataloader'])
+      dataset = {
+          split: SetTransformerDataset(config, channel_groups, split=split)
+          for split in ["pretrain", "validation"]
+      }
 
-    model_class = getattr(sys.modules[__name__], config['model'])
-    logger.info(f"Model Class: {config['model']}")
-    model = model_class(in_channels, patch_size, embed_dim, num_heads, num_layers, pooling_head=pooling_head, dropout=dropout)
-    if device.type == "cuda":
-        model = torch.nn.DataParallel(model)
-    model.to(device)
-    total_layers, total_params = count_parameters(model)
-    logger.info(f'Trainable parameters: {total_params / 1e6:.2f} million')
-    logger.info(f'Number of layers: {total_layers}')
+      logger.info(f"Dataset loaded in {time.time() - start:.1f} seconds")
 
-    optim_params = list(model.parameters())
-    optim_params.append(temperature)  
+      model_class = getattr(sys.modules[__name__], config['model'])
+      logger.info(f"Model Class: {config['model']}")
+      model = model_class(in_channels, patch_size, embed_dim, num_heads, num_layers, pooling_head=pooling_head, dropout=dropout)
+      if device.type == "cuda":
+          model = torch.nn.DataParallel(model)
+      model.to(device)
+      total_layers, total_params = count_parameters(model)
+      logger.info(f'Trainable parameters: {total_params / 1e6:.2f} million')
+      logger.info(f'Number of layers: {total_layers}')
 
-    optim = torch.optim.SGD(
-        optim_params,
-        lr=lr,
-        momentum=momentum,
-        weight_decay=weight_decay
-    )
+      optim_params = list(model.parameters())
+      optim_params.append(temperature)
 
-    if lr_step_period is None:
-        lr_step_period = math.inf
-    scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=lr_step_period, gamma=gamma)
+      optim = torch.optim.SGD(
+          optim_params,
+          lr=lr,
+          momentum=momentum,
+          weight_decay=weight_decay
+      )
 
-    epoch_resume = 0
-    best_loss = math.inf
+      if lr_step_period is None:
+          lr_step_period = math.inf
+      scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=lr_step_period, gamma=gamma)
 
-    if os.path.isfile(os.path.join(output, "checkpoint.pt")):
-        checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
-        model.load_state_dict(checkpoint[f"state_dict"])
+      epoch_resume = 0
+      best_loss = math.inf
 
-        # Loading temperature and other checkpointed parameters
-        with torch.no_grad():
-            temperature.fill_(checkpoint["temperature"])
-        optim.load_state_dict(checkpoint["optim_dict"])
-        scheduler.load_state_dict(checkpoint["scheduler_dict"])
+      if os.path.isfile(os.path.join(output, "checkpoint.pt")):
+          checkpoint = torch.load(os.path.join(output, "checkpoint.pt"))
+          model.load_state_dict(checkpoint[f"state_dict"])
 
-        # Other checkpointed values
-        epoch_resume = checkpoint["epoch"] + 1
-        best_loss = checkpoint["best_loss"]
-        logger.info(f"Resuming from epoch {epoch_resume}\n")
-    else:
-        logger.info("Starting from scratch")
-    os.makedirs(os.path.join(output, "log"), exist_ok=True)
-    with open(os.path.join(output, "log", "{}.tsv".format(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))), "w") as f:
+          # Loading temperature and other checkpointed parameters
+          with torch.no_grad():
+              temperature.fill_(checkpoint["temperature"])
+          optim.load_state_dict(checkpoint["optim_dict"])
+          scheduler.load_state_dict(checkpoint["scheduler_dict"])
+
+          # Other checkpointed values
+          epoch_resume = checkpoint["epoch"] + 1
+          best_loss = checkpoint["best_loss"]
+          logger.info(f"Resuming from epoch {epoch_resume}\n")
+      else:
+          logger.info("Starting from scratch")
+      os.makedirs(os.path.join(output, "log"), exist_ok=True)
+      with open(os.path.join(output, "log", "{}.tsv".format(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))), "w") as f:
         f.write("Epoch\tSplit\tTotal Loss\t")
         if mode == "pairwise":
             f.write("".join(f"{modality_types[i]}-{modality_types[j]} Loss\t" for (i, j) in ij))
@@ -239,6 +247,7 @@ def pretrain(
         f.flush()
         
         count_iter = 1
+        last_val_acc = None
         for epoch in range(epoch_resume, epochs):
             split = "pretrain"
             dataloader = torch.utils.data.DataLoader(dataset[split], batch_size=batch_size, num_workers=num_workers, shuffle=True, collate_fn=collate_fn, drop_last=(split == "pretrain"))
@@ -348,9 +357,11 @@ def pretrain(
                                         pbar_val.update()
 
                                 if mode == "pairwise":
+                                    pair_accs = [100 * (total_correct_val[i, j] + total_correct_val[j, i]) / 2 / total_pairs_val[i, j] for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))]
+                                    last_val_acc = sum(pair_accs) / len(pair_accs)
                                     pbar.set_postfix_str(
                                         f"Validation Loss: {total_loss_val / total_n_val:.5f}; " +
-                                        "Validation Acc: {}; ".format(" ".join(map("{:.1f}".format, [100 * (total_correct_val[i, j] + total_correct_val[j, i]) / 2 / total_pairs_val[i, j] for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))])))
+                                        "Validation Acc: {}; ".format(" ".join(map("{:.1f}".format, pair_accs)))
                                     )
                                     if config["use_wandb"] and count_iter % log_interval == 0:
                                         wandb.log({
@@ -358,9 +369,11 @@ def pretrain(
                                             **{f"Pairwise_val_acc_{i}_{j}": 100 * (total_correct_val[i, j] + total_correct_val[j, i]) / 2 / total_pairs_val[i, j] for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))}
                                         }, step=count_iter)
                                 elif mode == "leave_one_out":
+                                    pair_accs = [100 * (total_correct_val[i, 0] + total_correct_val[i, 1]) / (total_pairs_val[i, 0] + total_pairs_val[i, 1]) for i in range(len(modality_types))]
+                                    last_val_acc = sum(pair_accs) / len(pair_accs)
                                     pbar.set_postfix_str(
                                         f"Validation Loss: {total_loss_val / total_n_val:.5f}; " +
-                                        "Validation Acc: {}; ".format(" ".join(map("{:.1f}".format, [100 * (total_correct_val[i, 0] + total_correct_val[i, 1]) / (total_pairs_val[i, 0] + total_pairs_val[i, 1]) for i in range(len(modality_types))])))
+                                        "Validation Acc: {}; ".format(" ".join(map("{:.1f}".format, pair_accs)))
                                     )
                                     if config["use_wandb"] and count_iter % log_interval == 0:
                                         wandb.log({
@@ -373,23 +386,29 @@ def pretrain(
                         count_iter += 1
                         pbar.update()
             if mode == "pairwise":
+                train_pair_accs = [100 * total_correct[i, j] / total_pairs[i, j] for (i, j) in ij]
                 f.write("{}\t{}\t".format(epoch, split))
                 f.write(((len(ij) + 1) * "{:.5f}\t").format(total_loss / total_n, *[total_pairwise_loss[i, j] / total_pairs[i, j] for (i, j) in ij]))
-                f.write((len(ij) * "{:.3f}\t").format(*[100 * total_correct[i, j] / total_pairs[i, j] for (i, j) in ij]))
+                f.write((len(ij) * "{:.3f}\t").format(*train_pair_accs))
                 f.write("{:.5f}\n".format(temperature.item()))
             elif mode == "leave_one_out":
+                train_pair_accs = [100 * total_correct[i, j] / total_pairs[i, j] for i in range(num_modalities) for j in [0, 1]]
                 f.write("{}\t{}\t".format(epoch, split))
                 f.write(((num_modalities  * 2 + 1) * "{:.5f}\t").format(total_loss / total_n, *[total_pairwise_loss[i, j] / total_pairs[i, j] for i in range(num_modalities ) for j in [0, 1]]))
-                f.write(((num_modalities  * 2) * "{:.3f}\t").format(*[100 * total_correct[i, j] / total_pairs[i, j] for i in range(num_modalities ) for j in [0, 1]]))
+                f.write(((num_modalities  * 2) * "{:.3f}\t").format(*train_pair_accs))
                 f.write("{:.5f}\n".format(temperature.item()))
             f.flush()
 
+            train_acc = sum(train_pair_accs) / len(train_pair_accs)
+            tracker.log_epoch(epoch + 1, train_metric=train_acc, val_metric=last_val_acc)
+
             scheduler.step()
 
-            loss = total_loss / total_n 
+            loss = total_loss / total_n
             is_best = (loss < best_loss)
             if is_best:
                 best_loss = loss
+                tracker.mark_best(epoch + 1, last_val_acc if last_val_acc is not None else train_acc)
 
             save = {
                 "epoch": epoch,
@@ -397,7 +416,7 @@ def pretrain(
                 "optim_dict": optim.state_dict(),
                 "scheduler_dict": scheduler.state_dict(),
                 "best_loss": best_loss,
-                "loss": loss, 
+                "loss": loss,
                 "state_dict": model.state_dict()
             }
 
@@ -405,6 +424,10 @@ def pretrain(
                 torch.save(save, os.path.join(output, "best.pt"))
             torch.save(save, os.path.join(output, "checkpoint.pt"))
             save_data(config, os.path.join(output, "config.json"))
+        tracker.finish("COMPLETED (max epochs)")
+    except Exception as e:
+        tracker.finish_failed(e)
+        raise
 
     if config["use_wandb"]:
         wandb.finish()

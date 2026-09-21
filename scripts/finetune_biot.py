@@ -36,6 +36,7 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 
 sys.path.insert(0, str(REPO_ROOT) + "/sleepfm")
 from experiment_paths import new_experiment, experiment_from_checkpoint_dir, link_checkpoint_and_results
+from run_tracking import init_run
 
 from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS, HDF5_DIR
 from model.biot import BIOTClassifier
@@ -92,7 +93,8 @@ def run_epoch(model, loader, device, optimizer=None, class_weights=None):
     all_preds = np.concatenate(all_preds)
     all_targets = np.concatenate(all_targets)
     macro_f1 = f1_score(all_targets, all_preds, average="macro", zero_division=0)
-    return total_loss / len(loader.dataset), macro_f1
+    per_class_f1 = f1_score(all_targets, all_preds, average=None, zero_division=0)
+    return total_loss / len(loader.dataset), macro_f1, per_class_f1
 
 
 def main():
@@ -134,82 +136,95 @@ def main():
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
-    # Derived from exp.split_id (not args.split_id directly) so a resumed
-    # run (--checkpoint_dir) keeps using the split file it actually started
-    # with, even if --split_id isn't re-passed on resume.
-    split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
-    train_ds = BIOTSleepDataset(split_path, "train", args.modality, fold_key=args.fold_key,
-                                 hdf5_dir=args.hdf5_dir)
-    val_ds = BIOTSleepDataset(split_path, "validation", args.modality, fold_key=args.fold_key,
-                               hdf5_dir=args.hdf5_dir)
-    print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
+    tracker = init_run(model="biot", pretrain_method="finetuned", modality=exp.modality,
+                        split_id=exp.split_id, fold=fold_num)
 
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
-                               num_workers=args.num_workers, drop_last=True)
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
-                             num_workers=args.num_workers)
+    try:
+        # Derived from exp.split_id (not args.split_id directly) so a resumed
+        # run (--checkpoint_dir) keeps using the split file it actually started
+        # with, even if --split_id isn't re-passed on resume.
+        split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+        train_ds = BIOTSleepDataset(split_path, "train", args.modality, fold_key=args.fold_key,
+                                     hdf5_dir=args.hdf5_dir)
+        val_ds = BIOTSleepDataset(split_path, "validation", args.modality, fold_key=args.fold_key,
+                                   hdf5_dir=args.hdf5_dir)
+        print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
 
-    model = build_model(pretrained_path=args.pretrained_path).to(device)
-    class_weights = compute_class_weights(train_ds).to(device)
+        train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                                   num_workers=args.num_workers, drop_last=True)
+        val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
+                                 num_workers=args.num_workers)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+        model = build_model(pretrained_path=args.pretrained_path).to(device)
+        class_weights = compute_class_weights(train_ds).to(device)
 
-    start_epoch = 0
-    best_val_f1 = -1.0
-    best_epoch = 0
-    patience_counter = 0
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
 
-    latest_path = os.path.join(out_dir, "latest.pth")
-    if os.path.exists(latest_path):
-        # weights_only=False: best_val_f1 (sklearn f1_score, a numpy.float64)
-        # is embedded in this dict, which PyTorch 2.6+'s weights_only=True
-        # default rejects. Safe here -- our own checkpoint, not external data.
-        checkpoint = torch.load(latest_path, map_location=device, weights_only=False)
-        model.load_state_dict(checkpoint["model_state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        start_epoch = checkpoint["epoch"] + 1
-        best_val_f1 = checkpoint["best_val_f1"]
-        best_epoch = checkpoint["best_epoch"]
-        patience_counter = checkpoint["patience_counter"]
-        print(f"Resumed from {latest_path}: starting at epoch {start_epoch + 1}, "
-              f"best_val_f1={best_val_f1:.4f} @ epoch {best_epoch}, "
-              f"patience_counter={patience_counter}", flush=True)
-    else:
-        with open(os.path.join(out_dir, "config.json"), "w") as f:
-            json.dump(vars(args), f, indent=2)
+        start_epoch = 0
+        best_val_f1 = -1.0
+        best_epoch = 0
+        patience_counter = 0
 
-    for epoch in range(start_epoch, args.epochs):
-        train_loss, train_f1 = run_epoch(model, train_loader, device, optimizer, class_weights)
-        val_loss, val_f1 = run_epoch(model, val_loader, device, None, class_weights)
-
-        marker = ""
-        if val_f1 > best_val_f1:
-            best_val_f1 = val_f1
-            best_epoch = epoch + 1
-            patience_counter = 0
-            torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
+        latest_path = os.path.join(out_dir, "latest.pth")
+        if os.path.exists(latest_path):
+            # weights_only=False: best_val_f1 (sklearn f1_score, a numpy.float64)
+            # is embedded in this dict, which PyTorch 2.6+'s weights_only=True
+            # default rejects. Safe here -- our own checkpoint, not external data.
+            checkpoint = torch.load(latest_path, map_location=device, weights_only=False)
+            model.load_state_dict(checkpoint["model_state_dict"])
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            start_epoch = checkpoint["epoch"] + 1
+            best_val_f1 = checkpoint["best_val_f1"]
+            best_epoch = checkpoint["best_epoch"]
+            patience_counter = checkpoint["patience_counter"]
+            print(f"Resumed from {latest_path}: starting at epoch {start_epoch + 1}, "
+                  f"best_val_f1={best_val_f1:.4f} @ epoch {best_epoch}, "
+                  f"patience_counter={patience_counter}", flush=True)
+        else:
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump(vars(args), f, indent=2)
-            link_checkpoint_and_results(exp, fold_num)
-            marker = " *"
+
+        for epoch in range(start_epoch, args.epochs):
+            train_loss, train_f1, _ = run_epoch(model, train_loader, device, optimizer, class_weights)
+            val_loss, val_f1, val_per_class_f1 = run_epoch(model, val_loader, device, None, class_weights)
+
+            marker = ""
+            if val_f1 > best_val_f1:
+                best_val_f1 = val_f1
+                best_epoch = epoch + 1
+                patience_counter = 0
+                torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
+                with open(os.path.join(out_dir, "config.json"), "w") as f:
+                    json.dump(vars(args), f, indent=2)
+                link_checkpoint_and_results(exp, fold_num)
+                tracker.mark_best(epoch + 1, val_f1, per_class_f1=val_per_class_f1)
+                marker = " *"
+            else:
+                patience_counter += 1
+
+            print(f"E{epoch + 1:03d} train_loss={train_loss:.4f} train_f1={train_f1:.4f} "
+                  f"val_loss={val_loss:.4f} val_f1={val_f1:.4f}{marker}", flush=True)
+            tracker.log_epoch(epoch + 1, train_metric=train_f1, val_metric=val_f1,
+                               per_class_f1=val_per_class_f1)
+
+            torch.save({
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "best_val_f1": best_val_f1,
+                "best_epoch": best_epoch,
+                "patience_counter": patience_counter,
+            }, latest_path)
+
+            if patience_counter >= args.patience:
+                print(f"Early stop at epoch {epoch + 1} (best={best_val_f1:.4f} @ epoch {best_epoch})")
+                tracker.finish("COMPLETED (patience triggered)")
+                break
         else:
-            patience_counter += 1
-
-        print(f"E{epoch + 1:03d} train_loss={train_loss:.4f} train_f1={train_f1:.4f} "
-              f"val_loss={val_loss:.4f} val_f1={val_f1:.4f}{marker}", flush=True)
-
-        torch.save({
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "best_val_f1": best_val_f1,
-            "best_epoch": best_epoch,
-            "patience_counter": patience_counter,
-        }, latest_path)
-
-        if patience_counter >= args.patience:
-            print(f"Early stop at epoch {epoch + 1} (best={best_val_f1:.4f} @ epoch {best_epoch})")
-            break
+            tracker.finish("COMPLETED (max epochs)")
+    except Exception as e:
+        tracker.finish_failed(e)
+        raise
 
     print(f"Done. Best val macro F1 = {best_val_f1:.4f} @ epoch {best_epoch}")
 

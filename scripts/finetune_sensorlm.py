@@ -25,6 +25,7 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 
 sys.path.insert(0, os.path.join(REPO_ROOT, "sleepfm"))
 from experiment_paths import new_experiment, experiment_from_checkpoint_dir, link_checkpoint_and_results
+from run_tracking import init_run
 
 from sensorlm_dataset import MODALITY_CHANNELS, SensorLMSleepDataset, HDF5_DIR
 from sensorlm_model import SensorLMEncoder
@@ -45,6 +46,7 @@ def compute_class_weights(dataset):
 def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0.0
+    all_preds, all_targets = [], []
     for x, y, _ in loader:
         x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
@@ -54,7 +56,12 @@ def train_epoch(model, loader, optimizer, criterion, device):
         nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         total_loss += loss.item() * x.size(0)
-    return total_loss / len(loader.dataset)
+        all_preds.append(logits.argmax(dim=-1).detach().cpu().numpy())
+        all_targets.append(y.detach().cpu().numpy())
+    all_preds   = np.concatenate(all_preds)
+    all_targets = np.concatenate(all_targets)
+    train_f1 = f1_score(all_targets, all_preds, average="macro", zero_division=0)
+    return total_loss / len(loader.dataset), train_f1
 
 
 @torch.no_grad()
@@ -68,7 +75,9 @@ def eval_epoch(model, loader, device):
         all_targets.append(y.numpy())
     all_preds   = np.concatenate(all_preds)
     all_targets = np.concatenate(all_targets)
-    return f1_score(all_targets, all_preds, average="macro", zero_division=0)
+    macro_f1 = f1_score(all_targets, all_preds, average="macro", zero_division=0)
+    per_class_f1 = f1_score(all_targets, all_preds, average=None, zero_division=0)
+    return macro_f1, per_class_f1
 
 
 def main():
@@ -109,79 +118,92 @@ def main():
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
-    # Derived from exp.split_id (not args.split_id directly) so a resumed
-    # run (--checkpoint_dir) keeps using the split file it actually started
-    # with, even if --split_id isn't re-passed on resume.
-    split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
-    train_ds = SensorLMSleepDataset(split_path, "train", args.modality, args.fold_key,
-                                     hdf5_dir=args.hdf5_dir)
-    val_ds   = SensorLMSleepDataset(split_path, "val",   args.modality, args.fold_key,
-                                     hdf5_dir=args.hdf5_dir)
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
-                              num_workers=args.num_workers, pin_memory=True)
-    val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False,
-                              num_workers=args.num_workers, pin_memory=True)
-    print(f"[{args.modality}] train={len(train_ds)}  val={len(val_ds)}", flush=True)
+    tracker = init_run(model="sensorlm", pretrain_method="finetuned", modality=exp.modality,
+                        split_id=exp.split_id, fold=fold_num)
 
-    n_channels = len(MODALITY_CHANNELS[args.modality])
-    model      = SensorLMEncoder(n_channels=n_channels).to(device)
-    n_params   = sum(p.numel() for p in model.parameters())
-    print(f"Parameters: {n_params:,}", flush=True)
+    try:
+        # Derived from exp.split_id (not args.split_id directly) so a resumed
+        # run (--checkpoint_dir) keeps using the split file it actually started
+        # with, even if --split_id isn't re-passed on resume.
+        split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+        train_ds = SensorLMSleepDataset(split_path, "train", args.modality, args.fold_key,
+                                         hdf5_dir=args.hdf5_dir)
+        val_ds   = SensorLMSleepDataset(split_path, "val",   args.modality, args.fold_key,
+                                         hdf5_dir=args.hdf5_dir)
+        train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                                  num_workers=args.num_workers, pin_memory=True)
+        val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False,
+                                  num_workers=args.num_workers, pin_memory=True)
+        print(f"[{args.modality}] train={len(train_ds)}  val={len(val_ds)}", flush=True)
 
-    class_weights = compute_class_weights(train_ds).to(device)
-    criterion     = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer     = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+        n_channels = len(MODALITY_CHANNELS[args.modality])
+        model      = SensorLMEncoder(n_channels=n_channels).to(device)
+        n_params   = sum(p.numel() for p in model.parameters())
+        print(f"Parameters: {n_params:,}", flush=True)
 
-    # Resume logic
-    start_epoch     = 0
-    best_val_f1     = -1.0
-    best_epoch      = 0
-    patience_counter = 0
+        class_weights = compute_class_weights(train_ds).to(device)
+        criterion     = nn.CrossEntropyLoss(weight=class_weights)
+        optimizer     = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
 
-    latest_path = os.path.join(out_dir, "latest.pth")
-    if os.path.exists(latest_path):
-        # weights_only=False: best_val_f1 (sklearn f1_score, a numpy.float64)
-        # is embedded in this dict, which PyTorch 2.6+'s weights_only=True
-        # default rejects. Safe here -- our own checkpoint, not external data.
-        ckpt = torch.load(latest_path, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt["model_state_dict"])
-        optimizer.load_state_dict(ckpt["optimizer_state_dict"])
-        start_epoch      = ckpt["epoch"] + 1
-        best_val_f1      = ckpt["best_val_f1"]
-        best_epoch       = ckpt["best_epoch"]
-        patience_counter = ckpt["patience_counter"]
-        print(f"Resumed from epoch {start_epoch} (best val F1={best_val_f1:.4f})", flush=True)
-    else:
-        with open(os.path.join(out_dir, "config.json"), "w") as f:
-            json.dump(vars(args), f, indent=2)
+        # Resume logic
+        start_epoch     = 0
+        best_val_f1     = -1.0
+        best_epoch      = 0
+        patience_counter = 0
 
-    for epoch in range(start_epoch, args.epochs):
-        train_loss = train_epoch(model, train_loader, optimizer, criterion, device)
-        val_f1     = eval_epoch(model, val_loader, device)
-        print(f"Epoch {epoch+1}/{args.epochs}  loss={train_loss:.4f}  "
-              f"val_f1={val_f1:.4f}  best={best_val_f1:.4f}", flush=True)
-
-        if val_f1 > best_val_f1:
-            best_val_f1      = val_f1
-            best_epoch       = epoch
-            patience_counter = 0
-            torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
-            link_checkpoint_and_results(exp, fold_num)
+        latest_path = os.path.join(out_dir, "latest.pth")
+        if os.path.exists(latest_path):
+            # weights_only=False: best_val_f1 (sklearn f1_score, a numpy.float64)
+            # is embedded in this dict, which PyTorch 2.6+'s weights_only=True
+            # default rejects. Safe here -- our own checkpoint, not external data.
+            ckpt = torch.load(latest_path, map_location=device, weights_only=False)
+            model.load_state_dict(ckpt["model_state_dict"])
+            optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+            start_epoch      = ckpt["epoch"] + 1
+            best_val_f1      = ckpt["best_val_f1"]
+            best_epoch       = ckpt["best_epoch"]
+            patience_counter = ckpt["patience_counter"]
+            print(f"Resumed from epoch {start_epoch} (best val F1={best_val_f1:.4f})", flush=True)
         else:
-            patience_counter += 1
+            with open(os.path.join(out_dir, "config.json"), "w") as f:
+                json.dump(vars(args), f, indent=2)
 
-        torch.save({
-            "epoch":                epoch,
-            "model_state_dict":     model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "best_val_f1":          best_val_f1,
-            "best_epoch":           best_epoch,
-            "patience_counter":     patience_counter,
-        }, latest_path)
+        for epoch in range(start_epoch, args.epochs):
+            train_loss, train_f1 = train_epoch(model, train_loader, optimizer, criterion, device)
+            val_f1, val_per_class_f1 = eval_epoch(model, val_loader, device)
+            print(f"Epoch {epoch+1}/{args.epochs}  loss={train_loss:.4f}  "
+                  f"val_f1={val_f1:.4f}  best={best_val_f1:.4f}", flush=True)
+            tracker.log_epoch(epoch + 1, train_metric=train_f1, val_metric=val_f1,
+                               per_class_f1=val_per_class_f1)
 
-        if patience_counter >= args.patience:
-            print(f"Early stopping at epoch {epoch+1} (best epoch {best_epoch+1})", flush=True)
-            break
+            if val_f1 > best_val_f1:
+                best_val_f1      = val_f1
+                best_epoch       = epoch
+                patience_counter = 0
+                torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
+                link_checkpoint_and_results(exp, fold_num)
+                tracker.mark_best(epoch + 1, val_f1, per_class_f1=val_per_class_f1)
+            else:
+                patience_counter += 1
+
+            torch.save({
+                "epoch":                epoch,
+                "model_state_dict":     model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "best_val_f1":          best_val_f1,
+                "best_epoch":           best_epoch,
+                "patience_counter":     patience_counter,
+            }, latest_path)
+
+            if patience_counter >= args.patience:
+                print(f"Early stopping at epoch {epoch+1} (best epoch {best_epoch+1})", flush=True)
+                tracker.finish("COMPLETED (patience triggered)")
+                break
+        else:
+            tracker.finish("COMPLETED (max epochs)")
+    except Exception as e:
+        tracker.finish_failed(e)
+        raise
 
     print(f"Training done. Best val F1={best_val_f1:.4f} at epoch {best_epoch+1}", flush=True)
 

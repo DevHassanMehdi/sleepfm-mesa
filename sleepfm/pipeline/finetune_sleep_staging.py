@@ -20,6 +20,7 @@ sys.path.append(SLEEPFM_DIR)
 
 from utils import *
 from experiment_paths import new_experiment, link_checkpoint_and_results
+from run_tracking import init_run
 from models.models import SleepEventLSTMClassifier
 from models.dataset import SleepEventClassificationDataset as Dataset
 from models.dataset import sleep_event_finetune_full_collate_fn as collate_fn
@@ -135,6 +136,18 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     if checkpoint_path:
         output = checkpoint_path
         config = load_data(os.path.join(output, "config.json"))
+        # channel_like_string above was computed from THIS invocation's
+        # --config_path (defaults to config_finetune_sleep_events.yaml if not
+        # passed) -- stale/unrelated to the resumed run once config gets
+        # reloaded from the checkpoint's own config.json here. Recompute from
+        # the reloaded config so the tracker (and anything else using
+        # channel_like_string below) reflects the actual resumed run's
+        # modality, not whatever the default/incidental --config_path had.
+        # Confirmed via testing: without this fix, a resume invoked without
+        # --config_path resolved modality as "BAS" (the default config's
+        # channel_like) instead of the checkpoint's real "EEG_ONLY".
+        if "channel_like" in config:
+            channel_like_string = "_".join(config["channel_like"])
         exp = None
     else:
         if pretrain_approach is None:
@@ -164,63 +177,77 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         print(f">>> RESULTS DIR: {exp.results_dir}\n", flush=True)
         logger.info(f"Output path: {output}")
 
-    # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    # exp is None only on the --checkpoint_path resume branch, which doesn't
+    # preserve pretrain_approach/split_id as robustly as the --checkpoint_dir
+    # convention used by finetune_biot.py/finetune_labram.py/finetune_sensorlm.py
+    # -- fall back to the function's own already-resolved locals in that case.
+    tracker = init_run(
+        model="sleepfm",
+        pretrain_method=(exp.pretrain_method if exp is not None else (pretrain_approach or "unknown")),
+        modality=(exp.modality if exp is not None else channel_like_string),
+        split_id=(exp.split_id if exp is not None else split_id),
+        fold=fold,
+    )
 
-    # Initialize model
-    model_params = config['model_params']
-    model_class = getattr(sys.modules[__name__], config['model'])
-    model = model_class(**model_params).to(device)
-    model_name = type(model).__name__
+    try:
+      # Set device
+      device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+      # Initialize model
+      model_params = config['model_params']
+      model_class = getattr(sys.modules[__name__], config['model'])
+      model = model_class(**model_params).to(device)
+      model_name = type(model).__name__
 
-    total_layers, total_params = count_parameters(model)
-    logger.info(f"Device: {device.type} | Model: {model_name} | Params: {total_params / 1e6:.2f}M")
+      if torch.cuda.device_count() > 1:
+          model = nn.DataParallel(model)
 
-    # Initialize dataset and dataloaders
-    batch_size = config.get('batch_size', 1)
-    num_workers = config.get('num_workers', 4)
+      total_layers, total_params = count_parameters(model)
+      logger.info(f"Device: {device.type} | Model: {model_name} | Params: {total_params / 1e6:.2f}M")
 
-    train_dataset = Dataset(config, channel_groups, split=train_split)
-    val_dataset = Dataset(config, channel_groups, split="validation")
+      # Initialize dataset and dataloaders
+      batch_size = config.get('batch_size', 1)
+      num_workers = config.get('num_workers', 4)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
+      train_dataset = Dataset(config, channel_groups, split=train_split)
+      val_dataset = Dataset(config, channel_groups, split="validation")
 
-    logger.info(f"Data: fold={fold} | train={len(train_dataset)} | val={len(val_dataset)}")
+      train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate_fn)
+      val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
 
-    # Optimizer and loss function
-    num_epochs = config.get('epochs', 500)
-    optimizer = optim.AdamW(model.parameters(), lr=config['lr'])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-6)
+      logger.info(f"Data: fold={fold} | train={len(train_dataset)} | val={len(val_dataset)}")
 
-    start_epoch = 0
-    if checkpoint_path:
-        checkpoint_path = os.path.join(output, "checkpoint.pth")
-        if os.path.isfile(checkpoint_path):
-            checkpoint = torch.load(checkpoint_path)
-            start_epoch = checkpoint['epoch']
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+      # Optimizer and loss function
+      num_epochs = config.get('epochs', 500)
+      optimizer = optim.AdamW(model.parameters(), lr=config['lr'])
+      scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-6)
 
-    # Set up Weights & Biases
-    if config["use_wandb"]:
-        current_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        wandb.init(project="PSG-fm", name=f"run_at_{current_timestamp}", config=config)
+      start_epoch = 0
+      if checkpoint_path:
+          checkpoint_path = os.path.join(output, "checkpoint.pth")
+          if os.path.isfile(checkpoint_path):
+              checkpoint = torch.load(checkpoint_path)
+              start_epoch = checkpoint['epoch']
+              model.load_state_dict(checkpoint['model_state_dict'])
+              optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    # Training loop
-    best_val_f1 = -float('inf')
-    best_epoch = 0
-    patience_counter = 0
-    patience = 50
+      # Set up Weights & Biases
+      if config["use_wandb"]:
+          current_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+          wandb.init(project="PSG-fm", name=f"run_at_{current_timestamp}", config=config)
 
-    class_abbrev = ['W', 'N1', 'N2', 'N3', 'R']
+      # Training loop
+      best_val_f1 = -float('inf')
+      best_epoch = 0
+      patience_counter = 0
+      patience = 50
 
-    for epoch in range(start_epoch, num_epochs):
+      class_abbrev = ['W', 'N1', 'N2', 'N3', 'R']
+
+      for epoch in range(start_epoch, num_epochs):
         model.train()
         running_loss = 0.0
+        train_preds, train_targets, train_masks = [], [], []
         for x_data, y_data, padded_matrix, hdf5_path_list in train_loader:
             x_data, y_data, padded_matrix = x_data.to(device), y_data.to(device), padded_matrix.to(device)
             outputs, mask = model(x_data, padded_matrix)
@@ -229,8 +256,19 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             optimizer.step()
             optimizer.zero_grad()
             running_loss += loss.item()
+            train_preds.append(outputs.argmax(dim=2).detach().cpu().numpy())
+            train_targets.append(y_data.detach().cpu().numpy())
+            train_masks.append(mask.detach().cpu().numpy())
 
         train_loss = running_loss / len(train_loader)
+
+        # Train macro F1 (masked, same convention as validation below)
+        train_preds_flat = np.concatenate([p.flatten() for p in train_preds])
+        train_targets_flat = np.concatenate([t.flatten() for t in train_targets])
+        train_masks_flat = np.concatenate([m.flatten() for m in train_masks])
+        train_valid_mask = train_masks_flat == 0
+        train_f1 = f1_score(train_targets_flat[train_valid_mask], train_preds_flat[train_valid_mask],
+                             average='macro', zero_division=0)
 
         # Validation loop at the end of each epoch
         model.eval()
@@ -268,6 +306,8 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         best_marker = " *" if val_f1 > best_val_f1 else ""
         epoch_log = f"E{epoch + 1:03d} loss={train_loss:.3f} vl={val_loss:.3f} vf1={val_f1:.3f} | {per_class_str}{best_marker}"
         logger.info(epoch_log)
+        tracker.log_epoch(epoch + 1, train_metric=train_f1, val_metric=val_f1,
+                           per_class_f1=per_class_f1)
 
         # Log to wandb if enabled
         if config["use_wandb"]:
@@ -286,6 +326,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             best_model_path = os.path.join(output, "best.pth")
             torch.save(model.state_dict(), best_model_path)
             save_data(config, os.path.join(output, "config.json"))
+            tracker.mark_best(epoch + 1, val_f1, per_class_f1=per_class_f1)
             if exp is not None:
                 # fold_num=fold: results_dir is experiment-level (shared by
                 # every fold of the same model/modality/split_id/timestamp),
@@ -299,10 +340,16 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             patience_counter += 1
             if patience_counter >= patience:
                 logger.info(f"E{epoch + 1} Early stop | best_f1={best_val_f1:.3f} @ epoch {best_epoch}")
+                tracker.finish("COMPLETED (patience triggered)")
                 break
 
         scheduler.step()
         model.train()
+      else:
+        tracker.finish("COMPLETED (max epochs)")
+    except Exception as e:
+        tracker.finish_failed(e)
+        raise
 
 if __name__ == "__main__":
     finetune_sleep_staging()

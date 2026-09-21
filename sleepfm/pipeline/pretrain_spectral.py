@@ -24,6 +24,7 @@ from torch import nn
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.models import SetTransformer
 from utils import load_config, load_data, save_data
+from run_tracking import init_run
 
 torch.backends.cuda.enable_flash_sdp(False)
 torch.backends.cuda.enable_mem_efficient_sdp(False)
@@ -187,87 +188,94 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
     logger.info(f"Output: {output}")
     logger.info(f"modality_types: {config.get('modality_types')}")
 
-    device = torch.device(
-        "cuda" if torch.cuda.is_available()
-        else "mps" if torch.backends.mps.is_available()
-        else "cpu"
-    )
-    logger.info(f"Device: {device}")
+    split_id = os.path.splitext(os.path.basename(config.get("split_path", "unknown")))[0]
+    split_id = split_id.replace("dataset_split_", "")
+    modality_str = "_".join(config.get("modality_types", ["unknown"]))
+    tracker = init_run(model="spectral", pretrain_method="pretrain", modality=modality_str,
+                        split_id=split_id, fold=None, metric_name="Reconstruction_Loss")
 
-    dataset = {s: SpectralDataset(config, split=s) for s in ["pretrain", "validation"]}
+    try:
+      device = torch.device(
+          "cuda" if torch.cuda.is_available()
+          else "mps" if torch.backends.mps.is_available()
+          else "cpu"
+      )
+      logger.info(f"Device: {device}")
 
-    encoder = SetTransformer(
-        config["in_channels"],
-        config["patch_size"],
-        config["embed_dim"],
-        config["num_heads"],
-        config["num_layers"],
-        pooling_head=config["pooling_head"],
-        dropout=config["dropout"],
-    )
-    decoder = SpectralDecoder(embed_dim=config["embed_dim"], n_bands=5)
+      dataset = {s: SpectralDataset(config, split=s) for s in ["pretrain", "validation"]}
 
-    if device.type == "cuda":
-        encoder = torch.nn.DataParallel(encoder)
-    encoder.to(device)
-    decoder.to(device)
+      encoder = SetTransformer(
+          config["in_channels"],
+          config["patch_size"],
+          config["embed_dim"],
+          config["num_heads"],
+          config["num_layers"],
+          pooling_head=config["pooling_head"],
+          dropout=config["dropout"],
+      )
+      decoder = SpectralDecoder(embed_dim=config["embed_dim"], n_bands=5)
 
-    n_enc = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
-    n_dec = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
-    logger.info(f"Encoder: {n_enc/1e6:.2f}M params  |  Decoder: {n_dec/1e3:.1f}K params")
+      if device.type == "cuda":
+          encoder = torch.nn.DataParallel(encoder)
+      encoder.to(device)
+      decoder.to(device)
 
-    lr = config.get("spectral_lr", config.get("lr", 1e-3))
-    wd = config.get("spectral_weight_decay", config.get("weight_decay", 1e-4))
-    optimizer = torch.optim.Adam(
-        list(encoder.parameters()) + list(decoder.parameters()),
-        lr=lr,
-        weight_decay=wd,
-    )
+      n_enc = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
+      n_dec = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
+      logger.info(f"Encoder: {n_enc/1e6:.2f}M params  |  Decoder: {n_dec/1e3:.1f}K params")
 
-    max_epochs = config.get("max_epochs", 100)
-    patience = config.get("patience", 10)
-    batch_size = config["batch_size"]
-    num_workers = config["num_workers"]
+      lr = config.get("spectral_lr", config.get("lr", 1e-3))
+      wd = config.get("spectral_weight_decay", config.get("weight_decay", 1e-4))
+      optimizer = torch.optim.Adam(
+          list(encoder.parameters()) + list(decoder.parameters()),
+          lr=lr,
+          weight_decay=wd,
+      )
 
-    epoch_resume = 0
-    best_loss = math.inf
-    patience_counter = 0
+      max_epochs = config.get("max_epochs", 100)
+      patience = config.get("patience", 10)
+      batch_size = config["batch_size"]
+      num_workers = config["num_workers"]
 
-    ckpt_file = os.path.join(output, "checkpoint.pt")
-    best_file = os.path.join(output, "best.pt")
+      epoch_resume = 0
+      best_loss = math.inf
+      patience_counter = 0
 
-    if os.path.isfile(ckpt_file):
-        ckpt = torch.load(ckpt_file, map_location=device)
-        if _has_nan_or_inf(ckpt.get("state_dict", {})):
-            logger.warning("checkpoint.pt has NaN/Inf weights")
-            if os.path.isfile(best_file):
-                logger.warning("  → falling back to best.pt")
-                ckpt = torch.load(best_file, map_location=device)
-            else:
-                logger.warning("  → no best.pt found, starting fresh")
-                ckpt = None
-        if ckpt is not None:
-            encoder.load_state_dict(ckpt["state_dict"])
-            if "decoder_state_dict" in ckpt:
-                decoder.load_state_dict(ckpt["decoder_state_dict"])
-            optimizer.load_state_dict(ckpt["optim_dict"])
-            epoch_resume = ckpt["epoch"] + 1
-            best_loss = ckpt["best_loss"]
-            patience_counter = ckpt.get("patience_counter", 0)
-            logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
-        else:
-            logger.info("Starting fresh (checkpoint discarded)")
-    else:
-        logger.info("Starting fresh")
+      ckpt_file = os.path.join(output, "checkpoint.pt")
+      best_file = os.path.join(output, "best.pt")
 
-    os.makedirs(os.path.join(output, "log"), exist_ok=True)
-    log_tsv = os.path.join(
-        output, "log", f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}.tsv"
-    )
-    with open(log_tsv, "w") as f:
-        f.write("Epoch\tSplit\tLoss\n")
+      if os.path.isfile(ckpt_file):
+          ckpt = torch.load(ckpt_file, map_location=device)
+          if _has_nan_or_inf(ckpt.get("state_dict", {})):
+              logger.warning("checkpoint.pt has NaN/Inf weights")
+              if os.path.isfile(best_file):
+                  logger.warning("  → falling back to best.pt")
+                  ckpt = torch.load(best_file, map_location=device)
+              else:
+                  logger.warning("  → no best.pt found, starting fresh")
+                  ckpt = None
+          if ckpt is not None:
+              encoder.load_state_dict(ckpt["state_dict"])
+              if "decoder_state_dict" in ckpt:
+                  decoder.load_state_dict(ckpt["decoder_state_dict"])
+              optimizer.load_state_dict(ckpt["optim_dict"])
+              epoch_resume = ckpt["epoch"] + 1
+              best_loss = ckpt["best_loss"]
+              patience_counter = ckpt.get("patience_counter", 0)
+              logger.info(f"Resumed from epoch {epoch_resume}, best_loss={best_loss:.6f}")
+          else:
+              logger.info("Starting fresh (checkpoint discarded)")
+      else:
+          logger.info("Starting fresh")
 
-    for epoch in range(epoch_resume, max_epochs):
+      os.makedirs(os.path.join(output, "log"), exist_ok=True)
+      log_tsv = os.path.join(
+          output, "log", f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}.tsv"
+      )
+      with open(log_tsv, "w") as f:
+          f.write("Epoch\tSplit\tLoss\n")
+
+      for epoch in range(epoch_resume, max_epochs):
         logger.info(f"Epoch {epoch}/{max_epochs - 1}")
 
         train_loader = torch.utils.data.DataLoader(
@@ -290,6 +298,7 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
         if is_best:
             best_loss = val_loss
             patience_counter = 0
+            tracker.mark_best(epoch + 1, val_loss)
         else:
             patience_counter += 1
 
@@ -309,10 +318,17 @@ def pretrain_spectral(config_path, channel_groups_path, checkpoint_path):
 
         suffix = " [best]" if is_best else f" (patience {patience_counter}/{patience})"
         logger.info(f"Epoch {epoch}: train={train_loss:.6f} val={val_loss:.6f}{suffix}")
+        tracker.log_epoch(epoch + 1, train_metric=train_loss, val_metric=val_loss)
 
         if patience_counter >= patience:
             logger.info(f"Early stopping at epoch {epoch}")
+            tracker.finish("COMPLETED (patience triggered)")
             break
+      else:
+        tracker.finish("COMPLETED (max epochs)")
+    except Exception as e:
+        tracker.finish_failed(e)
+        raise
 
     logger.info(f"Done. Best val loss: {best_loss:.6f}")
 
