@@ -77,7 +77,12 @@ class RunTracker:
         self.tb_dir = self.run_dir / "tensorboard"
         self.tb_dir.mkdir(parents=True, exist_ok=True)
         self.summary_path = self.run_dir / "summary.txt"
-        self.resource_csv_path = self.run_dir / "resource_usage.csv"
+        # Per-sample GPU data is a means to an end (the aggregate line in
+        # summary.txt), not an artifact worth persisting per-run -- lives in
+        # scratch/tmp for the run's duration and is deleted once the final
+        # aggregate is computed, not under runs/.
+        tmp_dir = Path(os.environ.get("TMPDIR", "/tmp"))
+        self.resource_csv_path = tmp_dir / f"run_tracking_resource_{self.timestamp}.csv"
 
         self.writer = SummaryWriter(log_dir=str(self.tb_dir))
 
@@ -133,6 +138,15 @@ class RunTracker:
                 pass  # best-effort; the OS/cgroup will reap it when the job exits
         self._sampler_proc = None
 
+    def _cleanup_resource_csv(self):
+        # Called after _write_summary() has already extracted avg util/peak
+        # mem into summary.txt -- the raw per-sample data has served its
+        # purpose and doesn't need to persist anywhere.
+        try:
+            self.resource_csv_path.unlink(missing_ok=True)
+        except Exception:
+            pass  # best-effort cleanup; not worth failing the run over
+
     # -- per-epoch logging (A) -------------------------------------------------
     def log_epoch(self, epoch, train_metric=None, val_metric=None, per_class_f1=None):
         """epoch: 1-indexed, matching every script's existing print convention."""
@@ -176,6 +190,7 @@ class RunTracker:
         # block (subprocess teardown, writer flush) risks eating the window.
         self._write_summary(status)
         self._stop_resource_sampler()
+        self._cleanup_resource_csv()
         self.writer.close()
 
     def finish_failed(self, exc):

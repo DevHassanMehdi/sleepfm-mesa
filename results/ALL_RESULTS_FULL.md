@@ -1,10 +1,10 @@
-# SleepFM on MESA: Full-Cohort Results (1944 subjects, fold5_v1)
+# SleepFM on MESA: Full-Cohort Results (2056 subjects, fold5_v1)
 
 ## Configuration
 
 | Setting | Value |
 |---|---|
-| Cohort size | 1944 subjects |
+| Cohort size | 2056 subjects |
 | Fold scheme | fold5_v1 (subject-level 5-fold CV) |
 | Channel scope | EEG1, EEG2, EEG3, EKG only |
 | From-Scratch pretraining | Contrastive leave-one-out (from random init) |
@@ -18,66 +18,101 @@
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| From-Scratch | 0.4949 ± 0.0135 | 0.5433 ± 0.0077 | 0.7229 | 0.3317 | 0.5204 | 0.3903 | 0.5094 |
-| Spectral | 0.5132 ± 0.0101 | 0.5560 ± 0.0110 | 0.7243 | 0.3516 | 0.5434 | 0.3862 | 0.5605 |
-| Next-Token | 0.5238 ± 0.0087 | 0.5711 ± 0.0109 | 0.7314 | 0.3490 | 0.5683 | 0.3868 | 0.5837 |
-| BIOT | **0.7367 ± 0.0048** | **0.7694 ± 0.0069** | **0.9153** | **0.6570** | **0.7195** | **0.6607** | **0.7309** |
-| LaBraM | 0.6951 ± 0.0070 | 0.7332 ± 0.0073 | 0.8972 | 0.5726 | 0.6994 | 0.6528 | 0.6535 |
-| SensorLM | 0.6286 ± 0.0067 | 0.6750 ± 0.0094 | 0.8607 | 0.5072 | 0.6473 | 0.6276 | 0.5003 |
+| BIOT | **0.7541 ± 0.0047** | 0.8274 | 0.9455 | **0.5363** | 0.8023 | **0.6798** | 0.8068 |
+| From-Scratch | 0.7451 ± 0.0052 | **0.8403** | **0.9468** | 0.4661 | **0.8182** | 0.6798 | **0.8373** |
+| Next-Token | 0.7394 ± 0.0051 | 0.8373 | 0.9444 | 0.4443 | 0.8158 | 0.6684 | 0.8241 |
+| LaBraM | 0.7301 ± 0.0040 | 0.8108 | 0.9407 | 0.4787 | 0.7866 | 0.6704 | 0.7742 |
+| Spectral | 0.7122 ± 0.0055 | 0.8185 | 0.9339 | 0.3971 | 0.7949 | 0.6298 | 0.8052 |
+| SensorLM | 0.6446 ± 0.0095 | 0.7382 | 0.9085 | 0.3726 | 0.7103 | 0.6365 | 0.5951 |
 
 ## ECG Only
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| From-Scratch | **0.3997 ± 0.0131** | **0.4663 ± 0.0137** | **0.6823** | **0.3087** | **0.4142** | **0.2627** | **0.3308** |
-| Spectral | 0.3134 ± 0.0080 | 0.3713 ± 0.0079 | 0.6121 | 0.2827 | 0.2577 | 0.1881 | 0.2264 |
-| Next-Token | 0.3418 ± 0.0112 | 0.4071 ± 0.0081 | 0.6627 | 0.2623 | 0.3233 | 0.2185 | 0.2421 |
-| BIOT | 0.3118 ± 0.0069 | 0.3808 ± 0.0065 | 0.6350 | 0.3063 | 0.3192 | 0.1683 | 0.1303 |
-| LaBraM | 0.2971 ± 0.0111 | 0.3802 ± 0.0237 | 0.6133 | 0.2522 | 0.3611 | 0.1260 | 0.1328 |
-| SensorLM | 0.2883 ± 0.0053 | 0.3465 ± 0.0235 | 0.6108 | 0.2602 | 0.2605 | 0.1548 | 0.1550 |
+| From-Scratch | **0.5575 ± 0.0058** | **0.7048** | **0.8701** | **0.2214** | **0.6634** | **0.4064** | **0.6264** |
+| Next-Token | 0.4158 ± 0.0074 | 0.5987 | 0.8126 | 0.0369 | 0.5335 | 0.2803 | 0.4156 |
+| Spectral | 0.3402 ± 0.0022 | 0.5106 | 0.7497 | 0.0001 | 0.4327 | 0.2119 | 0.3064 |
+| LaBraM | 0.3390 ± 0.0048 | 0.4822 | 0.7532 | 0.1638 | 0.4215 | 0.1417 | 0.2145 |
+| BIOT | 0.3235 ± 0.0101 | 0.4541 | 0.6999 | 0.1708 | 0.4280 | 0.1378 | 0.1808 |
+| SensorLM | 0.3028 ± 0.0089 | 0.4143 | 0.7012 | 0.1548 | 0.3105 | 0.1378 | 0.2097 |
+
+*From-Scratch's ECG_ONLY result is not on the same methodological footing as the other 5 models -- see Discussion.*
 
 ## EEG + ECG
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| From-Scratch | 0.5056 ± 0.0152 | 0.5496 ± 0.0147 | 0.7359 | 0.3551 | 0.5247 | 0.3858 | 0.5265 |
-| Spectral | 0.5060 ± 0.0191 | 0.5554 ± 0.0136 | 0.7374 | 0.3394 | 0.5584 | 0.3694 | 0.5254 |
-| Next-Token | 0.5223 ± 0.0158 | 0.5705 ± 0.0138 | 0.7376 | 0.3602 | 0.5667 | 0.3886 | 0.5585 |
-| BIOT | **0.7361 ± 0.0058** | **0.7704 ± 0.0069** | **0.9135** | **0.6512** | **0.7332** | **0.6573** | **0.7252** |
-| LaBraM | 0.6868 ± 0.0066 | 0.7278 ± 0.0069 | 0.8947 | 0.5559 | 0.7053 | 0.6490 | 0.6291 |
-| SensorLM | 0.6271 ± 0.0075 | 0.6728 ± 0.0113 | 0.8664 | 0.5190 | 0.6302 | 0.6220 | 0.4979 |
+| BIOT | **0.7479 ± 0.0044** | 0.8289 | **0.9471** | 0.5343 | 0.8009 | 0.6629 | 0.7944 |
+| From-Scratch | 0.7435 ± 0.0035 | **0.8386** | 0.9464 | **0.4720** | **0.8156** | 0.6446 | **0.8388** |
+| Next-Token | 0.7342 ± 0.0039 | 0.8339 | 0.9433 | 0.4368 | 0.8113 | 0.6530 | 0.8266 |
+| LaBraM | 0.7230 ± 0.0026 | 0.8068 | 0.9404 | 0.4700 | 0.7827 | **0.6640** | 0.7578 |
+| Spectral | 0.7149 ± 0.0071 | 0.8202 | 0.9322 | 0.4033 | 0.7983 | 0.6357 | 0.8049 |
+| SensorLM | 0.6425 ± 0.0137 | 0.7352 | 0.9094 | 0.3710 | 0.7086 | 0.6334 | 0.5903 |
 
 ## Discussion
 
-**Across all three SleepFM variants** (From-Scratch, Spectral, Next-Token),
-the differences are small — all three land close together on every
-modality, with Next-Token consistently a touch ahead of the other two on
-EEG_ONLY and ECG_ONLY, and From-Scratch still holding the top ECG_ONLY
-spot overall. None of the three pretraining objectives (contrastive,
-spectral reconstruction, next-window prediction) produces a dramatically
-better encoder than the others for this task — they're variations on a
-theme, not different tiers.
+**BIOT and From-Scratch now lead the EEG-based modalities (EEG_ONLY,
+EEG_ECG), and the gap between externally-pretrained and from-scratch
+models has narrowed dramatically** compared to earlier (pre-label-fix)
+results. BIOT holds the top macro F1 on both EEG_ONLY (0.7541) and
+EEG_ECG (0.7479), but From-Scratch is now close behind on both (0.7451,
+0.7435) and actually leads on accuracy and three of five per-class
+scores in EEG_ECG. Next-Token and Spectral cluster just below, both
+competitive with LaBraM. SensorLM is consistently the weakest performer
+across all three modalities (macro F1 in the 0.64 range vs 0.71-0.75 for
+the other five) -- its one-stage, no-separate-pretraining design appears
+to be a real disadvantage on this task, not a training artifact (all
+SensorLM folds converged normally, patience firing as expected).
 
-**BIOT and LaBraM dominate EEG-based modalities** (EEG_ONLY, EEG_ECG) by a
-wide margin over every SleepFM variant and SensorLM — both were pretrained
-on large external EEG datasets, and that head start shows. BIOT leads
-outright; LaBraM sits close behind.
+**ECG_ONLY: From-Scratch leads every single column by a wide margin** --
+macro F1 0.5575 vs the next-best (Next-Token) at 0.4158, roughly 14
+points ahead, and it wins Wake/N1/N2/N3/REM individually, not just the
+aggregate. Before trusting this number, we investigated it directly
+(embeddings spot-check, cross-modal correlation, per-class breakdown,
+config/job-log audit) to rule out a channel-selection or embeddings
+mix-up bug -- see the caveat below. Excluding From-Scratch, Next-Token
+holds second place, followed by LaBraM, Spectral, BIOT, and SensorLM
+clustered closely together (macro F1 0.30-0.34) -- none of the
+externally-EEG-pretrained or no-separate-pretraining models get much
+traction on ECG-only signal.
 
-**ECG_ONLY flips the ranking entirely.** From-Scratch takes the top spot,
-followed by Next-Token — both SleepFM variants, both pretrained directly
-on this cohort's actual ECG signal. BIOT, LaBraM, and SensorLM all fall
-behind, likely because BIOT/LaBraM's pretraining never included real ECG
-at all, and SensorLM's from-scratch, no-pretraining approach doesn't get
-the same benefit From-Scratch/Next-Token get from self-supervised exposure
-to the target signal.
+**Caveat: From-Scratch's ECG_ONLY result is not directly comparable to
+the other 5 models on the same methodological footing.** From-Scratch's
+`leave_one_out` pretraining objective is a cross-modal contrastive
+scheme: it explicitly trains each modality's embedding to be predictive
+of the other modality's embedding for the same time window. We measured
+this directly -- the cross-modal correlation between From-Scratch's
+EEG_ONLY and EKG embeddings for the same subjects is 0.50-0.61, versus
+0.29 for Spectral's independently-trained per-modality embeddings on the
+same subjects. This means From-Scratch's "ECG_ONLY" embeddings carry
+real EEG-correlated information injected during pretraining, not signal
+isolated to the ECG channel alone. The elevated ECG_ONLY score therefore
+reflects the benefit of cross-modally-informed embeddings, not what a
+truly ECG-only-trained model can achieve. This is flagged for discussion
+and interpretation, not treated as a data or pipeline bug -- the
+per-class breakdown showed broad, proportional gains across all five
+sleep stages (not concentrated in one suspicious class), and the
+absolute score still sits well below any model's EEG_ONLY ceiling,
+consistent with genuinely-informed-but-still-ECG-derived embeddings
+rather than an outright data leak.
 
-**Overall takeaway**: if a wearable can capture EEG, BIOT or LaBraM is the
-stronger choice by a clear margin. If it's ECG-only, a SleepFM variant
-pretrained on this cohort's real ECG data — From-Scratch or Next-Token —
-beats larger, EEG-pretrained models working outside their comfort zone.
+**Overall takeaway**: if a wearable can capture EEG, BIOT and
+From-Scratch are now essentially tied for the strongest choice, with
+Next-Token and Spectral close behind and LaBraM competitive as well --
+the six models are far closer together than before the label-corruption
+fix. If it's ECG-only, Next-Token is the most directly comparable
+best performer among models trained under standard (non-cross-modal)
+objectives; From-Scratch's ECG_ONLY number is real but should be read
+with the cross-modal-embedding caveat above in mind.
 
 ## Pending
 
 None -- all 6 models (From-Scratch, Spectral, Next-Token, BIOT, LaBraM,
 SensorLM) complete across all 3 modalities (EEG_ONLY, ECG_ONLY, EEG_ECG),
-5 folds each.
+5 folds each. 90/90 fine-tuning runs independently verified: raw
+prediction pickles reconstructed directly for From-Scratch/Spectral/
+Next-Token, per_subject_results.csv + classification_report.txt
+reconstruction for BIOT/LaBraM/SensorLM (no raw pickles persisted by
+that pipeline). Zero mismatches. Fold-disjointness confirmed for all 18
+model/modality combinations: exactly 2056 unique subjects, zero overlap
+across each combination's 5 folds.
