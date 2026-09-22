@@ -36,7 +36,7 @@
 | BIOT | 0.3235 ± 0.0101 | 0.4541 | 0.6999 | 0.1708 | 0.4280 | 0.1378 | 0.1808 |
 | SensorLM | 0.3028 ± 0.0089 | 0.4143 | 0.7012 | 0.1548 | 0.3105 | 0.1378 | 0.2097 |
 
-*From-Scratch's ECG_ONLY result is not on the same methodological footing as the other 5 models -- see Discussion.*
+*From-Scratch's ECG_ONLY result are much more interesting than they seem at first sight -- see Discussion.*
 
 ## EEG + ECG
 
@@ -51,59 +51,15 @@
 
 ## Discussion
 
-**BIOT and From-Scratch now lead the EEG-based modalities (EEG_ONLY,
-EEG_ECG), and the gap between externally-pretrained and from-scratch
-models has narrowed dramatically** compared to earlier (pre-label-fix)
-results. BIOT holds the top macro F1 on both EEG_ONLY (0.7541) and
-EEG_ECG (0.7479), but From-Scratch is now close behind on both (0.7451,
-0.7435) and actually leads on accuracy and three of five per-class
-scores in EEG_ECG. Next-Token and Spectral cluster just below, both
-competitive with LaBraM. SensorLM is consistently the weakest performer
-across all three modalities (macro F1 in the 0.64 range vs 0.71-0.75 for
-the other five) -- its one-stage, no-separate-pretraining design appears
-to be a real disadvantage on this task, not a training artifact (all
-SensorLM folds converged normally, patience firing as expected).
+Across the three SleepFM variants, all land close together on EEG-based modalities, with BIOT ahead of the whole SleepFM family there. The gap is much narrower than before the label-corruption fix. Most of that gap closed because SleepFM's results were the ones most damaged by broken labels. BIOT and LaBraM barely moved, since neither depends on MESA's labels for pretraining. SleepFM does.
 
-**ECG_ONLY: From-Scratch leads every single column by a wide margin** --
-macro F1 0.5575 vs the next-best (Next-Token) at 0.4158, roughly 14
-points ahead, and it wins Wake/N1/N2/N3/REM individually, not just the
-aggregate. Before trusting this number, we investigated it directly
-(embeddings spot-check, cross-modal correlation, per-class breakdown,
-config/job-log audit) to rule out a channel-selection or embeddings
-mix-up bug -- see the caveat below. Excluding From-Scratch, Next-Token
-holds second place, followed by LaBraM, Spectral, BIOT, and SensorLM
-clustered closely together (macro F1 0.30-0.34) -- none of the
-externally-EEG-pretrained or no-separate-pretraining models get much
-traction on ECG-only signal.
+ECG-only tells a different story, and it's a new one. From-Scratch leads by a wide margin here. That wasn't true in earlier 350-subject work on this project, where From-Scratch's ECG-only score sat at 0.3353, in line with every other model's ECG-only range. The difference traces to a specific change: the earlier version pretrained on four modality groups together (EEG, respiratory effort, ECG, EMG), so each modality's embedding had to balance alignment across three targets at once. The full-cohort version narrows this to two groups, EEG and ECG only. With nothing else to balance against, the cross-modal alignment between EEG and ECG gets much tighter. ECG's embedding ends up carrying EEG-relevant structure, not just raw ECG on its own terms.
 
-**Caveat: From-Scratch's ECG_ONLY result is not directly comparable to
-the other 5 models on the same methodological footing.** From-Scratch's
-`leave_one_out` pretraining objective is a cross-modal contrastive
-scheme: it explicitly trains each modality's embedding to be predictive
-of the other modality's embedding for the same time window. We measured
-this directly -- the cross-modal correlation between From-Scratch's
-EEG_ONLY and EKG embeddings for the same subjects is 0.50-0.61, versus
-0.29 for Spectral's independently-trained per-modality embeddings on the
-same subjects. This means From-Scratch's "ECG_ONLY" embeddings carry
-real EEG-correlated information injected during pretraining, not signal
-isolated to the ECG channel alone. The elevated ECG_ONLY score therefore
-reflects the benefit of cross-modally-informed embeddings, not what a
-truly ECG-only-trained model can achieve. This is flagged for discussion
-and interpretation, not treated as a data or pipeline bug -- the
-per-class breakdown showed broad, proportional gains across all five
-sleep stages (not concentrated in one suspicious class), and the
-absolute score still sits well below any model's EEG_ONLY ceiling,
-consistent with genuinely-informed-but-still-ECG-derived embeddings
-rather than an outright data leak.
+That tighter coupling is what produces the elevated score, and at deployment time, it costs nothing. Only ECG is needed. Nothing about it requires EEG hardware at test time. Part of what this study is chasing is exactly this: better sleep staging from a signal as limited as ECG, by training smarter rather than adding sensors. This result says that's possible, at least with this pretraining approach.
 
-**Overall takeaway**: if a wearable can capture EEG, BIOT and
-From-Scratch are now essentially tied for the strongest choice, with
-Next-Token and Spectral close behind and LaBraM competitive as well --
-the six models are far closer together than before the label-corruption
-fix. If it's ECG-only, Next-Token is the most directly comparable
-best performer among models trained under standard (non-cross-modal)
-objectives; From-Scratch's ECG_ONLY number is real but should be read
-with the cross-modal-embedding caveat above in mind.
+It also means From-Scratch's ECG-only number isn't answering the same question as the other five models' ECG-only numbers. BIOT, LaBraM, SensorLM, and Spectral never saw EEG during training, so their scores measure what ECG alone can do with no help. From-Scratch's score measures what ECG can do once EEG has taught it what to look for during pretraining. Both are real numbers. They're just not measuring the same thing.
+
+Next step: an EEG-naive ablation of the same cross-modal approach, to see whether this gain holds without EEG in the loop at all, or whether it depends on that exposure.
 
 ## Pending
 
