@@ -1,0 +1,56 @@
+# Modality-set ablation, Arm D -- full 2056-subject cohort, otherwise
+# IDENTICAL to config_pretrain_fromscratch_eegonly_fullcohort.yaml
+# (same split file, same weight_decay=0.0001/lr_step_period=null fix,
+# 100 epochs). Only modality_types changes: EKG + EMG, no EEG, no RESP.
+# Tests the minimal two-modality non-EEG cross-modal pairing (does EKG
+# aligning against EMG alone produce the same ECG-embedding benefit as
+# aligning against EEG does).
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+batch_size: 128
+epochs: 100
+lr: 0.001
+lr_step_period: null
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+num_workers: 8
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_fromscratch_fullcohort.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_ablation_D_fullcohort'
+weight_decay: 0.0001
+
+# contrastive learning objective you want. pairwise vs. leave_one_out
+mode: "leave_one_out"
+save_iter: 5000
+eval_iter: 5000
+log_interval: 100
+use_wandb: false
+
+# dataloader configs -- confirmed vestigial/unused for actual tensor
+# shaping in pretrain.py's SetTransformerDataset (real per-modality
+# channel count is dynamic per-subject, zero-padded+masked at collate
+# time); kept here only for documentation. Values below are the real
+# MESA channel counts, verified directly against hdf5_full/ across all
+# 2056 subjects. EEG_ONLY_CHANNELS/RESP_CHANNELS kept for consistency
+# even though neither is an active modality here.
+EEG_ONLY_CHANNELS: 3
+RESP_CHANNELS: 6
+EKG_CHANNELS: 2
+EMG_CHANNELS: 3
+
+max_files: null
+val_size: 100
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+
+# modalities you want to train on. Select at least one
+modality_types: ["EKG", "EMG"]

@@ -4,6 +4,7 @@ from torch import nn
 from loguru import logger
 import os
 import sys
+import random
 sys.path.append("../")
 from utils import *
 from models.dataset import SetTransformerDataset, collate_fn
@@ -22,6 +23,15 @@ from torch.optim import AdamW
 torch.backends.cuda.enable_flash_sdp(False)
 torch.backends.cuda.enable_mem_efficient_sdp(False)
 torch.backends.cuda.enable_math_sdp(True)
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def run_iter(batch, num_modalities, model, device, mode, temperature, batch_size, ij):
@@ -107,17 +117,26 @@ def run_iter(batch, num_modalities, model, device, mode, temperature, batch_size
 @click.option("--channel_groups_path", type=str, default='../configs/channel_groups.json' )
 @click.option("--checkpoint_path", type=str, default=None)
 @click.option("--use_wandb", type=str, default=None)
+@click.option("--seed", type=int, default=None,
+              help="Seeds random/numpy/torch for reproducibility. Default "
+                   "(omitted) preserves existing behavior: no seeding call "
+                   "is made, regardless of the config's own (unused) "
+                   "'seed' field.")
 def pretrain(
-    config_path, 
-    channel_groups_path, 
-    checkpoint_path, 
-    use_wandb
+    config_path,
+    channel_groups_path,
+    checkpoint_path,
+    use_wandb,
+    seed
 ):
+
+    if seed is not None:
+        set_seed(seed)
 
     config = load_config(config_path)
     channel_groups = load_data(channel_groups_path)
     current_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     if checkpoint_path:
         output = checkpoint_path
         logger.info("Loading saved config")
@@ -164,6 +183,7 @@ def pretrain(
     logger.info(f"Output Path: {output}")
     logger.info(f"modality_types: {modality_types}")
     logger.info(f"Training Mode: {mode}")
+    logger.info(f"Seed: {seed if seed is not None else '(none -- unseeded, default behavior)'}")
 
     split_id = os.path.splitext(os.path.basename(config.get("split_path", "unknown")))[0]
     split_id = split_id.replace("dataset_split_", "")

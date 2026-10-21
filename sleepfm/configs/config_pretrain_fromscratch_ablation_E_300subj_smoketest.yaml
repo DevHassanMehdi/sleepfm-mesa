@@ -1,0 +1,64 @@
+# Ablation Arm E -- same 4-modality scope as Arm A (EEG_ONLY+RESP+EKG+EMG)
+# and the same FIXED hyperparameters (weight_decay=0.0001,
+# lr_step_period=null, 100 epochs), but pretrained on only the 300
+# subjects used by the old preserved fromscratch_eegonly encoder
+# (dataset_split_fromscratch.json's "pretrain" list), via
+# dataset_split_fromscratch_300subj.json -- same 300 subjects as
+# "pretrain"/"train", plus a validation set built from the standard
+# full-cohort validation-100 list with the 13 subjects that overlap the
+# 300 pretrain subjects removed (87 genuinely held-out subjects; the old
+# encoder's own "validation" list was NOT used here since it is a pure
+# subset of its own 300 pretrain subjects, not a real holdout). Isolates
+# whether the old encoder's much lower downstream performance was driven
+# by the old buggy hyperparameters (weight_decay=0.0, lr_step_period=2)
+# rather than by its 350-subject cohort size, by holding cohort size
+# fixed at the same ~300 subjects and fixing only the hyperparameters.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+batch_size: 128
+epochs: 3
+lr: 0.001
+lr_step_period: null
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+num_workers: 8
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+data_path: '/scratch/project_2019517/sleepfm-data/mesa/hdf5_full'
+split_path: 'sleepfm/configs/dataset_split_fromscratch_300subj.json'
+save_path: '/scratch/project_2019517/sleepfm-data/checkpoints/encoders/fromscratch_ablation_E_300subj_smoketest'
+weight_decay: 0.0001
+
+# contrastive learning objective you want. pairwise vs. leave_one_out
+mode: "leave_one_out"
+save_iter: 50
+eval_iter: 50
+log_interval: 10
+use_wandb: false
+
+# dataloader configs -- confirmed vestigial/unused for actual tensor
+# shaping in pretrain.py's SetTransformerDataset (real per-modality
+# channel count is dynamic per-subject, zero-padded+masked at collate
+# time); kept here only for documentation. Values below are the real
+# MESA channel counts, verified directly against hdf5_full/ across all
+# 2056 subjects (RESP and EMG both consistently match on every
+# subject -- see task report for the verification).
+EEG_ONLY_CHANNELS: 3
+RESP_CHANNELS: 6
+EKG_CHANNELS: 2
+EMG_CHANNELS: 3
+
+max_files: null
+val_size: 100
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+
+# modalities you want to train on. Select at least one
+modality_types: ["EEG_ONLY", "RESP", "EKG", "EMG"]
