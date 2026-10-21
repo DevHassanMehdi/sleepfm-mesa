@@ -36,7 +36,7 @@
 | BIOT | 0.3235 ± 0.0101 | 0.4541 | 0.6999 | 0.1708 | 0.4280 | 0.1378 | 0.1808 |
 | SensorLM | 0.3028 ± 0.0089 | 0.4143 | 0.7012 | 0.1548 | 0.3105 | 0.1378 | 0.2097 |
 
-*From-Scratch's ECG_ONLY result are much more interesting than they seem at first sight -- see Discussion.*
+*From-Scratch pretrained on MESA ECG with a contrastive objective. BIOT, LaBraM, and SensorLM did not see MESA ECG during pretraining. See Discussion.*
 
 ## EEG + ECG
 
@@ -53,13 +53,11 @@
 
 Across the three SleepFM variants, all land close together on EEG-based modalities, with BIOT ahead of the whole SleepFM family there. The gap is much narrower than before the label-corruption fix. Most of that gap closed because SleepFM's results were the ones most damaged by broken labels. BIOT and LaBraM barely moved, since neither depends on MESA's labels for pretraining. SleepFM does.
 
-ECG-only tells a different story, and it's a new one. From-Scratch leads by a wide margin here. That wasn't true in earlier 350-subject work on this project, where From-Scratch's ECG-only score sat at 0.3353, in line with every other model's ECG-only range. The difference traces to a specific change: the earlier version pretrained on four modality groups together (EEG, respiratory effort, ECG, EMG), so each modality's embedding had to balance alignment across three targets at once. The full-cohort version narrows this to two groups, EEG and ECG only. With nothing else to balance against, the cross-modal alignment between EEG and ECG gets much tighter. ECG's embedding ends up carrying EEG-relevant structure, not just raw ECG on its own terms.
+ECG-only is where the SleepFM variants differ most. From-Scratch leads by a wide margin, at 0.5575. We ran an ablation to find out why. The earlier 350-subject From-Scratch encoder scored 0.39 on ECG-only. Retraining it on the same 300 subjects with a fixed learning-rate schedule raised the score to 0.52. Training on all 2056 subjects raised it to 0.54. Narrowing pretraining to EEG and ECG added a little more, to 0.56. So most of the jump came from fixing the training schedule, which had been cutting the learning rate by ten times every two epochs.
 
-That tighter coupling is what produces the elevated score, and at deployment time, it costs nothing. Only ECG is needed. Nothing about it requires EEG hardware at test time. Part of what this study is chasing is exactly this: better sleep staging from a signal as limited as ECG, by training smarter rather than adding sensors. This result says that's possible, at least with this pretraining approach.
+EEG was not needed in pretraining. Encoders that never saw EEG scored between 0.52 and 0.56. The partner signal mattered a little, and chin EMG gave the lowest score. A second pretraining seed gave nearly the same result, so the top score is not a lucky seed. Each variant was pretrained once, so small differences should be read with care.
 
-It also means From-Scratch's ECG-only number isn't answering the same question as the other five models' ECG-only numbers. BIOT, LaBraM, SensorLM, and Spectral never saw EEG during training, so their scores measure what ECG alone can do with no help. From-Scratch's score measures what ECG can do once EEG has taught it what to look for during pretraining. Both are real numbers. They're just not measuring the same thing.
-
-Next step: an EEG-naive ablation of the same cross-modal approach, to see whether this gain holds without EEG in the loop at all, or whether it depends on that exposure.
+BIOT, LaBraM, and SensorLM stay at 0.30 to 0.34 on ECG-only, because none of them saw MESA ECG during pretraining. Spectral and Next-Token did see it, yet score 0.34 and 0.42. So ECG pretraining alone does not explain From-Scratch's lead. It may come from its contrastive objective or its 5-minute context. We have not tested that.
 
 ## Pending
 

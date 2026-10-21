@@ -21,12 +21,8 @@ Std  | 0.0052   | 0.0055   | 0.0030 | 0.0098 | 0.0067 | 0.0126 | 0.0055
 
 ECG_ONLY (EKG)
 --------------------------------------------------
-NOTE: leave_one_out pretraining is a cross-modal contrastive objective
--- these ECG_ONLY embeddings carry EEG-correlated information injected
-during pretraining (measured cross-modal correlation 0.50-0.61, vs
-0.29 for Spectral's independently-trained per-modality embeddings).
-Not directly comparable to the other 5 models' ECG_ONLY results on the
-same methodological footing. See ALL_RESULTS_FULL.md Discussion.
+NOTE: see results/ABLATION_MODALITY_SET_RESULTS.md for the modality-set
+ablation explaining this result, and ALL_RESULTS_FULL.md Discussion.
 --------------------------------------------------
 Fold | Macro F1 | Accuracy | Wake   | N1     | N2     | N3     | REM
 -----+----------+----------+--------+--------+--------+--------+-------
