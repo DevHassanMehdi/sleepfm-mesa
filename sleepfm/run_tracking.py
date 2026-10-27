@@ -17,6 +17,19 @@ can write a real "TIMEOUT" summary.txt with whatever epoch/metric state was
 last recorded, which a bash-level wrapper has no way to do since it has no
 visibility into the Python training loop's state.
 
+KNOWN LIMITATION: on this cluster, the SIGTERM-to-SIGKILL grace window on a
+SLURM time-limit kill has been observed as short as a few tens of
+milliseconds -- sometimes too short for _handle_sigterm to complete its
+write at all (confirmed by testing: one run's SIGKILL landed before the
+handler's first print statement executed). summary.txt is never left empty
+or truncated in that case (the atomic write guarantees that), but its
+"Status:" line can be left reading "IN_PROGRESS" -- the last snapshot
+log_epoch() wrote during training -- instead of "TIMEOUT". If you need to
+know whether a run actually hit its time limit vs. is still queued/running,
+`sacct -j <jobid> --format=State` is the source of truth for the real end
+state; summary.txt's epoch/metric fields are reliable in either case, but
+its status line is not guaranteed to say TIMEOUT specifically.
+
 Usage:
     from run_tracking import init_run
 
@@ -92,6 +105,37 @@ class RunTracker:
         self.best_metric = None
         self.final_per_class = None
         self._finished = False
+        # Guards _handle_sigterm against re-entry -- SLURM on this cluster
+        # was confirmed (via testing) to sometimes deliver SIGTERM twice in
+        # quick succession (1-7ms apart) on a time-limit kill. Without this,
+        # a second delivery arriving while the first invocation is blocked
+        # in a syscall (e.g. os.fsync during the summary write) triggers a
+        # nested call that unconditionally printed "written" and self-sent
+        # another SIGTERM -- which, with the original handler restored, hit
+        # the default action and could kill the process mid-write in the
+        # OUTER invocation, leaving summary.txt stuck at its last
+        # "IN_PROGRESS" snapshot instead of "TIMEOUT".
+        self._sigterm_handling = False
+
+        # Best-effort sweep for this run_dir's own leftover temp files from
+        # a prior crashed/killed write attempt (relevant if a caller ever
+        # passes the same explicit `timestamp=` to reuse a run_dir; normal
+        # usage always gets a fresh timestamp, so this is usually a no-op).
+        self._cleanup_leftover_tmp_files()
+
+        # Read once, here, before training starts -- never from inside the
+        # SIGTERM handler or _write_summary(). Confirmed by testing: calling
+        # torch.cuda.device_count() from the signal handler while the
+        # interrupted code was mid-CUDA-call (e.g. a validation forward
+        # pass) could block long enough to blow through SLURM's SIGTERM-to-
+        # SIGKILL grace window, leaving summary.txt empty. GPU count is
+        # fixed for the life of the run, so reading it once up front and
+        # reusing it is both correct and signal-safe.
+        try:
+            import torch
+            self.n_gpus = max(1, torch.cuda.device_count())
+        except Exception:
+            self.n_gpus = 1
 
         self._sample_interval_s = sample_interval_s
         self._sampler_proc = None
@@ -137,6 +181,19 @@ class RunTracker:
             except subprocess.TimeoutExpired:
                 pass  # best-effort; the OS/cgroup will reap it when the job exits
         self._sampler_proc = None
+
+    def _cleanup_leftover_tmp_files(self):
+        # Best-effort: an interrupted atomic write (process killed between
+        # opening the temp file and the os.replace that would consume it)
+        # leaves a dangling `summary.txt.tmp<pid>` behind. Harmless to the
+        # real summary.txt (which atomic rename ensures is never touched by
+        # a half-finished write), but worth sweeping up so it doesn't
+        # accumulate.
+        try:
+            for leftover in self.run_dir.glob(f"{self.summary_path.name}.tmp*"):
+                leftover.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     def _cleanup_resource_csv(self):
         # Called after _write_summary() has already extracted avg util/peak
@@ -188,7 +245,12 @@ class RunTracker:
         # be very short (observed ~8s on this cluster). summary.txt is the
         # one artifact that MUST land, so write it before anything that can
         # block (subprocess teardown, writer flush) risks eating the window.
+        # _write_summary() itself does its own fast minimal write first (see
+        # its docstring-equivalent comment) -- stopping the sampler here,
+        # strictly after _write_summary() returns, can never delay that
+        # first write.
         self._write_summary(status)
+        self._cleanup_leftover_tmp_files()
         self._stop_resource_sampler()
         self._cleanup_resource_csv()
         self.writer.close()
@@ -197,13 +259,39 @@ class RunTracker:
         self.finish(f"FAILED: {type(exc).__name__}: {exc}")
 
     def _handle_sigterm(self, signum, frame):
+        # Re-entrancy guard FIRST, before any print or I/O -- confirmed by
+        # testing that this cluster's SLURM can deliver SIGTERM twice
+        # within a few ms on a time-limit kill. A second delivery arriving
+        # while this function is still running (e.g. blocked in the first
+        # invocation's os.fsync call) must do nothing at all: no print, no
+        # write, no self-kill. Without this, the nested invocation could
+        # restore the default handler and self-kill while the OUTER
+        # invocation's write was still in flight.
+        if self._sigterm_handling:
+            return
+        self._sigterm_handling = True
+
         # SLURM sends SIGTERM ahead of SIGKILL on time-limit -- this is the
         # only way a TIMEOUT run gets a real summary.txt, since the training
         # loop never reaches its own finish() call in that case.
         print(f">>> RUN TRACKING: caught SIGTERM at {datetime.now().isoformat()}, "
               f"writing TIMEOUT summary", flush=True)
-        self.finish("TIMEOUT")
-        print(">>> RUN TRACKING: TIMEOUT summary written", flush=True)
+        try:
+            # finish() writes synchronously (through the final os.replace)
+            # before returning -- nothing below this line runs until that
+            # write has actually landed on disk.
+            self.finish("TIMEOUT")
+            wrote_ok = True
+        except Exception as e:
+            print(f">>> RUN TRACKING: TIMEOUT summary write failed: "
+                  f"{type(e).__name__}: {e}", flush=True)
+            wrote_ok = False
+
+        # Only claim success, and only restore the default handler /
+        # re-send SIGTERM to actually terminate, after the write attempt
+        # above has fully finished (succeeded or not) -- never before.
+        if wrote_ok:
+            print(">>> RUN TRACKING: TIMEOUT summary written", flush=True)
         signal.signal(signal.SIGTERM, self._orig_sigterm)
         os.kill(os.getpid(), signal.SIGTERM)
 
@@ -235,21 +323,10 @@ class RunTracker:
             return None, None
         return sum(utils_) / len(utils_), max(mems) / 1024.0
 
-    def _write_summary(self, status):
-        finish_time = datetime.now()
-        duration = finish_time - self.start_time
+    def _build_summary_lines(self, status, avg_util, peak_mem_gb, finish_time, duration):
         hours, rem = divmod(int(duration.total_seconds()), 3600)
         minutes = rem // 60
-
-        n_gpus = 1
-        try:
-            import torch
-            n_gpus = max(1, torch.cuda.device_count())
-        except Exception:
-            pass
-        gpu_hours = (duration.total_seconds() / 3600.0) * n_gpus
-
-        avg_util, peak_mem_gb = self._read_resource_stats()
+        gpu_hours = (duration.total_seconds() / 3600.0) * self.n_gpus
 
         fold_str = f" / fold_{self.fold}" if self.fold is not None else ""
         lines = [
@@ -280,9 +357,46 @@ class RunTracker:
             f"GPU-hours used: {gpu_hours:.3f} | Avg GPU util: {util_str}% | "
             f"Peak mem: {mem_str} GB"
         )
+        return lines
 
-        with open(self.summary_path, "w") as f:
-            f.write("\n".join(lines) + "\n")
+    def _atomic_write_text(self, path, text):
+        # Temp file in the SAME directory so os.replace() is an atomic
+        # rename on one filesystem, never a cross-filesystem copy. flush()
+        # + fsync() before replace() so the bytes are durable on disk before
+        # the rename makes them visible at `path` -- an interrupted write
+        # (SIGKILL mid-write) leaves the temp file damaged, never `path`
+        # itself, since `path` is only ever touched by the atomic rename.
+        tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
+        with open(tmp_path, "w") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+
+    def _write_summary(self, status):
+        finish_time = datetime.now()
+        duration = finish_time - self.start_time
+
+        # Step 1: minimal summary, written immediately. Nothing in this
+        # path touches CUDA or reads the resource CSV -- just in-memory
+        # state (epoch/metric/status) and cheap arithmetic (duration,
+        # GPU-hours from the GPU count read once in __init__). This MUST
+        # land even under a near-zero SIGTERM-to-SIGKILL grace window.
+        lines = self._build_summary_lines(status, None, None, finish_time, duration)
+        self._atomic_write_text(self.summary_path, "\n".join(lines) + "\n")
+
+        # Step 2: enhance with real resource stats, best-effort. If reading
+        # the CSV raises or is slow, the minimal summary from step 1 has
+        # already landed on disk via atomic rename -- a SIGKILL anywhere in
+        # this block costs only the resource line, never summary.txt itself
+        # (the temp file it would have replaced `path` with is simply
+        # abandoned, half-written or not).
+        try:
+            avg_util, peak_mem_gb = self._read_resource_stats()
+            lines = self._build_summary_lines(status, avg_util, peak_mem_gb, finish_time, duration)
+            self._atomic_write_text(self.summary_path, "\n".join(lines) + "\n")
+        except Exception:
+            pass
 
 
 def init_run(model, pretrain_method, modality, split_id, fold=None,

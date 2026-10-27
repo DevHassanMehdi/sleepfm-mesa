@@ -188,9 +188,8 @@ def pretrain(
     split_id = os.path.splitext(os.path.basename(config.get("split_path", "unknown")))[0]
     split_id = split_id.replace("dataset_split_", "")
     modality_str = "_".join(modality_types)
-    tracker = init_run(model="fromscratch", pretrain_method="pretrain", modality=modality_str,
-                        split_id=split_id, fold=None, metric_name="Retrieval_Accuracy")
 
+    tracker = None
     try:
       logger.info(f"Batch Size: {batch_size}; Number of Workers: {num_workers}")
       logger.info(f"Weight Decay: {weight_decay}; Learning Rate: {lr}; Learning Step Period: {lr_step_period}")
@@ -209,6 +208,17 @@ def pretrain(
       }
 
       logger.info(f"Dataset loaded in {time.time() - start:.1f} seconds")
+
+      # init_run() registers a SIGTERM handler in this process. Called only
+      # now, after SetTransformerDataset's multiprocessing Pool (inside
+      # index_files()) has already been created and torn down -- forking
+      # that Pool's workers AFTER the handler existed meant each worker
+      # inherited it too, and the Pool's own teardown-time SIGTERM to its
+      # workers got caught and misreported as a spurious early "TIMEOUT"
+      # for this run. Registering the handler after the Pool is gone avoids
+      # that.
+      tracker = init_run(model="fromscratch", pretrain_method="pretrain", modality=modality_str,
+                          split_id=split_id, fold=None, metric_name="Retrieval_Accuracy")
 
       model_class = getattr(sys.modules[__name__], config['model'])
       logger.info(f"Model Class: {config['model']}")
@@ -446,7 +456,8 @@ def pretrain(
             save_data(config, os.path.join(output, "config.json"))
         tracker.finish("COMPLETED (max epochs)")
     except Exception as e:
-        tracker.finish_failed(e)
+        if tracker is not None:
+            tracker.finish_failed(e)
         raise
 
     if config["use_wandb"]:
