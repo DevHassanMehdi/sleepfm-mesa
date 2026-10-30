@@ -86,7 +86,14 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
                    "SLURM script chaining evaluate_sleep_staging.py / "
                    "compute_metrics.py afterward) knows the exact "
                    "checkpoint_dir path without parsing stdout.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp):
+@click.option("--patience", type=int, default=50,
+              help="Early-stopping patience (epochs with no val-F1 "
+                   "improvement before stopping). Default 50 matches this "
+                   "script's previous hardcoded behavior exactly, so every "
+                   "existing invocation (including the finished 90-run "
+                   "benchmark) is unaffected unless this flag is passed "
+                   "explicitly.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -240,7 +247,8 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
       best_val_f1 = -float('inf')
       best_epoch = 0
       patience_counter = 0
-      patience = 50
+      # was hardcoded at 50; now the --patience CLI option (default 50, so
+      # unchanged unless passed explicitly -- see its help text above)
 
       class_abbrev = ['W', 'N1', 'N2', 'N3', 'R']
 

@@ -26,6 +26,9 @@ LABELS_DIR = "data/mesa/labels"
 
 MODALITY_CHANNELS = {
     "EEG_ONLY":          ["EEG1", "EEG2", "EEG3"],
+    "EEG1_ONLY":         ["EEG1"],
+    "EEG2_ONLY":         ["EEG2"],
+    "EEG3_ONLY":         ["EEG3"],
     "ECG_ONLY":          ["EKG"],
     "EEG_ECG":           ["EEG1", "EEG2", "EEG3", "EKG"],
     "BAS":               ["EEG1", "EEG2", "EEG3", "EOG-L", "EOG-R"],

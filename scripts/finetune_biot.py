@@ -148,12 +148,17 @@ def main():
                                      hdf5_dir=args.hdf5_dir)
         val_ds = BIOTSleepDataset(split_path, "validation", args.modality, fold_key=args.fold_key,
                                    hdf5_dir=args.hdf5_dir)
-        print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
+        print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)} "
+              f"channels={train_ds.channels}", flush=True)
 
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
                                    num_workers=args.num_workers, drop_last=True)
         val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
                                  num_workers=args.num_workers)
+        _probe_x, _probe_y, _ = next(iter(train_loader))
+        print(f"[{args.modality}] input batch shape: {tuple(_probe_x.shape)} "
+              f"(batch, channels, samples)", flush=True)
+        del _probe_x, _probe_y
 
         model = build_model(pretrained_path=args.pretrained_path).to(device)
         class_weights = compute_class_weights(train_ds).to(device)

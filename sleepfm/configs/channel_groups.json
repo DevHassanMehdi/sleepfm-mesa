@@ -978,5 +978,14 @@
         "EEG1",
         "EEG2",
         "EEG3"
+    ],
+    "EEG1_ONLY": [
+        "EEG1"
+    ],
+    "EEG2_ONLY": [
+        "EEG2"
+    ],
+    "EEG3_ONLY": [
+        "EEG3"
     ]
 }

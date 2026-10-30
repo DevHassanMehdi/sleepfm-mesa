@@ -53,6 +53,11 @@ _MODALITY_ALIASES = {
     "BAS_EKG": "BAS_EKG",
     "BAS_EKG_RESP": "BAS_EKG_RESP",
     "BAS_EKG_RESP_EMG": "BAS_EKG_RESP_EMG",
+    # Single-EEG-channel comparison (EEG1/EEG2/EEG3 individually) --
+    # identity mappings, already canonical.
+    "EEG1_ONLY": "EEG1_ONLY",
+    "EEG2_ONLY": "EEG2_ONLY",
+    "EEG3_ONLY": "EEG3_ONLY",
 }
 
 
