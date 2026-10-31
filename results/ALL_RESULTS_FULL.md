@@ -13,6 +13,7 @@
 | BIOT pretraining | Externally pretrained (EEG-SHHS+PREST-18-channels.ckpt) + fine-tuned |
 | LaBraM pretraining | Externally pretrained (labram-base.pth) + fine-tuned |
 | SensorLM pretraining | One-stage, from-scratch (no separate pretraining phase) |
+| Fine-tuning patience | From-Scratch, Spectral, Next-Token: 50. BIOT, LaBraM, SensorLM: 20 |
 
 ## EEG Only
 
