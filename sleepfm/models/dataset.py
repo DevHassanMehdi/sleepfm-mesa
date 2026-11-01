@@ -254,6 +254,12 @@ class SleepEventClassificationDataset(Dataset):
     def _try_get_item(self, idx):
         hdf5_path, label_path, start_index = self.index_map[idx]
         labels_df = pd.read_csv(label_path)
+        # Validity must be computed from the raw StageNumber, before the
+        # -1->0 remap below turns every unscored row into a valid-looking
+        # Wake label. -1 is MESA's existing "no label" sentinel (never
+        # actually present in MESA's own label files) and is also used by
+        # the Moody/PhysioNet 2026 label converter for unscored epochs.
+        label_valid = (labels_df["StageNumber"].to_numpy() != -1)
         labels_df["StageNumber"] = labels_df["StageNumber"].replace(-1, 0)
 
         #### Temp
@@ -266,6 +272,7 @@ class SleepEventClassificationDataset(Dataset):
             dset_names = list(hf.keys())[:]
             if self.context != -1:
                 y_data = y_data[start_index:start_index+self.context]
+                label_valid = label_valid[start_index:start_index+self.context]
             for dataset_name in dset_names:
                 if dataset_name in self.channel_like:
                     if self.context == -1:
@@ -290,6 +297,7 @@ class SleepEventClassificationDataset(Dataset):
         x_data = torch.tensor(x_data, dtype=torch.float32)
         y_data = pd.to_numeric(pd.Series(y_data), errors="coerce").fillna(-1).to_numpy()
         y_data = torch.tensor(y_data, dtype=torch.float32)
+        label_valid = torch.tensor(np.asarray(label_valid), dtype=torch.bool)
 
         # Resample embeddings from 5-second to 30-second resolution (factor of 6)
         # by mean-pooling every 6 consecutive embedding vectors. This aligns the
@@ -316,12 +324,13 @@ class SleepEventClassificationDataset(Dataset):
 
         x_data = x_data[:, :min_length, :]
         y_data = y_data[:min_length]
+        label_valid = label_valid[:min_length]
 
-        return x_data, y_data, self.max_channels, self.max_seq_len, hdf5_path
+        return x_data, y_data, self.max_channels, self.max_seq_len, hdf5_path, label_valid
 
 
 def sleep_event_finetune_full_collate_fn(batch):
-    x_data, y_data, max_channels_list, max_seq_len_list, hdf5_path_list = zip(*batch)
+    x_data, y_data, max_channels_list, max_seq_len_list, hdf5_path_list, label_valid_list = zip(*batch)
 
     num_channels = max(max_channels_list)
 
@@ -336,7 +345,7 @@ def sleep_event_finetune_full_collate_fn(batch):
     padded_y_data = []
     padded_mask = []
 
-    for x_item, y_item in zip(x_data, y_data):
+    for x_item, y_item, valid_item in zip(x_data, y_data, label_valid_list):
         # Get the shape of x_item
         c, s, e = x_item.size()
         c = min(c, num_channels)
@@ -349,6 +358,19 @@ def sleep_event_finetune_full_collate_fn(batch):
         # Copy the actual data to the padded tensor and set the mask for real data
         padded_x_item[:c, :s, :e] = x_item[:c, :s, :e]
         mask[:c, :s] = 0  # 0 for real data, 1 for padding
+
+        # Also mark unscored epochs (StageNumber was -1 before the
+        # remap -- see _try_get_item) as excluded, the same way padding
+        # is excluded, so masked_cross_entropy_loss and every downstream
+        # consumer of this mask (evaluate_sleep_staging.py,
+        # compute_metrics.py) skip them automatically. A no-op for any
+        # file whose labels never contain -1 (true of every real MESA
+        # label file), since valid_item is then all True and
+        # invalid_cols is empty.
+        invalid_cols = ~valid_item[:s]
+        sub_mask = mask[:c, :s]
+        sub_mask[:, invalid_cols] = 1
+        mask[:c, :s] = sub_mask
 
         # Pad y_data with zeros to match max_seq_len
         padded_y_item = torch.zeros(max_seq_len)
