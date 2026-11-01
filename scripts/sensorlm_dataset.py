@@ -26,7 +26,7 @@ _SPLIT_KEY = {"train": "train", "val": "validation", "validation": "validation",
 
 class SensorLMSleepDataset(Dataset):
     def __init__(self, split_path, split, modality, fold_key="fold_0",
-                 hdf5_dir=HDF5_DIR, labels_dir=LABELS_DIR):
+                 hdf5_dir=HDF5_DIR, labels_dir=LABELS_DIR, skip_unscored=False):
         self.modality = modality
         self.channels = MODALITY_CHANNELS[modality]
         self.hdf5_dir = hdf5_dir
@@ -48,9 +48,22 @@ class SensorLMSleepDataset(Dataset):
                 self.skipped_subjects.append((sid, missing))
                 continue
             df     = pd.read_csv(label_path)
-            valid  = np.isin(df["StageNumber"].to_numpy(), [0, 1, 2, 3, 4])
-            starts = np.round(df["Start"].to_numpy() * MESA_HZ).astype(int)
             stages = df["StageNumber"].to_numpy()
+            starts = np.round(df["Start"].to_numpy() * MESA_HZ).astype(int)
+            # np.isin(..., [0,1,2,3,4]) already excludes -1 (unscored)
+            # unconditionally, same as any other out-of-range value --
+            # skip_unscored makes that exclusion explicit/toggleable
+            # rather than an implicit side effect of the broader filter,
+            # for datasets (e.g. Moody/PhysioNet 2026) that use -1 for
+            # unscored epochs. A no-op either way for MESA, which never
+            # has -1 in StageNumber.
+            valid = np.isin(stages, [0, 1, 2, 3, 4])
+            if skip_unscored:
+                n_unscored = int((stages == -1).sum())
+                if n_unscored:
+                    print(f"skip_unscored: excluding {n_unscored} unscored "
+                          f"(-1) epochs for {sid}")
+                valid = valid & (stages != -1)
             for s, st in zip(starts[valid], stages[valid]):
                 self.index.append((hdf5_path, int(s), int(st)))
 

@@ -104,6 +104,12 @@ def main():
                          help="Resume an existing full_cohort experiment "
                               "folder (e.g. after a SLURM timeout) instead of "
                               "starting a new timestamped run.")
+    parser.add_argument("--skip_unscored", action="store_true", default=False,
+                         help="Explicitly drop epochs with StageNumber == -1 "
+                              "(unscored) when building the sample index. "
+                              "Off by default; a no-op for MESA either way, "
+                              "since np.isin(stages, [0,1,2,3,4]) already "
+                              "excludes -1 unconditionally.")
     args = parser.parse_args()
 
     device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -127,9 +133,9 @@ def main():
         # with, even if --split_id isn't re-passed on resume.
         split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
         train_ds = SensorLMSleepDataset(split_path, "train", args.modality, args.fold_key,
-                                         hdf5_dir=args.hdf5_dir)
+                                         hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
         val_ds   = SensorLMSleepDataset(split_path, "val",   args.modality, args.fold_key,
-                                         hdf5_dir=args.hdf5_dir)
+                                         hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
                                   num_workers=args.num_workers, pin_memory=True)
         val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False,
