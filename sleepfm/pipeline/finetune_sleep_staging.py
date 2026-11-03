@@ -256,9 +256,9 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         model.train()
         running_loss = 0.0
         train_preds, train_targets, train_masks = [], [], []
-        for x_data, y_data, padded_matrix, hdf5_path_list in train_loader:
-            x_data, y_data, padded_matrix = x_data.to(device), y_data.to(device), padded_matrix.to(device)
-            outputs, mask = model(x_data, padded_matrix)
+        for x_data, y_data, padded_matrix, structural_mask, hdf5_path_list in train_loader:
+            x_data, y_data, padded_matrix, structural_mask = x_data.to(device), y_data.to(device), padded_matrix.to(device), structural_mask.to(device)
+            outputs, mask = model(x_data, padded_matrix, structural_mask)
             loss = masked_cross_entropy_loss(outputs, y_data, mask, device)
             loss.backward()
             optimizer.step()
@@ -285,9 +285,9 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         all_targets = []
         all_masks = []
         with torch.no_grad():
-            for x_data, y_data, padded_matrix, _ in val_loader:
-                x_data, y_data, padded_matrix = x_data.to(device), y_data.to(device), padded_matrix.to(device)
-                outputs, mask = model(x_data, padded_matrix)
+            for x_data, y_data, padded_matrix, structural_mask, _ in val_loader:
+                x_data, y_data, padded_matrix, structural_mask = x_data.to(device), y_data.to(device), padded_matrix.to(device), structural_mask.to(device)
+                outputs, mask = model(x_data, padded_matrix, structural_mask)
                 loss = masked_cross_entropy_loss(outputs, y_data, mask, device)
                 val_loss += loss.item()
                 all_preds.append(outputs.argmax(dim=2).cpu().numpy())

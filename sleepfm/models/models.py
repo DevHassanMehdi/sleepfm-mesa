@@ -178,24 +178,35 @@ class SleepEventLSTMClassifier(nn.Module):
         # Fully connected layer for classification
         self.fc = nn.Linear(embed_dim, num_classes)
 
-    def forward(self, x, mask):
+    def forward(self, x, mask, structural_mask=None):
         B, C, S, E = x.shape
-        
+
         # Rearrange for spatial pooling
         x = rearrange(x, 'b c s e -> (b s) c e')
-        
-        # Prepare the mask for spatial pooling
-        mask_spatial = mask[:, :, 0]
+
+        # structural_mask carries ONLY channel/sequence padding (see
+        # sleep_event_finetune_full_collate_fn), never label validity, so
+        # label validity (unscored epochs) never enters the forward pass --
+        # it only affects the loss and metrics via the returned mask below.
+        # Falling back to the combined mask when structural_mask isn't
+        # given reproduces this function's original behavior exactly, so
+        # any caller not yet updated to pass structural_mask is unaffected.
+        attn_mask = structural_mask if structural_mask is not None else mask
+
+        # Prepare the mask for spatial pooling. Channel padding is
+        # time-invariant (a channel is either real for the whole file or
+        # padded for the whole file), so when attn_mask is structural_mask
+        # this is equivalent to just reading any single timestep -- but
+        # derived as "masked at every timestep" so the fallback path (where
+        # attn_mask is the label-validity-carrying combined mask) is also
+        # safe regardless of which epoch happens to be unscored.
+        mask_spatial = attn_mask.to(dtype=torch.bool).all(dim=-1)
         mask_spatial = mask_spatial.unsqueeze(1).expand(-1, S, -1)
         mask_spatial = rearrange(mask_spatial, 'b t c -> (b t) c')
-        
-        # Ensure the mask is boolean
-        if mask_spatial.dtype != torch.bool:
-            mask_spatial = mask_spatial.to(dtype=torch.bool)
 
         # Apply spatial pooling
         x = self.spatial_pooling(x, mask_spatial)
-        
+
         # Reshape to (B, S, E) after pooling
         x = x.view(B, S, E)
 
@@ -204,7 +215,9 @@ class SleepEventLSTMClassifier(nn.Module):
         x = self.layer_norm(x)
 
         # Apply transformer encoder for spatial modeling
-        mask_temporal = mask[:, 0, :]
+        mask_temporal = attn_mask[:, 0, :]
+        if mask_temporal.dtype != torch.bool:
+            mask_temporal = mask_temporal.to(dtype=torch.bool)
         x = self.transformer_encoder(x, src_key_padding_mask=mask_temporal)
 
         # Apply LSTM for temporal modeling
@@ -213,7 +226,7 @@ class SleepEventLSTMClassifier(nn.Module):
         # Apply the final fully connected layer for classification
         x = self.fc(x)  # Shape: (B, S, num_classes)
 
-        return x, mask[:, 0, :]  # Return mask along temporal dimension
+        return x, mask[:, 0, :]  # Return the COMBINED mask (padding + label validity) for loss/metrics
 
 
 class DiagnosisFinetuneFullLSTMCOXPH(nn.Module):

@@ -344,6 +344,7 @@ def sleep_event_finetune_full_collate_fn(batch):
     padded_x_data = []
     padded_y_data = []
     padded_mask = []
+    padded_structural_mask = []
 
     for x_item, y_item, valid_item in zip(x_data, y_data, label_valid_list):
         # Get the shape of x_item
@@ -358,6 +359,16 @@ def sleep_event_finetune_full_collate_fn(batch):
         # Copy the actual data to the padded tensor and set the mask for real data
         padded_x_item[:c, :s, :e] = x_item[:c, :s, :e]
         mask[:c, :s] = 0  # 0 for real data, 1 for padding
+
+        # structural_mask reflects ONLY channel/sequence padding, computed
+        # from c and s exactly as above, before label validity is folded
+        # in below. It must never depend on which epochs are unscored --
+        # see SleepEventLSTMClassifier.forward(), which uses this (not
+        # mask) to build its internal attention masks, so that label
+        # validity affects only the loss and metrics, never the forward
+        # pass. A snapshot taken here, before the mutation below, rather
+        # than a clone of mask afterward.
+        structural_mask = mask.clone()
 
         # Also mark unscored epochs (StageNumber was -1 before the
         # remap -- see _try_get_item) as excluded, the same way padding
@@ -380,13 +391,15 @@ def sleep_event_finetune_full_collate_fn(batch):
         padded_x_data.append(padded_x_item)
         padded_y_data.append(padded_y_item)
         padded_mask.append(mask)
+        padded_structural_mask.append(structural_mask)
 
     # Stack all tensors into a batch
     x_data = torch.stack(padded_x_data)
     y_data = torch.stack(padded_y_data)
     padded_mask = torch.stack(padded_mask)
+    padded_structural_mask = torch.stack(padded_structural_mask)
 
-    return x_data, y_data, padded_mask, hdf5_path_list
+    return x_data, y_data, padded_mask, padded_structural_mask, hdf5_path_list
 
 
 class DiagnosisFinetuneFullCOXPHDataset(Dataset):

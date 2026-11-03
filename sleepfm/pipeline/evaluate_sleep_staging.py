@@ -133,9 +133,9 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
 
     count = 0
     with torch.no_grad():
-        for (x_data, y_data, padded_matrix, hdf5_path_list) in tqdm(test_loader, desc="Evaluating"):
-            x_data, y_data, padded_matrix, hdf5_path_list = x_data.to(device), y_data.to(device), padded_matrix.to(device), list(hdf5_path_list)
-            outputs, mask = model(x_data, padded_matrix)
+        for (x_data, y_data, padded_matrix, structural_mask, hdf5_path_list) in tqdm(test_loader, desc="Evaluating"):
+            x_data, y_data, padded_matrix, structural_mask, hdf5_path_list = x_data.to(device), y_data.to(device), padded_matrix.to(device), structural_mask.to(device), list(hdf5_path_list)
+            outputs, mask = model(x_data, padded_matrix, structural_mask)
             all_targets.append(y_data.cpu().numpy())
             all_outputs.append(torch.softmax(outputs, dim=-1).cpu().numpy())
             all_logits.append(outputs.cpu().numpy())
