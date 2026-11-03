@@ -39,11 +39,11 @@ HDF5_FULL_DIR = Path("/scratch/project_2019517/sleepfm-data/mesa/hdf5_full")
 LABELS_DIR = Path("/scratch/project_2019517/sleepfm-data/mesa/labels")
 
 
-def get_subject_pool():
+def get_subject_pool(hdf5_dir=HDF5_FULL_DIR, labels_dir=LABELS_DIR):
     """Every subject with both a raw HDF5 and a label CSV -- the full
-    usable cohort (confirmed 1944/1944 as of 2026-07-28)."""
-    hdf5_ids = {f[:-len(".hdf5")] for f in os.listdir(HDF5_FULL_DIR) if f.endswith(".hdf5")}
-    label_ids = {f[:-len(".csv")] for f in os.listdir(LABELS_DIR) if f.endswith(".csv")}
+    usable cohort (confirmed 1944/1944 as of 2026-07-28 for MESA)."""
+    hdf5_ids = {f[:-len(".hdf5")] for f in os.listdir(hdf5_dir) if f.endswith(".hdf5")}
+    label_ids = {f[:-len(".csv")] for f in os.listdir(labels_dir) if f.endswith(".csv")}
     return sorted(hdf5_ids & label_ids)
 
 
@@ -80,10 +80,20 @@ def main():
     parser.add_argument("--split_id", type=str, required=True,
                          help='e.g. "fold5_v1" or "fold10_v1"')
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--hdf5_dir", type=str, default=str(HDF5_FULL_DIR),
+                         help="Override the HDF5 directory used to build the "
+                              "subject pool (default: MESA's hdf5_full).")
+    parser.add_argument("--labels_dir", type=str, default=str(LABELS_DIR),
+                         help="Override the labels directory used to build the "
+                              "subject pool (default: MESA's labels dir).")
+    parser.add_argument("--output_dir", type=str, default=str(REPO_ROOT / "sleepfm" / "configs"),
+                         help="Override where dataset_split_{split_id}.json is "
+                              "written (default: sleepfm/configs/, same as before "
+                              "this option existed).")
     args = parser.parse_args()
 
-    subject_ids = get_subject_pool()
-    print(f"Subject pool: {len(subject_ids)} (hdf5_full ∩ labels)")
+    subject_ids = get_subject_pool(args.hdf5_dir, args.labels_dir)
+    print(f"Subject pool: {len(subject_ids)} ({args.hdf5_dir} ∩ {args.labels_dir})")
 
     split = generate_split(subject_ids, args.n_folds, seed=args.seed)
 
@@ -96,7 +106,7 @@ def main():
         print(f"  {fold_key}: train={len(fold['train'])} "
               f"validation={len(fold['validation'])} test={len(fold['test'])}")
 
-    out_path = REPO_ROOT / "sleepfm" / "configs" / f"dataset_split_{args.split_id}.json"
+    out_path = Path(args.output_dir) / f"dataset_split_{args.split_id}.json"
     with open(out_path, "w") as f:
         json.dump(split, f, indent=2)
     print(f"\nWritten to {out_path}")

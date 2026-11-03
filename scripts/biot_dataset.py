@@ -79,7 +79,7 @@ class BIOTSleepDataset(Dataset):
             with h5py.File(hdf5_path, "r") as hf:
                 missing = [ch for ch in self.channels if ch not in hf]
             if missing:
-                print(f"WARNING: skipping {subject_id} ({split}, modality={modality}): "
+                print(f"WARNING: skipping a {split} subject (modality={modality}): "
                       f"missing channel(s) {missing}")
                 self.skipped_subjects.append((subject_id, missing))
                 continue
@@ -95,10 +95,6 @@ class BIOTSleepDataset(Dataset):
             # has -1 in StageNumber.
             valid = np.isin(stages, [0, 1, 2, 3, 4])
             if skip_unscored:
-                n_unscored = int((stages == -1).sum())
-                if n_unscored:
-                    print(f"skip_unscored: excluding {n_unscored} unscored "
-                          f"(-1) epochs for {subject_id}")
                 valid = valid & (stages != -1)
             for start_sample, stage in zip(starts[valid], stages[valid]):
                 self.index.append((hdf5_path, int(start_sample), int(stage)))

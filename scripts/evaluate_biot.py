@@ -20,7 +20,7 @@ sys.path.insert(0, "/scratch/project_2019517/BIOT")
 
 os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 
-from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS, HDF5_DIR
+from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS, HDF5_DIR, LABELS_DIR
 from finetune_biot import build_model
 from experiment_paths import experiment_from_checkpoint_dir, write_metrics_bundle
 
@@ -43,6 +43,16 @@ def main():
                               "for full-cohort evaluation -- must match "
                               "whatever --hdf5_dir the checkpoint was "
                               "fine-tuned with.")
+    parser.add_argument("--labels_dir", type=str, default=LABELS_DIR,
+                         help="Override the labels directory (default: "
+                              "biot_dataset.py's built-in MESA labels path). "
+                              "Was previously hardcoded to that default with "
+                              "no override.")
+    parser.add_argument("--split_path", type=str, default=None,
+                         help="Override the split file path (default: "
+                              "derived from --checkpoint_dir's own split_id, "
+                              "i.e. sleepfm/configs/dataset_split_{split_id}.json "
+                              "-- unchanged unless explicitly passed).")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,9 +67,9 @@ def main():
     # Derived from exp.split_id (parsed from checkpoint_dir's own name) so
     # eval always uses the exact split file that produced this checkpoint --
     # not a separately-passed, possibly-mismatched --split_id.
-    split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+    split_path = args.split_path or os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
     test_ds = BIOTSleepDataset(split_path, "test", args.modality, fold_key=args.fold_key,
-                                hdf5_dir=args.hdf5_dir)
+                                hdf5_dir=args.hdf5_dir, labels_dir=args.labels_dir)
     test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False,
                               num_workers=args.num_workers)
     print(f"[{args.modality}] test={len(test_ds)}", flush=True)
