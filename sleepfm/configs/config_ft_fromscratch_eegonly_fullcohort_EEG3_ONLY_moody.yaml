@@ -1,0 +1,44 @@
+# Moody/PhysioNet 2026 (I0006) fine-tuning config -- EEG3-only,
+# From-Scratch. Copied from
+# config_ft_fromscratch_eegonly_fullcohort_EEG3_ONLY.yaml with ONLY
+# data_path, model_path, split_path, labels_path, and dataset changed to
+# point at the Moody cohort instead. model_path points at a COPY of the
+# retrained Moody encoder with modality_types=["EEG3_ONLY"] in its
+# config.json (to be created in step 4, same architecture fact used for
+# the MESA EEG3_ONLY encoder: SetTransformer's per-channel weights are
+# shared/reusable across any channel subset -- best.pt is identical
+# regardless of modality_types, only the embeddings-generation step's
+# declared modality differs). early_stopping_patience here (10) is the
+# MESA config's own value; finetune_sleep_staging.py's --patience 50
+# CLI flag overrides it at submission time either way, per this task's
+# step 5.
+model_params:
+  embed_dim: 128
+  num_heads: 4
+  num_layers: 2
+  num_classes: 5
+  pooling_head: 4
+  dropout: 0.3
+  max_seq_length: 1500
+max_channels: 4
+context: -1
+seed: 42
+model: "SleepEventLSTMClassifier"
+dataset: "i0006"
+batch_size: 16
+epochs: 500
+lr: 0.0001
+num_workers: 2
+early_stopping_patience: 10
+data_path: "/scratch/project_2019517/moody2026_pilot/hdf5_included"
+model_path: "/scratch/project_2019517/moody2026_pilot/retrain/encoders/fromscratch_eegonly_moody_EEG3_ONLY/SetTransformer/leave_one_out_128_patch_size_640"
+split_path: "/scratch/project_2019517/moody2026_pilot/splits/dataset_split_moody_i0006_fold5_v1.json"
+labels_path: "/scratch/project_2019517/moody2026_pilot/labels_included"
+save_iter: 1000
+eval_iter: 1000
+log_interval: 10
+accumulation_steps: 16
+use_wandb: false
+max_files: null
+sampling_freq: 128
+channel_like: ["EEG3_ONLY"]

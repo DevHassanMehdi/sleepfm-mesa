@@ -111,16 +111,39 @@ def main():
                               "biot_dataset.py's built-in 350-subject "
                               "Puhti-era path). Pass the full-cohort path "
                               "for full-cohort fine-tuning.")
+    parser.add_argument("--labels_dir", type=str, default=None,
+                         help="Override the labels directory (default: "
+                              "biot_dataset.py's built-in MESA labels path, "
+                              "via BIOTSleepDataset's own default). Required "
+                              "for any non-MESA dataset.")
     parser.add_argument("--pretrained_path", default=PRETRAINED_PATH)
     parser.add_argument("--split_id", type=str, default="fold10_v1",
                          help="Selects which split file to use -- resolves to "
                               "sleepfm/configs/dataset_split_{split_id}.json "
-                              "(e.g. 'fold5_v1' -> dataset_split_fold5_v1.json). "
-                              "Also used for the full_cohort experiment naming scheme.")
+                              "(e.g. 'fold5_v1' -> dataset_split_fold5_v1.json) "
+                              "unless --split_path overrides it. Also used for "
+                              "the full_cohort experiment naming scheme either way.")
+    parser.add_argument("--split_path", type=str, default=None,
+                         help="Override the split file path (default: derived "
+                              "from --split_id under sleepfm/configs/, which "
+                              "is git-tracked -- required for any split file "
+                              "that must not be committed, e.g. one containing "
+                              "non-MESA record IDs under a BDSP-licensed "
+                              "dataset's own owner-only area). Pass the SAME "
+                              "value again when resuming via --checkpoint_dir.")
     parser.add_argument("--checkpoint_dir", type=str, default=None,
                          help="Resume an existing full_cohort experiment "
                               "folder (e.g. after a SLURM timeout) instead of "
                               "starting a new timestamped run.")
+    parser.add_argument("--root", type=str, default=None,
+                         help="Override where checkpoint_dir/results_dir are "
+                              "rooted (see experiment_paths.ExperimentID.root) "
+                              "-- redirects BOTH away from "
+                              "checkpoints/full_cohort/ and "
+                              "experiments_full_cohort/full_cohort/ into this "
+                              "directory instead. Pass the SAME value again "
+                              "when resuming via --checkpoint_dir. Default "
+                              "(omitted) preserves existing behavior exactly.")
     parser.add_argument("--skip_unscored", action="store_true", default=False,
                          help="Explicitly drop epochs with StageNumber == -1 "
                               "(unscored) when building the sample index. "
@@ -133,10 +156,11 @@ def main():
 
     fold_num = int(args.fold_key.replace("fold_", ""))
     if args.checkpoint_dir:
-        exp = experiment_from_checkpoint_dir(args.checkpoint_dir)
+        exp = experiment_from_checkpoint_dir(args.checkpoint_dir, root=args.root)
     else:
         exp = new_experiment(model="biot", modality=args.modality,
-                              pretrain_method="finetuned", split_id=args.split_id)
+                              pretrain_method="finetuned", split_id=args.split_id,
+                              root=args.root)
     out_dir = str(exp.fold_dir(fold_num))
     os.makedirs(out_dir, exist_ok=True)
     print(f">>> OUTPUT PATH: {out_dir}", flush=True)
@@ -148,12 +172,16 @@ def main():
     try:
         # Derived from exp.split_id (not args.split_id directly) so a resumed
         # run (--checkpoint_dir) keeps using the split file it actually started
-        # with, even if --split_id isn't re-passed on resume.
-        split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
-        train_ds = BIOTSleepDataset(split_path, "train", args.modality, fold_key=args.fold_key,
-                                     hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
-        val_ds = BIOTSleepDataset(split_path, "validation", args.modality, fold_key=args.fold_key,
-                                   hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
+        # with, even if --split_id isn't re-passed on resume. --split_path
+        # always wins when given (including on resume -- pass the same value
+        # again, same as --root), since exp.split_id alone can't express a
+        # split file living outside sleepfm/configs/.
+        split_path = args.split_path or os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
+        biot_kwargs = dict(fold_key=args.fold_key, hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
+        if args.labels_dir:
+            biot_kwargs["labels_dir"] = args.labels_dir
+        train_ds = BIOTSleepDataset(split_path, "train", args.modality, **biot_kwargs)
+        val_ds = BIOTSleepDataset(split_path, "validation", args.modality, **biot_kwargs)
         print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)} "
               f"channels={train_ds.channels}", flush=True)
 

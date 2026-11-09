@@ -1,0 +1,57 @@
+# SMOKE TEST ONLY for config_pretrain_fromscratch_eegonly_moody.yaml.
+# Identical to that config in every hyperparameter (same data_path,
+# split_path, modality_types, weight_decay, lr_step_period, batch_size,
+# patch_size) -- only epochs (100 -> 3) and eval_iter/save_iter (5000 ->
+# 200) are reduced, so validation runs a few times within the 3-epoch
+# smoke test and this checks the REAL recipe, not a differently tuned
+# one. NOTE: a first attempt used eval_iter=8, wrongly assuming
+# subject-level batching (1135 subjects / 128 batch_size =~ 9
+# iterations/epoch). Pretraining actually batches 5-second CHUNKS within
+# each subject's HDF5 (sampling_duration: 5), giving 747
+# iterations/epoch -- eval_iter=8 triggered a ~7s validation pass every
+# ~2s of training (177 times in 30 minutes) and the job timed out
+# without finishing even 1 of 3 epochs, though validation accuracy was
+# already clearly rising (0.9% -> ~9.1%, chance is ~0.8% for this
+# 128-way task) before the timeout. eval_iter=200 gives ~3-4 checks/epoch
+# instead of ~93. Writes to a SEPARATE save_path so it can never be
+# confused with or overwrite the real run's checkpoint.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+batch_size: 128
+epochs: 3
+lr: 0.001
+lr_step_period: null
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+num_workers: 8
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+data_path: '/scratch/project_2019517/moody2026_pilot/hdf5_included'
+split_path: '/scratch/project_2019517/moody2026_pilot/splits/dataset_split_moody_i0006_pretrain.json'
+save_path: '/scratch/project_2019517/moody2026_pilot/retrain/encoders/fromscratch_eegonly_moody_smoketest'
+weight_decay: 0.0001
+
+mode: "leave_one_out"
+save_iter: 200
+eval_iter: 200
+log_interval: 20
+use_wandb: false
+
+EEG_ONLY_CHANNELS: 3
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+
+max_files: null
+val_size: 100
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+
+modality_types: ["EEG_ONLY", "EKG"]

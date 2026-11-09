@@ -53,11 +53,17 @@ def main():
                               "derived from --checkpoint_dir's own split_id, "
                               "i.e. sleepfm/configs/dataset_split_{split_id}.json "
                               "-- unchanged unless explicitly passed).")
+    parser.add_argument("--root", type=str, default=None,
+                         help="Pass the SAME --root used by finetune_biot.py for "
+                              "this run, so results_dir (where per_subject_results.csv "
+                              "etc. get written) resolves under that root instead of "
+                              "falling back to REPO_ROOT/experiments_full_cohort/. "
+                              "Default (omitted) preserves existing behavior exactly.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    exp = experiment_from_checkpoint_dir(args.checkpoint_dir)
+    exp = experiment_from_checkpoint_dir(args.checkpoint_dir, root=args.root)
     fold_num = int(args.fold_key.replace("fold_", ""))
     fold_dir = exp.fold_dir(fold_num)
     ckpt_path = fold_dir / "best.pth"

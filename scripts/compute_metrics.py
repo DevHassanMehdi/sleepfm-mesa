@@ -74,9 +74,15 @@ def main():
                               "folds start at 0. Required when checkpoint_dir holds "
                               "just one fold_N/ (the full_cohort one-run-per-fold "
                               "naming scheme).")
+    parser.add_argument('--root', type=str, default=None,
+                         help="Pass the SAME --root used by finetune_sleep_staging.py "
+                              "for this run, so results_dir (where per_subject_results.csv "
+                              "etc. get written) resolves under that root instead of "
+                              "falling back to REPO_ROOT/experiments_full_cohort/. "
+                              "Default (omitted) preserves existing behavior exactly.")
     args = parser.parse_args()
 
-    exp = experiment_from_checkpoint_dir(args.checkpoint_dir)
+    exp = experiment_from_checkpoint_dir(args.checkpoint_dir, root=args.root)
     base = Path(args.checkpoint_dir)
 
     fold_f1s = []

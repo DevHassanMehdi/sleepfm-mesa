@@ -93,7 +93,24 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
                    "existing invocation (including the finished 90-run "
                    "benchmark) is unaffected unless this flag is passed "
                    "explicitly.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience):
+@click.option("--root", type=str, default=None,
+              help="Override where checkpoint_dir/results_dir are rooted "
+                   "(see experiment_paths.ExperimentID.root) -- redirects "
+                   "BOTH away from checkpoints/full_cohort/ and "
+                   "experiments_full_cohort/full_cohort/ into this directory "
+                   "instead, keeping the same naming underneath it. Default "
+                   "(omitted) preserves existing behavior exactly.")
+@click.option("--split_tmp_dir", type=str, default=None,
+              help="Override where the intermediate per-fold flat split file "
+                   "is written (default: data/mesa/, i.e. "
+                   "/scratch/project_2019517/sleepfm-data/mesa/ via the "
+                   "data/ symlink -- gitignored, but group-readable and "
+                   "MESA-specific, not owner-only). This file is a full "
+                   "{train, validation, test} listing of every file in the "
+                   "dataset, so it must go somewhere owner-only for any "
+                   "dataset whose record names can't be shared. Default "
+                   "(omitted) preserves existing behavior exactly.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience, root, split_tmp_dir):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -128,8 +145,10 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     # split_id/fold combinations happen to overlap across concurrent jobs.
     full_split = load_data(config["split_path"])
     fold_split = full_split[f"fold_{fold}"]
+    _split_tmp_base = split_tmp_dir if split_tmp_dir else os.path.join(REPO_ROOT, "data/mesa")
+    os.makedirs(_split_tmp_base, exist_ok=True)
     fold_split_path = os.path.join(
-        REPO_ROOT, "data/mesa", f"dataset_split_{split_id}_fold{fold}_{os.getpid()}.json"
+        _split_tmp_base, f"dataset_split_{split_id}_fold{fold}_{os.getpid()}.json"
     )
     save_data(fold_split, fold_split_path)
     config["split_path"] = fold_split_path
@@ -177,6 +196,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
             pretrain_method=pretrain_approach,
             split_id=split_id,
             timestamp=timestamp,
+            root=root,
         )
         output = str(exp.fold_dir(fold))
         os.makedirs(output, exist_ok=True)

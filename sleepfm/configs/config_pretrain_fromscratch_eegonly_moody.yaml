@@ -1,0 +1,55 @@
+# Moody/PhysioNet 2026 (I0006) From-Scratch SleepFM encoder pretraining --
+# EEG_ONLY + EKG only. Copied from
+# config_pretrain_fromscratch_eegonly_fullcohort.yaml (the real MESA
+# full-cohort config) with ONLY data_path, split_path, and save_path
+# changed to point at the Moody cohort instead -- every other
+# hyperparameter (modality_types, weight_decay, lr_step_period, epochs,
+# batch_size, patch_size/chunk length) is identical to the MESA config,
+# so this is the same pretraining recipe applied to a different cohort,
+# not a new recipe. BDSP-licensed data: save_path is owner-only, under
+# /scratch/project_2019517/moody2026_pilot/, never under the shared
+# checkpoints/encoders/ tree.
+seed: 42
+model: 'SetTransformer'
+in_channels: 1
+batch_size: 128
+epochs: 100
+lr: 0.001
+lr_step_period: null
+gamma: 0.1
+temperature: 0.0
+momentum: 0.9
+num_workers: 8
+embed_dim: 128
+num_heads: 8
+num_layers: 6
+pooling_head: 8
+dropout: 0.3
+
+data_path: '/scratch/project_2019517/moody2026_pilot/hdf5_included'
+split_path: '/scratch/project_2019517/moody2026_pilot/splits/dataset_split_moody_i0006_pretrain.json'
+save_path: '/scratch/project_2019517/moody2026_pilot/retrain/encoders/fromscratch_eegonly_moody'
+weight_decay: 0.0001
+
+# contrastive learning objective you want. pairwise vs. leave_one_out
+mode: "leave_one_out"
+save_iter: 5000
+eval_iter: 5000
+log_interval: 100
+use_wandb: false
+
+# dataloader configs (unused by pretrain.py -- carried forward unchanged
+# from config_pretrain_eegonly.yaml for consistency)
+EEG_ONLY_CHANNELS: 3
+RESP_CHANNELS: 7
+EKG_CHANNELS: 2
+EMG_CHANNELS: 4
+
+max_files: null
+val_size: 100
+sampling_duration: 5
+sampling_freq: 128
+patch_size: 640
+
+# modalities you want to train on. Select at least one
+modality_types: ["EEG_ONLY", "EKG"]

@@ -79,6 +79,15 @@ class ExperimentID:
     pretrain_method: str
     split_id: str
     timestamp: str
+    # Optional override for where checkpoint_dir/results_dir are rooted.
+    # None preserves the original hardcoded roots (SLEEPFM_DATA_ROOT /
+    # REPO_ROOT) exactly -- every existing caller is unaffected. Set this
+    # to redirect BOTH checkpoints and results under a single directory
+    # (e.g. a BDSP-licensed dataset's own owner-only area, kept out of
+    # results/ and the shared checkpoints/full_cohort tree), while keeping
+    # the same checkpoints/full_cohort/<run_name> and
+    # experiments_full_cohort/full_cohort/<run_name> naming underneath it.
+    root: Path = None
 
     @property
     def run_name(self) -> str:
@@ -87,23 +96,28 @@ class ExperimentID:
 
     @property
     def checkpoint_dir(self) -> Path:
-        return SLEEPFM_DATA_ROOT / "checkpoints" / "full_cohort" / self.run_name
+        base = Path(self.root) if self.root is not None else SLEEPFM_DATA_ROOT
+        return base / "checkpoints" / "full_cohort" / self.run_name
 
     @property
     def results_dir(self) -> Path:
-        return REPO_ROOT / "experiments_full_cohort" / "full_cohort" / self.run_name
+        base = Path(self.root) if self.root is not None else REPO_ROOT
+        return base / "experiments_full_cohort" / "full_cohort" / self.run_name
 
     def fold_dir(self, fold: int) -> Path:
         return self.checkpoint_dir / f"fold_{fold}"
 
 
 def new_experiment(model: str, modality: str, pretrain_method: str,
-                    split_id: str, timestamp: str = None) -> ExperimentID:
+                    split_id: str, timestamp: str = None, root=None) -> ExperimentID:
     """Create a new ExperimentID, stamped with the current time unless given.
 
     Creates both checkpoint_dir and results_dir (empty) immediately so
     both exist from the start of a run, even before any file is written
     into them.
+
+    root: optional override, see ExperimentID.root. None (default)
+    preserves existing behavior exactly.
     """
     ts = timestamp or datetime.now().strftime("%Y-%m-%d_%H%M")
     exp = ExperimentID(
@@ -112,16 +126,22 @@ def new_experiment(model: str, modality: str, pretrain_method: str,
         pretrain_method=pretrain_method,
         split_id=split_id,
         timestamp=ts,
+        root=root,
     )
     exp.checkpoint_dir.mkdir(parents=True, exist_ok=True)
     exp.results_dir.mkdir(parents=True, exist_ok=True)
     return exp
 
 
-def experiment_from_checkpoint_dir(checkpoint_dir) -> ExperimentID:
+def experiment_from_checkpoint_dir(checkpoint_dir, root=None) -> ExperimentID:
     """Reconstruct an ExperimentID from an existing checkpoints/full_cohort/...
     directory -- e.g. for an evaluate_*.py script that's handed a
     checkpoint dir a training run already created.
+
+    root: pass the SAME root used to create the original experiment (via
+    new_experiment's root=...), so a resumed/evaluated run's results_dir
+    still resolves under that root instead of falling back to REPO_ROOT.
+    None (default) preserves existing behavior exactly.
     """
     name = Path(checkpoint_dir).name
     parts = name.split("__")
@@ -133,7 +153,7 @@ def experiment_from_checkpoint_dir(checkpoint_dir) -> ExperimentID:
     model, modality, pretrain_method, split_id, timestamp = parts
     return ExperimentID(model=model, modality=modality,
                          pretrain_method=pretrain_method,
-                         split_id=split_id, timestamp=timestamp)
+                         split_id=split_id, timestamp=timestamp, root=root)
 
 
 def link_checkpoint_and_results(exp: ExperimentID, fold_num: int = None) -> None:
