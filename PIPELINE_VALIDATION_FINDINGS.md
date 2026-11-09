@@ -246,6 +246,23 @@ folds, all 5 EEG_ECG folds, all 5 Spectral folds, all 5 Next-Token
 folds (25 runs total) as part of the results-restructuring work —
 every single one matched exactly. **No bug in the metrics pipeline.**
 
+**Addendum**: the check above (and 9.5's later repeat of it) covered
+macro F1 and accuracy only — it never checked whether a row's own
+per-class F1 cells were internally consistent with that row's macro F1.
+That gap let a transcription error ship: From-Scratch's 90-run-benchmark
+EEG-only row had its N3 F1 cell overwritten with BIOT's N3 value (both
+showed `0.6798`) in `results/ALL_RESULTS_FULL.md` and
+`results/detailed/EEG_CHANNEL_DETAILED.md`, inconsistent with that row's
+own stated macro F1 (mean of the 5 per-class cells gave 0.7496, not the
+row's 0.7451). `results/FS_fullcohort_ALL_results.txt` had the correct
+value (0.6569) the whole time. Per-class cells are now checked
+everywhere: for every row with both a macro F1 and 5 per-class F1 cells
+across the three main tables (`ALL_RESULTS_FULL.md`), the six per-model
+files, and the ablation/channel files, mean(Wake, N1, N2, N3, REM) is
+compared to the row's own macro F1 (threshold 0.0006, loose enough for
+display-rounding noise, tight enough to catch a wrong cell). 140 such
+rows exist; this one cell, in two files, was the only failure.
+
 ### 5.2 Epoch/label alignment
 Checked, for every one of 388 test subjects across two folds (not a
 sample): does the number of predicted epochs match the label CSV's row
