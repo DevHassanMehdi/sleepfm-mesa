@@ -217,3 +217,9 @@ runs/
 
 # Diagnostic script output (token cache reports etc.) -- regenerable, not code.
 diagnostics/
+
+# Per-subject and per-epoch result outputs -- provenance data one level
+# below the aggregate metrics kept in results/*.md, same category as
+# experiments_full_cohort/. Archived before deletion, see results/RESULTS.md.
+per_subject/
+epoch_predictions/
