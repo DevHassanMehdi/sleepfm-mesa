@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=finetune_sleep_staging_fullcohort
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/finetune_sleep_staging_fullcohort_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/finetune_sleep_staging_fullcohort_%x_%j.log
 
 # Usage: sbatch finetune_sleep_staging_fullcohort.slurm <CONFIG_PATH> <PRETRAIN_APPROACH> <FOLD>
 set -e
@@ -14,12 +14,12 @@ CONFIG_PATH=${1:?Usage: sbatch finetune_sleep_staging_fullcohort.slurm <CONFIG_P
 PRETRAIN_APPROACH=${2:?Usage: sbatch finetune_sleep_staging_fullcohort.slurm <CONFIG_PATH> <PRETRAIN_APPROACH> <FOLD>}
 FOLD=${3:?Usage: sbatch finetune_sleep_staging_fullcohort.slurm <CONFIG_PATH> <PRETRAIN_APPROACH> <FOLD>}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export TMPDIR=/scratch/project_2019517/tmp
 mkdir -p "$TMPDIR"
 

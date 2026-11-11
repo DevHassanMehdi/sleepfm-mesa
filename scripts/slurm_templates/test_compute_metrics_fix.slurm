@@ -6,13 +6,13 @@
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=2
 #SBATCH --job-name=test_compute_metrics
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/test_compute_metrics_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/test_compute_metrics_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 TMPDIR=/tmp/compute_metrics_fix_test
 rm -rf "$TMPDIR"

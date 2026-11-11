@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=mesa_eeg3_p50ref
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/mesa_eeg3_p50ref_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/mesa_eeg3_p50ref_%j.log
 
 # MESA EEG3-only reference at patience 50 (From-Scratch), using the
 # EXISTING channel-comparison EEG3 embeddings (not deleted, not
@@ -25,12 +25,12 @@ SPLIT_ID=fold5_v1
 CHECKPOINT_DIR="/scratch/project_2019517/sleepfm-data/checkpoints/full_cohort/sleepfm__EEG3_ONLY__fromscratch_ch3_p50ref__${SPLIT_ID}__${TIMESTAMP}"
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "RUN_START: $(date +%s) fold=$FOLD"
 echo ">>> Expected checkpoint_dir: $CHECKPOINT_DIR"

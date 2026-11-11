@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=p20match
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/p20match_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/p20match_%x_%j.log
 
 # Matched-patience-20 runs for MESA From-Scratch, MESA Next-Token, and
 # Moody Next-Token (the three new batches requested). Shared template:
@@ -40,12 +40,12 @@ PRETRAIN_APPROACH=$7
 ROOT_ARG=$8
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 if [ "$ROOT_ARG" == "NONE" ]; then
     BASE_CKPT_DIR="/scratch/project_2019517/sleepfm-data/checkpoints/full_cohort"

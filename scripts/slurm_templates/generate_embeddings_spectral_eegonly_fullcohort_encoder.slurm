@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=embed_spectral_eegonly_fullcohort
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/embed_spectral_eegonly_fullcohort_encoder_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/embed_spectral_eegonly_fullcohort_encoder_%j.log
 
 # Embeddings for the completed Spectral full-cohort encoder, using best.pt
 # (epoch 24, genuine validation-loss optimum -- NOT checkpoint.pt, epoch 36,
@@ -16,7 +16,7 @@
 # (checkpoints/encoders/spectral_eegonly_fullcohort/... vs .../
 # fromscratch_eegonly_fullcohort/...).
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate

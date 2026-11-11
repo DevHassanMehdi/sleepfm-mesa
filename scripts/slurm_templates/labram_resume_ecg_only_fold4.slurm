@@ -6,10 +6,10 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=labram_resume_ECG_ONLY_fold_4
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/labram_resume_ECG_ONLY_fold_4_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/labram_resume_ECG_ONLY_fold_4_%j.log
 
 set -e
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate

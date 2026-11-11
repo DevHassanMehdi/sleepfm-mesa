@@ -5,7 +5,7 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_build_spectral_cache
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_build_spectral_cache_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_build_spectral_cache_%j.log
 
 # Full-scale (1135 pretrain + 100 validation) Moody spectral cache for
 # Next-Token pretraining. Same MODALITY_TYPES/MAX_CHANNELS (EEG_ONLY+EKG,
@@ -21,10 +21,10 @@
 umask 077
 mkdir -p /scratch/project_2019517/moody2026_pilot/retrain/nexttoken_cache
 chmod 700 /scratch/project_2019517/moody2026_pilot/retrain/nexttoken_cache
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/x86_64
 module load python-pytorch/2.10
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 
 echo "SPECTRAL_CACHE_START: $(date +%s)"

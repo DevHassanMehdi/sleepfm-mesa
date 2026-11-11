@@ -6,13 +6,13 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=embed_pub_gapfill112
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/embed_pub_gapfill112_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/embed_pub_gapfill112_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 
 python sleepfm/pipeline/generate_embeddings.py \

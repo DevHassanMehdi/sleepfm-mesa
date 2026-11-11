@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=biot_fullcohort_p10
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/biot_fullcohort_p10_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/biot_fullcohort_p10_%x_%j.log
 
 # Usage: sbatch biot_fullcohort_patience10_18h.slurm <MODALITY> <FOLD_KEY> [CHECKPOINT_DIR]
 # CHECKPOINT_DIR is optional -- pass it to resume an existing run (e.g.
@@ -17,7 +17,7 @@ MODALITY=${1:?Usage: sbatch ... <MODALITY> <FOLD_KEY> [CHECKPOINT_DIR]}
 FOLD_KEY=${2:?Usage: sbatch ... <MODALITY> <FOLD_KEY> [CHECKPOINT_DIR]}
 CHECKPOINT_DIR=${3:-}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate

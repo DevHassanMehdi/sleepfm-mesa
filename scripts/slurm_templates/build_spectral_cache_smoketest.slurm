@@ -5,10 +5,10 @@
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=smoketest_spectral_cache
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/smoketest_spectral_cache_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/smoketest_spectral_cache_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 module load python-data/3.12-31.03
 

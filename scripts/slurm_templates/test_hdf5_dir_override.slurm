@@ -6,9 +6,9 @@
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=test_hdf5_dir_override
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/test_hdf5_dir_override_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/test_hdf5_dir_override_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
@@ -16,10 +16,10 @@ export HDF5_USE_FILE_LOCKING=FALSE
 
 python3 << 'PYEOF'
 import sys, os
-sys.path.insert(0, "/users/hamehdi/projects/sleepfm-mesa/scripts")
+sys.path.insert(0, "/users/hamehd/projects/sleepfm-mesa/scripts")
 
 FULL_COHORT_HDF5 = "/scratch/project_2019517/sleepfm-data/mesa/hdf5_full"
-SPLIT_PATH = "/users/hamehdi/projects/sleepfm-mesa/sleepfm/configs/dataset_split_fold10_v1.json"
+SPLIT_PATH = "/users/hamehd/projects/sleepfm-mesa/sleepfm/configs/dataset_split_fold10_v1.json"
 
 def unique_subjects(ds):
     return len(set(os.path.basename(t[0]) for t in ds.index))

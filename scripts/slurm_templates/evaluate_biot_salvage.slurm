@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=evaluate_biot_salvage
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/evaluate_biot_salvage_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/evaluate_biot_salvage_%x_%j.log
 
 # Usage: sbatch evaluate_biot_salvage.slurm <MODALITY> <FOLD_KEY> <CHECKPOINT_DIR>
 set -e
@@ -14,7 +14,7 @@ MODALITY=${1:?Usage: sbatch evaluate_biot_salvage.slurm <MODALITY> <FOLD_KEY> <C
 FOLD_KEY=${2:?Usage: sbatch evaluate_biot_salvage.slurm <MODALITY> <FOLD_KEY> <CHECKPOINT_DIR>}
 CHECKPOINT_DIR=${3:?Usage: sbatch evaluate_biot_salvage.slurm <MODALITY> <FOLD_KEY> <CHECKPOINT_DIR>}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate

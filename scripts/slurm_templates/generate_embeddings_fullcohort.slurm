@@ -6,18 +6,18 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=generate_embeddings_fullcohort
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/generate_embeddings_fullcohort_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/generate_embeddings_fullcohort_%x_%j.log
 
 # Usage: sbatch generate_embeddings_fullcohort.slurm <MODEL_PATH>
 set -e
 MODEL_PATH=${1:?Usage: sbatch generate_embeddings_fullcohort.slurm <MODEL_PATH>}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "EMBEDDINGS_START: $(date +%s)  MODEL_PATH=${MODEL_PATH}"
 python sleepfm/pipeline/generate_embeddings.py \

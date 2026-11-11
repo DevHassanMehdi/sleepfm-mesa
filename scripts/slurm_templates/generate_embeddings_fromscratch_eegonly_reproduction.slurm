@@ -6,14 +6,14 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=embed_fromscratch_eegonly_repro
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/embed_fromscratch_eegonly_reproduction_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/embed_fromscratch_eegonly_reproduction_%j.log
 
 # Embeddings from the FRESH reproduction encoder's best.pt, for the full
 # 1944-subject cohort (only the 50 historical test subjects are actually
 # needed downstream, but reusing the same full-cohort split file keeps
 # this consistent with every other embeddings job this session).
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate

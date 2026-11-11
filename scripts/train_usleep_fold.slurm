@@ -6,7 +6,7 @@
 #SBATCH --mem=128G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=usleep_fold
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/usleep_fold_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/usleep_fold_%j.log
 
 # Usage: sbatch train_usleep_fold.slurm <FOLD> <MODALITY>
 # MODALITY one of: EEG_EOG, EEG_ONLY, ECG_ONLY, EEG_ECG
@@ -14,7 +14,7 @@ set -e
 FOLD=${1:?Usage: sbatch train_usleep_fold.slurm <FOLD> <MODALITY>}
 MODALITY=${2:?Usage: sbatch train_usleep_fold.slurm <FOLD> <MODALITY>}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 export TMPDIR=/scratch/project_2019517/tmp
 mkdir -p "$TMPDIR"
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
@@ -51,7 +51,7 @@ ut predict --num_gpus 1 --datasets mesa --data_split test_data \
     --out_dir predictions/test --majority --save_true --overwrite
 
 echo "===== Evaluating ${MODALITY} fold ${FOLD} ====="
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 python scripts/evaluate_usleep_fold.py --fold ${FOLD} --modality ${MODALITY} --project_dir "${PROJECT_DIR}"
 
 echo "========== DONE ${MODALITY} fold ${FOLD} =========="

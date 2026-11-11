@@ -6,10 +6,10 @@
 #SBATCH --mem=128G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=ft_EEG_ONLY
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/ft_EEG_ONLY_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/ft_EEG_ONLY_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env

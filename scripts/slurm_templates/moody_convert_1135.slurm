@@ -5,10 +5,10 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=16
 #SBATCH --job-name=moody_convert_1135
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_convert_1135_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_convert_1135_%j.log
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 source /scratch/project_2019517/kaggle_venv_py312/bin/activate
 
 PHYSIO_DIR=/scratch/project_2019517/moody2026_pilot/raw_large/physiological_data/I0006/physiological_data/I0006

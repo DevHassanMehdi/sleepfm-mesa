@@ -11,7 +11,7 @@ Run on a CPU interactive/small node (NOT the login node):
                  -c 4 --mem=32G --time=01:00:00
     source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
     conda activate sleepfm_env
-    cd /users/hamehdi/projects/sleepfm-mesa
+    cd /users/hamehd/projects/sleepfm-mesa
     python scripts/build_token_cache.py
 """
 

@@ -6,7 +6,7 @@
 #SBATCH --mem=128G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=sensorlm_modality
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/sensorlm_modality_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/sensorlm_modality_%j.log
 
 # Usage: sbatch run_sensorlm_modality.slurm <MODALITY> [FOLD_KEY]
 # MODALITY: EEG_ONLY, ECG_ONLY, or EEG_ECG
@@ -17,7 +17,7 @@ set -e
 MODALITY=${1:?Usage: sbatch run_sensorlm_modality.slurm <MODALITY>}
 FOLD_KEY=${2:-fold_0}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 export TMPDIR=/scratch/project_2019517/tmp
 mkdir -p "$TMPDIR"

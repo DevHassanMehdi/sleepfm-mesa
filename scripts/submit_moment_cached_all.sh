@@ -11,7 +11,7 @@
 #
 # Usage: bash scripts/submit_moment_cached_all.sh
 set -e
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 mkdir -p logs
 
 MODALITIES="EEG_ONLY ECG_ONLY EEG_ECG"

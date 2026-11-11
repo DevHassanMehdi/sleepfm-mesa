@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_finetune_p20
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_finetune_p20_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_finetune_p20_%j.log
 
 # From-Scratch Moody fine-tuning at patience 20 (not 50) -- same template
 # as moody_finetune_run_template.slurm (the patience-50 runs), with a
@@ -34,12 +34,12 @@ PRETRAIN_APPROACH=fromscratch_moody_p20
 MOODY_ROOT=/scratch/project_2019517/moody2026_pilot/retrain
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 CHECKPOINT_DIR="${MOODY_ROOT}/checkpoints/full_cohort/sleepfm__${CANONICAL_MODALITY}__${PRETRAIN_APPROACH}__${SPLIT_ID}__${TIMESTAMP}"
 

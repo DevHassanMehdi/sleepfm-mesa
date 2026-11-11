@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_biot_wave1_eval
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_biot_wave1_eval_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_biot_wave1_eval_%j.log
 
 # Test-set evaluation for the 4 BIOT Wave 1 fold-0 checkpoints, all on
 # the Moody test split, writing per-subject outputs only into the
@@ -18,12 +18,12 @@ HDF5_DIR=/scratch/project_2019517/moody2026_pilot/hdf5_included
 LABELS_DIR=/scratch/project_2019517/moody2026_pilot/labels_included
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "EVAL_START: $(date +%s)"
 

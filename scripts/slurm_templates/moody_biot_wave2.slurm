@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_biot_wave2
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_biot_wave2_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_biot_wave2_%x_%j.log
 
 # BIOT Wave 2: one (modality, fold) pair, patience 20. Same resume
 # mechanism as Wave 1 (pointer file keyed by modality+fold this time,
@@ -25,12 +25,12 @@ POINTER_FILE="${MOODY_ROOT}/.biot_wave2_${MODALITY}_fold${FOLD}_checkpoint_dir.t
 CAPTURE_LOG="${MOODY_ROOT}/.biot_wave2_${MODALITY}_fold${FOLD}_capture_${SLURM_JOB_ID}.log"
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "WAVE2_START: $(date +%s) modality=$MODALITY fold=$FOLD"
 

@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_finetune
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_finetune_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_finetune_%j.log
 
 # Adapted from full_cohort_run_template.slurm for the Moody retrain
 # (patience 50, --root redirecting checkpoint_dir/results_dir into the
@@ -31,12 +31,12 @@ TIMESTAMP=$6
 MOODY_ROOT=/scratch/project_2019517/moody2026_pilot/retrain
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 CHECKPOINT_DIR="${MOODY_ROOT}/checkpoints/full_cohort/sleepfm__${CANONICAL_MODALITY}__fromscratch__${SPLIT_ID}__${TIMESTAMP}"
 

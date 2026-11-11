@@ -6,7 +6,7 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=eval_nexttoken
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/eval_nexttoken_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/eval_nexttoken_%j.log
 
 # Evaluate the most recent combined fine-tuned run for each modality.
 # Each modality's latest run_YYYY-MM-DD_HHMM folder is auto-detected.
@@ -15,8 +15,8 @@
 # To evaluate a specific run instead of the latest, set RUN_OVERRIDE:
 #   RUN_OVERRIDE=/scratch/.../finetuned/combined/EEG_ONLY/run_2026-07-20_1200
 
-cd /users/hamehdi/projects/sleepfm-mesa
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env

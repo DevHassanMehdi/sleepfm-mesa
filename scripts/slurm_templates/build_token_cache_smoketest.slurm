@@ -5,9 +5,9 @@
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=smoketest_build_token_cache
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/smoketest_build_token_cache_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/smoketest_build_token_cache_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module load python-data/3.12-31.03
 
 echo "SMOKETEST_START: $(date +%s)"

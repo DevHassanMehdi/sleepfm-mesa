@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=ft_ss_fullcohort
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/ft_ss_fullcohort_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/ft_ss_fullcohort_%x_%j.log
 
 # Usage: sbatch --time=<H:MM:SS> finetune_spectral_nexttoken_fullcohort.slurm \
 #            <CONFIG_YAML> <PRETRAIN_APPROACH> <FOLD> <CANONICAL_MODALITY> <TIMESTAMP>
@@ -21,12 +21,12 @@ FOLD=${3:?Usage: <CONFIG_YAML> <PRETRAIN_APPROACH> <FOLD> <CANONICAL_MODALITY> <
 CANONICAL_MODALITY=${4:?Usage: <CONFIG_YAML> <PRETRAIN_APPROACH> <FOLD> <CANONICAL_MODALITY> <TIMESTAMP>}
 TIMESTAMP=${5:?Usage: <CONFIG_YAML> <PRETRAIN_APPROACH> <FOLD> <CANONICAL_MODALITY> <TIMESTAMP>}
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export TMPDIR=/scratch/project_2019517/tmp
 mkdir -p "$TMPDIR"
 

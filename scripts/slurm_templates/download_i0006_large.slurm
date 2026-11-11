@@ -5,7 +5,7 @@
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=dl_i0006_large_moody2026
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/dl_i0006_large_moody2026_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/dl_i0006_large_moody2026_%j.log
 
 echo "START: $(date +%s) host=$(hostname)"
 source /scratch/project_2019517/kaggle_venv_py312/bin/activate

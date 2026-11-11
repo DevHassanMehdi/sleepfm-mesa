@@ -14,12 +14,12 @@
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=2
 #SBATCH --job-name=nsrr_download
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/download_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/download_%x_%j.log
 
 DATASET="${DATASET:-mesa}"
 echo "[INFO] Dataset: ${DATASET}"
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 export GEM_HOME="/scratch/project_2019517/miniconda3/share/rubygems"
 export GEM_PATH="/scratch/project_2019517/miniconda3/share/rubygems"
 

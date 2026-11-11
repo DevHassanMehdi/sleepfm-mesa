@@ -6,14 +6,14 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=embed_eegonly_fullcohort_checkpointpt
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/embed_eegonly_fullcohort_checkpointpt_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/embed_eegonly_fullcohort_checkpointpt_%j.log
 
 # Same encoder, same subject set as the existing best.pt-derived embeddings
 # cache -- only the checkpoint file differs (final epoch 99 instead of the
 # training-loss-selected epoch 28). Writes to model_path/mesa_checkpoint/
 # (and mesa_5min_agg_checkpoint/), never touching the existing mesa/ cache.
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate

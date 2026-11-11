@@ -15,7 +15,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-NSRR_BIN = "/users/hamehdi/.local/share/x86_64/gem/ruby/3.4.0/bin/nsrr"
+NSRR_BIN = "/users/hamehd/.local/share/x86_64/gem/ruby/3.4.0/bin/nsrr"
 NSRR_RUBY_BINDIR = "/scratch/project_2019517/miniconda3/bin"
 NSRR_GEM_ENV = {
     "PATH": NSRR_RUBY_BINDIR + os.pathsep + os.environ.get("PATH", ""),

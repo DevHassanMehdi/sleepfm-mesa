@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_nexttoken_pretrain
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_nexttoken_pretrain_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_nexttoken_pretrain_%j.log
 
 # Full Next-Token pretraining on Moody (100 epochs, patience 10, same
 # recipe as MESA's config_pretrain_nexttoken_eegonly_fullcohort.yaml --
@@ -19,12 +19,12 @@
 # (3.4029 -> 3.3882 -> 3.3504) before this submission.
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "PRETRAIN_START: $(date +%s)"
 python sleepfm/pipeline/pretrain_nexttoken.py \

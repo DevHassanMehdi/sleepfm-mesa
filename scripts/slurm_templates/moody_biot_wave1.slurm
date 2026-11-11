@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_biot_wave1
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_biot_wave1_%x_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_biot_wave1_%x_%j.log
 
 # BIOT Wave 1: fold 0, one of the 4 conditions, patience 20. Resumable
 # across 18h allocations without a code change to finetune_biot.py: a
@@ -25,12 +25,12 @@ POINTER_FILE="${MOODY_ROOT}/.biot_wave1_fold0_${MODALITY}_checkpoint_dir.txt"
 CAPTURE_LOG="${MOODY_ROOT}/.biot_wave1_fold0_${MODALITY}_capture_${SLURM_JOB_ID}.log"
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "WAVE1_START: $(date +%s) modality=$MODALITY"
 

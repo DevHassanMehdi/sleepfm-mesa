@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=ft_eegonly_fold5v1_f0_ckptpt
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/finetune_eegonly_fold5v1_fold0_checkpointpt_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/finetune_eegonly_fold5v1_fold0_checkpointpt_%j.log
 
 # checkpoint.pt vs best.pt A/B test: identical config/fold/hyperparameters to
 # the completed best.pt-based run (sleepfm__EEG_ONLY__fromscratch__fold5_v1__
@@ -27,12 +27,12 @@ FOLD=0
 CANONICAL_MODALITY="EEG_ONLY"
 TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 CHECKPOINT_DIR="/scratch/project_2019517/sleepfm-data/checkpoints/full_cohort/sleepfm__${CANONICAL_MODALITY}__fromscratch__${SPLIT_ID}__${TIMESTAMP}"
 

@@ -5,9 +5,9 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=mesa_preprocess
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/preprocess_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/preprocess_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env
 

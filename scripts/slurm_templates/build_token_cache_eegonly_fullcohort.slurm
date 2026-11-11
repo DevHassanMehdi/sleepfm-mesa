@@ -5,9 +5,9 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=build_token_cache_eegonly_fullcohort
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/build_token_cache_eegonly_fullcohort_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/build_token_cache_eegonly_fullcohort_%j.log
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module load python-data/3.12-31.03
 
 echo "TOKENCACHE_START: $(date +%s)"

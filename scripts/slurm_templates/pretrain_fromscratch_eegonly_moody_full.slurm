@@ -6,7 +6,7 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=moody_pretrain_full
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_pretrain_full_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_pretrain_full_%j.log
 
 # Time limit derived from the 3-epoch smoke test's measured pace (job
 # 2818642, corrected eval_iter): 747 iterations/epoch, ~107ms/iter pure
@@ -16,12 +16,12 @@
 # checkpoint.pt automatically (pretrain.py's own --checkpoint_path logic).
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 CKPT_DIR=/scratch/project_2019517/moody2026_pilot/retrain/encoders/fromscratch_eegonly_moody/SetTransformer/leave_one_out_128_patch_size_640
 CONFIG=sleepfm/configs/config_pretrain_fromscratch_eegonly_moody.yaml

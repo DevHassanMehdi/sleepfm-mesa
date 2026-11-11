@@ -4,7 +4,7 @@
 #
 # Usage: bash scripts/submit_yasa_heldout.sh
 set -e
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 mkdir -p logs
 
 for MODALITY in EEG_ONLY EEG_ECG; do

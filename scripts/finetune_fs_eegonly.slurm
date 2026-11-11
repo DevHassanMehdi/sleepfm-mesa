@@ -6,7 +6,7 @@
 #SBATCH --mem=128G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=ft_fs
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/ft_fs_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/ft_fs_%j.log
 
 # Fine-tune SleepFM From-Scratch (FS) encoder for EEG_ONLY / ECG_ONLY / EEG_ECG.
 #
@@ -18,8 +18,8 @@
 #   checkpoints/finetuned/fromscratch/{EEG_ONLY,ECG_ONLY,EEG_ECG}/run_YYYY-MM-DD_HHMM/fold_0/
 # No collision with other pretraining approaches or between runs.
 
-cd /users/hamehdi/projects/sleepfm-mesa
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 export HDF5_USE_FILE_LOCKING=FALSE
 source /scratch/project_2019517/miniconda3/etc/profile.d/conda.sh
 conda activate sleepfm_env

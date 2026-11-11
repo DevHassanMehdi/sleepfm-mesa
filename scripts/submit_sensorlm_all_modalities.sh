@@ -3,7 +3,7 @@
 #
 # Usage: bash scripts/submit_sensorlm_all_modalities.sh
 set -e
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 mkdir -p logs
 
 for MODALITY in EEG_ONLY ECG_ONLY EEG_ECG; do

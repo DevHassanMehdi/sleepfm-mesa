@@ -6,7 +6,7 @@
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=diag_nvsmi
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/diag_nvsmi_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/diag_nvsmi_%j.log
 
 echo "=== nvidia-smi (basic) ==="
 nvidia-smi

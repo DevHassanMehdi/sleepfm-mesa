@@ -6,7 +6,7 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=pretrain_fromscratch_eegonly_repro
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/pretrain_fromscratch_eegonly_reproduction_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/pretrain_fromscratch_eegonly_reproduction_%j.log
 
 # Fresh, from-random-init reproduction of the original 350-subject
 # From-Scratch EEG_ONLY encoder. New output path (checkpoints/encoders/
@@ -17,12 +17,12 @@
 # gives generous margin. No early-stopping in pretrain.py -- will run
 # the full 100 configured epochs regardless.
 
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 module use /appl/modulefiles/manual/aida/aarch64
 module load python-pytorch/2.10
 source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
 export HDF5_USE_FILE_LOCKING=FALSE
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "REPRO_START: $(date +%s)"
 python sleepfm/pipeline/pretrain.py \

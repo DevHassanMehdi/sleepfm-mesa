@@ -5,7 +5,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=moody_build_token_cache
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/moody_build_token_cache_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/moody_build_token_cache_%j.log
 
 # Fits MiniBatchKMeans (n_clusters=512, same as MESA) on the Moody spectral
 # cache's pretrain split, assigns tokens to both splits, writes
@@ -18,7 +18,7 @@ mkdir -p /scratch/project_2019517/moody2026_pilot/retrain/diagnostics
 chmod 700 /scratch/project_2019517/moody2026_pilot/retrain/diagnostics
 module use /appl/modulefiles/manual/aida/x86_64
 module load python-pytorch/2.10
-export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+export PYTHONPATH=/users/hamehd/projects/sleepfm-mesa/sleepfm:/users/hamehd/projects/sleepfm-mesa
 
 echo "TOKEN_CACHE_START: $(date +%s)"
 
@@ -26,7 +26,7 @@ echo "TOKEN_CACHE_START: $(date +%s)"
 # hardcoded relative "diagnostics/" report dir lands outside git, matching
 # every other Moody artifact in this project.
 cd /scratch/project_2019517/moody2026_pilot/retrain
-python /users/hamehdi/projects/sleepfm-mesa/scripts/build_token_cache.py \
+python /users/hamehd/projects/sleepfm-mesa/scripts/build_token_cache.py \
     --cache_dir /scratch/project_2019517/moody2026_pilot/retrain/nexttoken_cache \
     --report_name token_cache_report_moody.txt
 EXIT=$?

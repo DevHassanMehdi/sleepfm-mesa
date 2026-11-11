@@ -5,10 +5,10 @@
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=dl_caisr_i0006
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/dl_caisr_i0006_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/dl_caisr_i0006_%j.log
 
 umask 077
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 source /scratch/project_2019517/kaggle_venv_py312/bin/activate
 unset KAGGLE_USERNAME KAGGLE_KEY
 

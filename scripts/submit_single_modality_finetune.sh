@@ -1,6 +1,6 @@
 #!/bin/bash
 # Submit EEG_ONLY, ECG_ONLY, EEG_ECG fine-tuning jobs in parallel
-cd /users/hamehdi/projects/sleepfm-mesa
+cd /users/hamehd/projects/sleepfm-mesa
 
 echo "Submitting EEG_ONLY..."
 sbatch scripts/finetune_EEG_ONLY.slurm

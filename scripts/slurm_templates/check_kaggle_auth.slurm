@@ -5,7 +5,7 @@
 #SBATCH --mem=1G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=check_kaggle_auth
-#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/check_kaggle_auth_%j.log
+#SBATCH --output=/users/hamehd/projects/sleepfm-mesa/logs/check_kaggle_auth_%j.log
 
 echo "=== compute node: $(hostname) ==="
 source /scratch/project_2019517/kaggle_venv/bin/activate
