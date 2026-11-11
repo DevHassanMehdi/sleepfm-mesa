@@ -1,0 +1,10 @@
+{
+  "model": "biot",
+  "modality": "EEG1_ONLY",
+  "pretrain_method": "finetuned",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-10-28_1543",
+  "fold": 3,
+  "overall_macro_f1": 0.695129,
+  "overall_accuracy": 0.781412
+}

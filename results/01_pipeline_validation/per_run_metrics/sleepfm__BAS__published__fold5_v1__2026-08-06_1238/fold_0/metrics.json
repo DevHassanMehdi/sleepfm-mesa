@@ -1,0 +1,16 @@
+{
+  "model": "sleepfm",
+  "modality": "BAS",
+  "pretrain_method": "published",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-08-06_1238",
+  "split": "test",
+  "n_folds_used": 1,
+  "per_fold_macro_f1": [
+    0.523217
+  ],
+  "mean_macro_f1": 0.523217,
+  "std_macro_f1": 0.0,
+  "overall_macro_f1": 0.523217,
+  "overall_accuracy": 0.548834
+}

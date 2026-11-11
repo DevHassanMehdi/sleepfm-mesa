@@ -1,0 +1,10 @@
+{
+  "model": "labram",
+  "modality": "EEG_ONLY",
+  "pretrain_method": "finetuned",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-08-09_1229",
+  "fold": 0,
+  "overall_macro_f1": 0.728099,
+  "overall_accuracy": 0.801236
+}

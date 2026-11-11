@@ -1,0 +1,10 @@
+{
+  "model": "labram",
+  "modality": "ECG_ONLY",
+  "pretrain_method": "finetuned",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-08-09_1229",
+  "fold": 2,
+  "overall_macro_f1": 0.335416,
+  "overall_accuracy": 0.48548
+}

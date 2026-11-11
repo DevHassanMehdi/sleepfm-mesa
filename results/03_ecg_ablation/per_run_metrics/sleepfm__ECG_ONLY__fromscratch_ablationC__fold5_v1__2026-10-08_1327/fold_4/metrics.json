@@ -1,0 +1,16 @@
+{
+  "model": "sleepfm",
+  "modality": "ECG_ONLY",
+  "pretrain_method": "fromscratch_ablationC",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-10-08_1327",
+  "split": "test",
+  "n_folds_used": 1,
+  "per_fold_macro_f1": [
+    0.54931
+  ],
+  "mean_macro_f1": 0.54931,
+  "std_macro_f1": 0.0,
+  "overall_macro_f1": 0.54931,
+  "overall_accuracy": 0.710419
+}

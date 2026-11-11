@@ -1,0 +1,16 @@
+{
+  "model": "sleepfm",
+  "modality": "ECG_ONLY",
+  "pretrain_method": "nexttoken_p20",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-11-11_122917940",
+  "split": "test",
+  "n_folds_used": 1,
+  "per_fold_macro_f1": [
+    0.4239
+  ],
+  "mean_macro_f1": 0.4239,
+  "std_macro_f1": 0.0,
+  "overall_macro_f1": 0.4239,
+  "overall_accuracy": 0.603522
+}

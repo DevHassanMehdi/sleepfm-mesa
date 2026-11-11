@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH --account=project_2019517
+#SBATCH --partition=gpumedium
+#SBATCH --gres=gpu:gh200:1
+#SBATCH --time=1-12:00:00
+#SBATCH --mem=64G
+#SBATCH --cpus-per-task=8
+#SBATCH --job-name=pretrain_nexttoken_eegonly_fullcohort
+#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/pretrain_nexttoken_eegonly_fullcohort_%j.log
+
+cd /users/hamehdi/projects/sleepfm-mesa
+module use /appl/modulefiles/manual/aida/aarch64
+module load python-pytorch/2.10
+source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
+export HDF5_USE_FILE_LOCKING=FALSE
+export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+
+echo "FULLCOHORT_START: $(date +%s)"
+CKPT_DIR="/scratch/project_2019517/sleepfm-data/checkpoints/encoders/nexttoken_eegonly_fullcohort/SetTransformer/nexttoken_128_patch_size_640"
+if [ -f "${CKPT_DIR}/checkpoint.pt" ]; then
+    echo "Resuming from ${CKPT_DIR}"
+    python sleepfm/pipeline/pretrain_nexttoken.py \
+        --config_path sleepfm/configs/config_pretrain_nexttoken_eegonly_fullcohort.yaml \
+        --checkpoint_path "${CKPT_DIR}"
+else
+    echo "Starting fresh"
+    python sleepfm/pipeline/pretrain_nexttoken.py \
+        --config_path sleepfm/configs/config_pretrain_nexttoken_eegonly_fullcohort.yaml
+fi
+PYEXIT=$?
+if [ $PYEXIT -ne 0 ]; then
+    echo "FATAL: pretrain_nexttoken.py exited with code $PYEXIT"
+    exit $PYEXIT
+fi
+echo "FULLCOHORT_END: $(date +%s)"

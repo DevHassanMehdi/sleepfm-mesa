@@ -1,0 +1,86 @@
+#!/bin/bash
+#SBATCH --account=project_2019517
+#SBATCH --partition=gpumedium
+#SBATCH --gres=gpu:gh200:1
+#SBATCH --time=02:00:00
+#SBATCH --mem=32G
+#SBATCH --cpus-per-task=8
+#SBATCH --job-name=full_cohort_spectral_run
+#SBATCH --output=/users/hamehdi/projects/sleepfm-mesa/logs/full_cohort_spectral_run_%j.log
+
+# Spectral-pretrained-encoder fine-tuning. Same structure as
+# full_cohort_run_template.slurm (the From-Scratch template) except
+# --pretrain_approach is hardcoded to "spectral" here instead of
+# "fromscratch", since finetune_sleep_staging.py takes it as an explicit
+# CLI flag with no positional-arg passthrough in the original template.
+#
+# Positional args:
+#   $1 = config_path        (per-modality config, fixes channel_like)
+#   $2 = split_path          (dataset_split_fold5_v1.json)
+#   $3 = split_id            ("fold5_v1" -- fold5_v1 only per current standard)
+#   $4 = fold                (integer, 0-4)
+#   $5 = canonical_modality  (EEG_ONLY | ECG_ONLY | EEG_ECG -- must match
+#                             what sleepfm/experiment_paths.py's
+#                             canonical_modality() derives from this
+#                             config's channel_like; used here only to
+#                             build the expected checkpoint_dir path for
+#                             the post-hoc existence check below)
+#   $6 = timestamp           (YYYY-MM-DD_HHMMSS, precomputed by the
+#                             submitting script so concurrently submitted
+#                             jobs never collide)
+CONFIG_PATH=$1
+SPLIT_PATH=$2
+SPLIT_ID=$3
+FOLD=$4
+CANONICAL_MODALITY=$5
+TIMESTAMP=$6
+
+cd /users/hamehdi/projects/sleepfm-mesa
+module use /appl/modulefiles/manual/aida/aarch64
+module load python-pytorch/2.10
+source /projappl/project_2019517/sleepfm_venv_arm/bin/activate
+export HDF5_USE_FILE_LOCKING=FALSE
+export PYTHONPATH=/users/hamehdi/projects/sleepfm-mesa/sleepfm:/users/hamehdi/projects/sleepfm-mesa
+
+CHECKPOINT_DIR="/scratch/project_2019517/sleepfm-data/checkpoints/full_cohort/sleepfm__${CANONICAL_MODALITY}__spectral__${SPLIT_ID}__${TIMESTAMP}"
+
+echo "RUN_START: $(date +%s)"
+echo ">>> modality=$CANONICAL_MODALITY split_id=$SPLIT_ID fold=$FOLD pretrain=spectral"
+echo ">>> Expected checkpoint_dir: $CHECKPOINT_DIR"
+
+echo "=== STEP 1: finetune_sleep_staging.py ==="
+python sleepfm/pipeline/finetune_sleep_staging.py \
+    --config_path "$CONFIG_PATH" \
+    --split_path "$SPLIT_PATH" \
+    --fold "$FOLD" \
+    --pretrain_approach spectral \
+    --split_id "$SPLIT_ID" \
+    --timestamp "$TIMESTAMP"
+
+if [ ! -d "$CHECKPOINT_DIR" ]; then
+    echo "FATAL: expected checkpoint_dir does not exist: $CHECKPOINT_DIR"
+    exit 1
+fi
+
+echo "=== STEP 2: evaluate_sleep_staging.py (val) ==="
+python sleepfm/pipeline/evaluate_sleep_staging.py \
+    --config_path "$CONFIG_PATH" \
+    --output_path "$CHECKPOINT_DIR" \
+    --split validation \
+    --fold "$FOLD"
+
+echo "=== STEP 3: evaluate_sleep_staging.py (test) ==="
+python sleepfm/pipeline/evaluate_sleep_staging.py \
+    --config_path "$CONFIG_PATH" \
+    --output_path "$CHECKPOINT_DIR" \
+    --split test \
+    --fold "$FOLD"
+
+echo "=== STEP 4: compute_metrics.py ==="
+python scripts/compute_metrics.py \
+    --checkpoint_dir "$CHECKPOINT_DIR" \
+    --split test \
+    --fold "$FOLD"
+
+echo "RUN_END: $(date +%s)"
+echo ">>> checkpoint_dir: $CHECKPOINT_DIR"

@@ -1,0 +1,16 @@
+{
+  "model": "sleepfm",
+  "modality": "ECG_ONLY",
+  "pretrain_method": "spectral",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-09-17_2326",
+  "split": "test",
+  "n_folds_used": 1,
+  "per_fold_macro_f1": [
+    0.342514
+  ],
+  "mean_macro_f1": 0.342514,
+  "std_macro_f1": 0.0,
+  "overall_macro_f1": 0.342514,
+  "overall_accuracy": 0.511138
+}

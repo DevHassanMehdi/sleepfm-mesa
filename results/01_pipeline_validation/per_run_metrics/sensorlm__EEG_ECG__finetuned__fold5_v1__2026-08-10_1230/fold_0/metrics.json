@@ -1,0 +1,10 @@
+{
+  "model": "sensorlm",
+  "modality": "EEG_ECG",
+  "pretrain_method": "finetuned",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-08-10_1230",
+  "fold": 0,
+  "overall_macro_f1": 0.64126,
+  "overall_accuracy": 0.728261
+}

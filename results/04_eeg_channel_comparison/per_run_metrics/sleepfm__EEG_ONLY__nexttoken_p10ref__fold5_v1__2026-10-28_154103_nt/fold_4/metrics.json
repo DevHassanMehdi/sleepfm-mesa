@@ -1,0 +1,16 @@
+{
+  "model": "sleepfm",
+  "modality": "EEG_ONLY",
+  "pretrain_method": "nexttoken_p10ref",
+  "split_id": "fold5_v1",
+  "timestamp": "2026-10-28_154103_nt",
+  "split": "test",
+  "n_folds_used": 1,
+  "per_fold_macro_f1": [
+    0.729675
+  ],
+  "mean_macro_f1": 0.729675,
+  "std_macro_f1": 0.0,
+  "overall_macro_f1": 0.729675,
+  "overall_accuracy": 0.830197
+}
