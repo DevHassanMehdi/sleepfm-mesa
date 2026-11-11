@@ -1,0 +1,8 @@
+# SMOKE TEST ONLY -- 10-record Moody subset, to verify build_spectral_cache.py
+# produces correctly-shaped cache files on Moody HDF5s (EEG_ONLY+EKG, 4-channel
+# scope, same MODALITY_TYPES/MAX_CHANNELS as the MESA script already hardcodes)
+# before committing to the full 1135-record Moody cache build. Mirrors
+# config_spectral_cache_smoketest.yaml's role for the MESA full-cohort rebuild.
+data_path: '/scratch/project_2019517/moody2026_pilot/test10_hdf5'
+split_path: '/scratch/project_2019517/moody2026_pilot/splits/dataset_split_moody_i0006_cache10test.json'
+val_size: 2

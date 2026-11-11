@@ -28,6 +28,7 @@ N_CLUSTERS = 512
 KM_BATCH_SIZE = 10000
 CACHE_DIR = "/scratch/project_2019517/sleepfm-data"
 REPORT_DIR = "diagnostics"
+RESEED_EXTRA_PASSES = 5  # extra partial_fit passes over pretrain after a reseed
 
 
 def load_and_validate_cache(path, name):
@@ -141,6 +142,47 @@ def build_pairs(fps, window_starts, labels):
     )
 
 
+def reseed_empty_clusters(km, features, masked, n_windows, empty_ids,
+                           extra_passes=RESEED_EXTRA_PASSES, batch_size=KM_BATCH_SIZE):
+    """
+    Re-seed each empty cluster from the single pretrain window (among all
+    valid, non-masked pretrain windows) with the largest current distance
+    to its own assigned centroid -- i.e. the point today's codebook fits
+    worst -- then run a few more partial_fit passes over the pretrain set
+    so the reseeded centroid(s) and their neighbors re-equilibrate.
+    Mutates km in place. Returns updated labels in the same convention as
+    assign_tokens_batched (-1 for fully-masked windows). Pretrain-only,
+    same leakage rule as the main fit.
+    """
+    good_idx = np.where(~masked)[0]
+    features_km = features[good_idx]
+
+    labels_km = np.empty(len(good_idx), dtype=np.int32)
+    for start in range(0, len(good_idx), batch_size):
+        labels_km[start:start + batch_size] = km.predict(features_km[start:start + batch_size])
+
+    assigned_centroids = km.cluster_centers_[labels_km]
+    errors = np.linalg.norm(features_km - assigned_centroids, axis=1)
+    worst_order = np.argsort(-errors)
+
+    used = set()
+    for cid in empty_ids:
+        pick = next(int(i) for i in worst_order if int(i) not in used)
+        used.add(pick)
+        km.cluster_centers_[cid] = features_km[pick]
+        # Match sklearn's own starved-cluster-reassignment convention
+        # (_mini_batch_step): give the reseeded center a small, nonzero
+        # count so it isn't instantly flagged as starved again on the
+        # very next batch.
+        km._counts[cid] = km._counts[km._counts > 0].min()
+
+    for _ in range(extra_passes):
+        for start in range(0, len(features_km), batch_size):
+            km.partial_fit(features_km[start:start + batch_size])
+
+    return assign_tokens_batched(km, features, masked, n_windows)
+
+
 def entropy_bits(labels, n_clusters):
     valid = labels[labels >= 0]
     counts = np.bincount(valid.astype(np.int64), minlength=n_clusters)
@@ -159,6 +201,15 @@ def main():
                          help="Filename (under diagnostics/) for the build report. "
                               "Change this when pointing at a different cache_dir so "
                               "the historical report isn't overwritten.")
+    parser.add_argument("--reseed_empty", action="store_true", default=False,
+                         help="If any cluster ends up with 0 assigned pretrain "
+                              "windows, re-seed it from the single worst-fit "
+                              "pretrain window (largest distance to its own "
+                              "assigned centroid) and run a few more partial_fit "
+                              "passes, then re-check, before falling back to the "
+                              "hard failure. Off by default -- behavior (and the "
+                              "hard-fail itself) is unchanged unless this flag is "
+                              "passed explicitly.")
     args = parser.parse_args()
 
     cache_dir = args.cache_dir
@@ -261,6 +312,19 @@ def main():
     valid_labels_pre = labels_pre[labels_pre >= 0]
     cluster_counts = np.bincount(valid_labels_pre.astype(np.int64), minlength=N_CLUSTERS)
     n_empty = int((cluster_counts == 0).sum())
+
+    if n_empty > 0 and args.reseed_empty:
+        empty_ids = np.where(cluster_counts == 0)[0].tolist()
+        log(f"\n  {n_empty}/{N_CLUSTERS} cluster(s) empty {empty_ids} -- "
+            f"--reseed_empty is set: reseeding from the worst-fit pretrain "
+            f"window(s) + {RESEED_EXTRA_PASSES} extra partial_fit pass(es)")
+        labels_pre = reseed_empty_clusters(km, features_pre, masked_pre, N_pre, empty_ids)
+        labels_val = assign_tokens_batched(km, features_val, masked_val, N_val)  # centroids moved; re-assign
+        valid_labels_pre = labels_pre[labels_pre >= 0]
+        cluster_counts = np.bincount(valid_labels_pre.astype(np.int64), minlength=N_CLUSTERS)
+        n_empty = int((cluster_counts == 0).sum())
+        log(f"  After reseed: {n_empty}/{N_CLUSTERS} cluster(s) still empty")
+
     if n_empty > 0:
         raise RuntimeError(
             f"Degenerate codebook: {n_empty}/{N_CLUSTERS} clusters have 0 assigned "

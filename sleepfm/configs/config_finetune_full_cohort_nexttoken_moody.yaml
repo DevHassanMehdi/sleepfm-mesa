@@ -1,0 +1,39 @@
+# Moody/PhysioNet 2026 (I0006) fine-tuning config -- 3-channel EEG,
+# Next-Token. Copied from config_finetune_full_cohort_moody.yaml (the
+# From-Scratch Moody config) with ONLY model_path changed to point at the
+# Next-Token-retrained Moody encoder instead. model_params/batch_size/
+# epochs/lr/channel_like are byte-identical.
+model_params:
+  embed_dim: 128
+  num_heads: 4
+  num_layers: 2
+  num_classes: 5
+  pooling_head: 4
+  dropout: 0.3
+  max_seq_length: 1500
+
+max_channels: 4
+context: -1
+seed: 42
+model: "SleepEventLSTMClassifier"
+dataset: "i0006"
+batch_size: 16
+epochs: 500
+lr: 0.0001
+num_workers: 2
+early_stopping_patience: 50
+
+data_path: "/scratch/project_2019517/moody2026_pilot/hdf5_included"
+model_path: "/scratch/project_2019517/moody2026_pilot/retrain/encoders/nexttoken_moody/SetTransformer/nexttoken_128_patch_size_640"
+split_path: "/scratch/project_2019517/moody2026_pilot/splits/dataset_split_moody_i0006_fold5_v1.json"
+labels_path: "/scratch/project_2019517/moody2026_pilot/labels_included"
+save_iter: 1000
+eval_iter: 1000
+log_interval: 10
+accumulation_steps: 16
+use_wandb: false
+
+max_files: null
+sampling_freq: 128
+
+channel_like: ["EEG_ONLY"]
