@@ -61,6 +61,7 @@ def generate_embeddings(
 ):
     config_path = os.path.join(model_path, "config.json")
     config = load_config(config_path)
+    config = rebase_old_home_paths(config)
     channel_groups = load_data(channel_groups_path)
 
     if split_path is None:

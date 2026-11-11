@@ -23,6 +23,7 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 from biot_dataset import BIOTSleepDataset, MODALITY_CHANNELS, HDF5_DIR, LABELS_DIR
 from finetune_biot import build_model
 from experiment_paths import experiment_from_checkpoint_dir, write_metrics_bundle
+from utils import rebase_old_home_paths
 
 STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
 
@@ -120,6 +121,7 @@ def main():
     config_path = fold_dir / "config.json"
     import json
     config = json.load(open(config_path)) if config_path.exists() else {}
+    config = rebase_old_home_paths(config)
 
     write_metrics_bundle(
         exp,

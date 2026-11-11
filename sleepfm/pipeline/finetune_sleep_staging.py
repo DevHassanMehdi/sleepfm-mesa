@@ -162,6 +162,7 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
     if checkpoint_path:
         output = checkpoint_path
         config = load_data(os.path.join(output, "config.json"))
+        config = rebase_old_home_paths(config)
         # channel_like_string above was computed from THIS invocation's
         # --config_path (defaults to config_finetune_sleep_events.yaml if not
         # passed) -- stale/unrelated to the resumed run once config gets

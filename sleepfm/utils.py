@@ -1,9 +1,35 @@
+import os
 import sys
 import yaml
 import json
 import pickle
 from typing import Any
 import numpy as np
+
+# Home directory on the account every pre-migration checkpoint/config.json
+# was saved under. Historical saved configs bake in absolute paths rooted
+# here; rebase_old_home_paths() rewrites them to the current account's
+# home directory so old checkpoints keep working after an account migration.
+_OLD_HOME_PREFIX = "/users/hamehdi/"
+
+
+def rebase_old_home_paths(obj):
+    """Recursively rewrite any string starting with _OLD_HOME_PREFIX to use
+    the current account's home directory instead, including inside nested
+    dicts/lists/tuples. Strings that don't start with the prefix (and any
+    non-string value) are returned unchanged, so this is always safe to
+    call on a config that was never affected."""
+    if isinstance(obj, str):
+        if obj.startswith(_OLD_HOME_PREFIX):
+            return os.path.join(os.path.expanduser("~"), obj[len(_OLD_HOME_PREFIX):])
+        return obj
+    if isinstance(obj, dict):
+        return {k: rebase_old_home_paths(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        rebased = [rebase_old_home_paths(v) for v in obj]
+        return type(obj)(rebased)
+    return obj
+
 
 def count_parameters(model):
     # Duck-typed on model.children()/.parameters()/.numel() -- never

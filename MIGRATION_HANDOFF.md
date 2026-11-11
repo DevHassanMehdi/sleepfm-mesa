@@ -4,6 +4,75 @@ Written 2026-11-11. Nothing in this document was run as a live command beyond
 what was needed to gather the facts below. No secrets, keys, or token
 contents appear anywhere in this file, by path only where relevant.
 
+## Post-migration status (11 Nov 2026)
+
+The account migration to **`hamehd`** (new home `/users/hamehd`, old home
+`/users/hamehdi` now fully permission-denied) is functionally complete.
+Summary below; see the migration verification sessions for full evidence.
+
+**Checks that passed**: identity/groups/quotas, all listed project data
+paths (group already corrected to `project_2019517` for both
+`sleepfm-data` and `moody2026_pilot`), MESA/Moody file counts (2056/2056,
+350/350, 1135/1135, all exact), archived-labels checksum integrity, 40
+random HDF5 opens (20 MESA + 20 Moody), the GPU environment smoke test
+(GH200, CUDA, all required imports, 0 package-version mismatches vs.
+`scripts/env/sleepfm_venv_arm_frozen.txt`), repo state (`results/` holds
+exactly the 8 `.md` files; `HEAD` clean), `git config user.name`/`user.email`
+now real values (`Hassan Mehdi` / `itshmehdi@gmail.com`, no longer the
+placeholder), and a `grep -rn hamehdi` across every tracked script/config/
+template/dotfile coming back clean.
+
+**The stale-path bug, found and fixed.** 299 saved `config.json` files
+under `data/checkpoints/full_cohort/*/fold_*/` (every full-cohort
+fine-tuning run) hardcode the old account's home directory in one or more
+of `results_dir` (297 files), `split_path` (239), `labels_path` (174),
+`model_path` (40), and `data_path` (4) — baked in at training time, so an
+account migration leaves them pointing at a directory that no longer
+exists for this account. Added `rebase_old_home_paths()` to
+`sleepfm/utils.py` (recursively rewrites any string starting with
+`/users/hamehdi/` to the current `~`, no-op otherwise, nested dicts/lists
+included) and called it right after every saved-config load in
+`evaluate_sleep_staging.py`, `finetune_sleep_staging.py`'s
+`--checkpoint_path` resume branch, `generate_embeddings.py`,
+`evaluate_biot.py`, `evaluate_labram.py`, and `evaluate_sensorlm.py`.
+`finetune_biot.py`/`finetune_labram.py`/`finetune_sensorlm.py`'s
+`--checkpoint_dir` resume path never reads a saved config for paths at all
+(experiment identity comes from the directory name, weights from
+`latest.pth`/`best.pth`), so there was no call site to attach it to there.
+Verified end-to-end straight from the original, unmodified checkpoints
+(symlinked into a throwaway dir so writes never touched the real
+checkpoint folder): From-Scratch and Next-Token EEG_ONLY fold 0 both
+reproduce their saved macro F1/accuracy to 6 decimals, and the real
+`test_all_*.pickle` files in the checkpoint folders were confirmed
+byte-identical (md5) before and after. Added a unit test,
+`tests/test_rebase_old_home_paths.py`.
+
+**A separate gotcha found along the way, not fixed here**: `evaluate_biot.py`/
+`finetune_biot.py` (and the LaBraM/SensorLM equivalents) default
+`--hdf5_dir` to the relative path `data/mesa/hdf5`, which currently
+resolves through the `mesa/hdf5` symlink to `hdf5_350_puhti_baseline`
+(the 350-subject baseline), not the full 2056-subject cohort. Every
+existing SLURM template passes `--hdf5_dir .../mesa/hdf5_full` explicitly,
+so production runs are unaffected, but any ad hoc invocation that omits
+the flag will silently evaluate against the wrong, much smaller cohort
+with no error. Confirmed directly: omitting `--hdf5_dir` on a BIOT
+re-evaluation gave 83,005 test epochs and macro F1 0.7542 (the 350-subject
+cohort); passing it explicitly gave the correct 515,461 epochs and macro
+F1 0.7551, matching the saved benchmark exactly.
+
+**Open fixes** (commands in the relevant section below, none run):
+1. **GitHub SSH key** — a new ed25519 key was generated on this account
+   (`SHA256:nqAeAjVmy7vqboJYncqdjkMSHUTHxnHQ5KzG/xdXXlk`) but its public
+   half isn't added to GitHub yet; `git fetch`/`push`/`ssh -T` all fail
+   with `Permission denied (publickey)`.
+2. **NSRR gem** — binary and Ruby gem environment not installed on this
+   account yet (`~/.local/share/x86_64/gem/ruby/3.4.0/bin/nsrr` missing).
+3. **Kaggle token** — no credentials at either `~/.kaggle/access_token` or
+   `~/.config/kaggle/kaggle.json`.
+4. **Billing visibility** — `csc-projects`/`csc-quota` still report
+   `project_2019517` "not accessible" on this account, same as the old one;
+   GPU billing-unit balance remains unconfirmed.
+
 ## Current cluster state
 
 **squeue** (user `hamehdi`): one entry, the interactive dashboard session

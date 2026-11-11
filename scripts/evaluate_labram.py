@@ -24,6 +24,7 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 from labram_dataset import LaBraMSleepDataset, MODALITY_CHANNELS, get_ch_names, HDF5_DIR
 from finetune_labram import build_model, forward_logits, get_input_chans
 from experiment_paths import experiment_from_checkpoint_dir, write_metrics_bundle
+from utils import rebase_old_home_paths
 
 STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
 
@@ -106,6 +107,7 @@ def main():
 
     config_path = fold_dir / "config.json"
     config = json.load(open(config_path)) if config_path.exists() else {}
+    config = rebase_old_home_paths(config)
 
     write_metrics_bundle(
         exp,

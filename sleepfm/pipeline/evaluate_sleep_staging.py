@@ -58,6 +58,7 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
 
     if "config.json" in os.listdir(output_path):
         config = load_data(os.path.join(output_path, "config.json"))
+        config = rebase_old_home_paths(config)
 
     # Set up logging
     logger.add("logs/evaluation_{time}.log", rotation="10 MB")
