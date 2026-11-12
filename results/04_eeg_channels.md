@@ -8,6 +8,8 @@
 
 ## Names used
 
+*No marks: names and descriptions.*
+<!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
 | SleepFM From-Scratch | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
@@ -21,43 +23,51 @@
 
 **Setup:** Full MESA cohort, 2056 subjects, fold5_v1. Single-channel early-stopping patience 10 for all nine runs.
 
-**Legend:** 🟦 best single channel in column, within model, bold value. 🟩 all-3-channel row.
+**Legend:** bold = best channel within that model's block (see the "Table standard" in RESULTS.md). The all-3-channel rows are reference rows, excluded from ranking.
 
 ## Main results
 
 ### SleepFM From-Scratch
 
+*Compared: channels, down each column, higher is better.*
+<!-- spec: block=none; items=channels; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none; exclude_rows=Channel~EEG, 3 channels -->
 | Channel | Early-stopping patience | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| EEG, 1 channel (Fz-Cz) | 10 | 0.6835 ± 0.0120 | **0.8010** 🟦 | 0.9176 | 0.3200 | **0.7826** 🟦 | 0.6291 | **0.7681** 🟦 |
-| EEG, 1 channel (Cz-Oz) | 10 | 0.6843 ± 0.0100 | 0.7978 | **0.9226** 🟦 | **0.3526** 🟦 | 0.7694 | 0.6231 | 0.7536 |
-| EEG, 1 channel (C4-M1) | 10 | **0.6886 ± 0.0121** 🟦 | 0.7994 | 0.9169 | 0.3394 | 0.7746 | **0.6456** 🟦 | 0.7663 |
-| EEG, 3 channels, patience 10 | 10 | 0.7306 ± 0.0102 🟩 | 0.8309 | 0.9431 | 0.4270 | 0.8036 | 0.6583 | 0.8211 |
-| EEG, 3 channels, patience 50 (benchmark) | 50 | 0.7451 ± 0.0052 🟩 | 0.8403 | 0.9468 | 0.4661 | 0.8182 | 0.6569 | 0.8373 |
+| EEG, 1 channel (Fz-Cz) | 10 | 0.6835 ± 0.0120 | **0.8010** | 0.9176 | 0.3200 | **0.7826** | 0.6291 | **0.7681** |
+| EEG, 1 channel (Cz-Oz) | 10 | 0.6843 ± 0.0100 | 0.7978 | **0.9226** | **0.3526** | 0.7694 | 0.6231 | 0.7536 |
+| EEG, 1 channel (C4-M1) | 10 | **0.6886 ± 0.0121** | **0.7994** | 0.9169 | 0.3394 | 0.7746 | **0.6456** | **0.7663** |
+| EEG, 3 channels, patience 10 | 10 | 0.7306 ± 0.0102 | 0.8309 | 0.9431 | 0.4270 | 0.8036 | 0.6583 | 0.8211 |
+| EEG, 3 channels, patience 50 (benchmark) | 50 | 0.7451 ± 0.0052 | 0.8403 | 0.9468 | 0.4661 | 0.8182 | 0.6569 | 0.8373 |
 
 ### SleepFM Next-Token
 
+*Compared: channels, down each column, higher is better.*
+<!-- spec: block=none; items=channels; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none; exclude_rows=Channel~EEG, 3 channels -->
 | Channel | Early-stopping patience | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| EEG, 1 channel (Fz-Cz) | 10 | **0.7015 ± 0.0063** 🟦 | **0.8084** 🟦 | 0.9218 | 0.3831 | **0.7901** 🟦 | 0.6353 | 0.7769 |
-| EEG, 1 channel (Cz-Oz) | 10 | 0.6966 ± 0.0098 | 0.8044 | **0.9274** 🟦 | **0.3912** 🟦 | 0.7787 | 0.6323 | 0.7534 |
-| EEG, 1 channel (C4-M1) | 10 | 0.6964 ± 0.0091 | 0.8081 | 0.9213 | 0.3412 | 0.7857 | **0.6501** 🟦 | **0.7835** 🟦 |
-| EEG, 3 channels, patience 10 | 10 | 0.7346 ± 0.0053 🟩 | 0.8355 | 0.9425 | 0.4220 | 0.8148 | 0.6708 | 0.8229 |
-| EEG, 3 channels, patience 50 (benchmark) | 50 | 0.7394 ± 0.0051 🟩 | 0.8373 | 0.9444 | 0.4443 | 0.8158 | 0.6684 | 0.8241 |
+| EEG, 1 channel (Fz-Cz) | 10 | **0.7015 ± 0.0063** | **0.8084** | 0.9218 | 0.3831 | **0.7901** | 0.6353 | 0.7769 |
+| EEG, 1 channel (Cz-Oz) | 10 | 0.6966 ± 0.0098 | 0.8044 | **0.9274** | **0.3912** | 0.7787 | 0.6323 | 0.7534 |
+| EEG, 1 channel (C4-M1) | 10 | 0.6964 ± 0.0091 | **0.8081** | 0.9213 | 0.3412 | 0.7857 | **0.6501** | **0.7835** |
+| EEG, 3 channels, patience 10 | 10 | 0.7346 ± 0.0053 | 0.8355 | 0.9425 | 0.4220 | 0.8148 | 0.6708 | 0.8229 |
+| EEG, 3 channels, patience 50 (benchmark) | 50 | 0.7394 ± 0.0051 | 0.8373 | 0.9444 | 0.4443 | 0.8158 | 0.6684 | 0.8241 |
 
 ### BIOT
 
+*Compared: channels, down each column, higher is better.*
+<!-- spec: block=none; items=channels; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none; exclude_rows=Channel~EEG, 3 channels -->
 | Channel | Early-stopping patience | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| EEG, 1 channel (Fz-Cz) | 10 | 0.6976 ± 0.0052 | 0.7795 | 0.9070 | 0.4824 | **0.7567 🟦** | 0.6244 | **0.7175** 🟦 |
-| EEG, 1 channel (Cz-Oz) | 10 | 0.6887 ± 0.0088 | 0.7765 | **0.9149** 🟦 | **0.4829** 🟦 | 0.7437 | 0.6174 | 0.6845 |
-| EEG, 1 channel (C4-M1) | 10 | **0.6998 ± 0.0088** 🟦 | **0.7815** 🟦 | 0.9181 | 0.4800 | 0.7462 | **0.6396** 🟦 | 0.7152 |
-| EEG, 3 channels, patience 20 (benchmark) | 20 | 0.7541 ± 0.0047 🟩 | 0.8274 | 0.9455 | 0.5363 | 0.8023 | 0.6798 | 0.8068 |
+| EEG, 1 channel (Fz-Cz) | 10 | 0.6976 ± 0.0052 | **0.7795** | 0.9070 | **0.4824** | **0.7567** | 0.6244 | **0.7175** |
+| EEG, 1 channel (Cz-Oz) | 10 | 0.6887 ± 0.0088 | 0.7765 | 0.9149 | **0.4829** | 0.7437 | 0.6174 | 0.6845 |
+| EEG, 1 channel (C4-M1) | 10 | **0.6998 ± 0.0088** | **0.7815** | **0.9181** | 0.4800 | 0.7462 | **0.6396** | 0.7152 |
+| EEG, 3 channels, patience 20 (benchmark) | 20 | 0.7541 ± 0.0047 | 0.8274 | 0.9455 | 0.5363 | 0.8023 | 0.6798 | 0.8068 |
 
 ## Detail tables
 
 ### Paired per-fold win counts
 
+*No marks: win counts and diffs.*
+<!-- spec: items=paired per-fold win counts; marks=none; note=win counts and diffs -->
 | Model | Pair | Wins | Mean diff | Per-fold diff |
 |---|---|---|---|---|
 | SleepFM From-Scratch | EEG, 1 channel (Fz-Cz) vs EEG, 1 channel (Cz-Oz) | Fz-Cz 3/5, Cz-Oz 2/5 | -0.0008 | +0.0101, -0.0106, -0.0147, +0.0062, +0.0051 |
@@ -66,9 +76,9 @@
 | SleepFM Next-Token | EEG, 1 channel (Fz-Cz) vs EEG, 1 channel (Cz-Oz) | Fz-Cz 3/5, Cz-Oz 2/5 | +0.0049 | -0.0003, +0.0101, +0.0044, -0.0090, +0.0192 |
 | SleepFM Next-Token | EEG, 1 channel (Fz-Cz) vs EEG, 1 channel (C4-M1) | Fz-Cz 3/5, C4-M1 2/5 | +0.0051 | -0.0020, +0.0085, +0.0073, -0.0059, +0.0175 |
 | SleepFM Next-Token | EEG, 1 channel (Cz-Oz) vs EEG, 1 channel (C4-M1) | Cz-Oz 2/5, C4-M1 3/5 | +0.0002 | -0.0017, -0.0015, +0.0030, +0.0031, -0.0017 |
-| BIOT | EEG, 1 channel (Fz-Cz) vs EEG, 1 channel (Cz-Oz) | **Fz-Cz 5/5** 🟦, Cz-Oz 0/5 | +0.0089 | +0.0082, +0.0031, +0.0173, +0.0051, +0.0110 |
+| BIOT | EEG, 1 channel (Fz-Cz) vs EEG, 1 channel (Cz-Oz) | Fz-Cz 5/5 , Cz-Oz 0/5 | +0.0089 | +0.0082, +0.0031, +0.0173, +0.0051, +0.0110 |
 | BIOT | EEG, 1 channel (Fz-Cz) vs EEG, 1 channel (C4-M1) | Fz-Cz 1/5, C4-M1 4/5 | -0.0022 | -0.0015, -0.0090, -0.0028, -0.0045, +0.0067 |
-| BIOT | EEG, 1 channel (Cz-Oz) vs EEG, 1 channel (C4-M1) | Cz-Oz 0/5, **C4-M1 5/5** 🟦 | -0.0112 | -0.0097, -0.0121, -0.0201, -0.0096, -0.0043 |
+| BIOT | EEG, 1 channel (Cz-Oz) vs EEG, 1 channel (C4-M1) | Cz-Oz 0/5, C4-M1 5/5 | -0.0112 | -0.0097, -0.0121, -0.0201, -0.0096, -0.0043 |
 
 Only BIOT's Cz-Oz-worst result clears the bar of winning most folds with a gap bigger than the fold-to-fold std.
 
@@ -76,6 +86,8 @@ Only BIOT's Cz-Oz-worst result clears the bar of winning most folds with a gap b
 
 **SleepFM From-Scratch**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Channel | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | EEG, 1 channel (Fz-Cz) | 0.6899 | 0.6919 | 0.6610 | 0.6934 | 0.6812 |
@@ -85,6 +97,8 @@ Only BIOT's Cz-Oz-worst result clears the bar of winning most folds with a gap b
 
 **SleepFM Next-Token**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Channel | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | EEG, 1 channel (Fz-Cz) | 0.6960 | 0.7136 | 0.6978 | 0.7002 | 0.6996 |
@@ -94,6 +108,8 @@ Only BIOT's Cz-Oz-worst result clears the bar of winning most folds with a gap b
 
 **BIOT**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Channel | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | EEG, 1 channel (Fz-Cz) | 0.6922 | 0.7074 | 0.6952 | 0.6951 | 0.6982 |

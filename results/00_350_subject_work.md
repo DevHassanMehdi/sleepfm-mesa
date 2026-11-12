@@ -8,6 +8,8 @@
 
 ## Names used
 
+*No marks: names and descriptions.*
+<!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
 | SleepFM From-Scratch | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
@@ -25,16 +27,18 @@
 
 **Setup:** 350-subject cohort (300 pretrain, 50 test), fold_0 only. Early-stopping patience not recorded for this era's runs.
 
-**Legend:** 🟩 best in column, bold value.
+**Legend:** bold = best (see each table's caption, and the "Table standard" in RESULTS.md).
 
 ## Main results
 
 ### EEG, 3 channels
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| BIOT | **0.7237** 🟩 | 0.8007 | 0.9325 | **0.5327** 🟩 | 0.7639 | **0.6594** 🟩 | 0.7301 |
-| SleepFM Next-Token | 0.7024 | **0.8143** 🟩 | **0.9334** 🟩 | 0.3473 | **0.7904** 🟩 | 0.6515 | **0.7896** 🟩 |
+| BIOT | **0.7237** | 0.8007 | **0.9325** | **0.5327** | 0.7639 | **0.6594** | 0.7301 |
+| SleepFM Next-Token | 0.7024 | **0.8143** | **0.9334** | 0.3473 | **0.7904** | 0.6515 | **0.7896** |
 | SleepFM Spectral | 0.6971 | 0.8042 | 0.9237 | 0.3628 | 0.7788 | 0.6389 | 0.7811 |
 | LaBraM | 0.6835 | 0.7737 | 0.9203 | 0.4257 | 0.7511 | 0.6557 | 0.6647 |
 | SleepFM From-Scratch | 0.6582 | 0.7757 | 0.8941 | 0.2952 | 0.7653 | 0.6464 | 0.7201 |
@@ -47,29 +51,33 @@ U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.
 
 ### ECG only
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| SleepFM Next-Token | **0.3614** 🟩 | **0.5451** 🟩 | **0.8095** 🟩 | 0.0048 | **0.4666** 🟩 | **0.2252** 🟩 | 0.3010 |
+| SleepFM Next-Token | **0.3614** | **0.5451** | **0.8095** | 0.0048 | **0.4666** | **0.2252** | 0.3010 |
 | Combined | 0.3380 | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
-| SleepFM From-Scratch | 0.3353 | 0.5268 | 0.7566 | 0.0000 | 0.4148 | 0.2188 | **0.3165** 🟩 |
-| MOMENT | 0.3096 | 0.4191 | 0.6239 | **0.1850** 🟩 | 0.4467 | 0.1498 | 0.1427 |
+| SleepFM From-Scratch | 0.3353 | 0.5268 | 0.7566 | 0.0000 | 0.4148 | 0.2188 | **0.3165** |
+| MOMENT | 0.3096 | 0.4191 | 0.6239 | **0.1850** | 0.4467 | 0.1498 | 0.1427 |
 | BIOT | 0.3086 | 0.4302 | 0.6815 | 0.1239 | 0.3933 | 0.1391 | 0.2051 |
 | SensorLM | 0.2821 | 0.3695 | 0.6257 | 0.1330 | 0.3307 | 0.1296 | 0.1914 |
 | LaBraM | 0.2803 | 0.4092 | 0.6211 | 0.1049 | 0.3920 | 0.1045 | 0.1792 |
 | SleepFM Spectral | 0.2603 | 0.4216 | 0.6808 | 0.0000 | 0.2645 | 0.1502 | 0.2062 |
-| YASA | N/A, cannot run | | | | | | |
+| YASA | N/A, cannot run |  |  |  |  |  |  |
 
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
 
 ### EEG + ECG
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| SleepFM Next-Token | **0.7026** 🟩 | **0.8072** 🟩 | 0.9267 | 0.3722 | **0.7801** 🟩 | 0.6386 | **0.7953** 🟩 |
-| BIOT | 0.7023 | 0.7975 | **0.9345** 🟩 | **0.5001** 🟩 | 0.7724 | 0.5733 | 0.7311 |
+| SleepFM Next-Token | **0.7026** | **0.8072** | 0.9267 | 0.3722 | **0.7801** | 0.6386 | **0.7953** |
+| BIOT | **0.7023** | 0.7975 | **0.9345** | **0.5001** | 0.7724 | 0.5733 | 0.7311 |
 | SleepFM Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726 |
 | SleepFM From-Scratch | 0.6529 | 0.7765 | 0.9069 | 0.2411 | 0.7542 | 0.6309 | 0.7415 |
-| LaBraM | 0.6524 | 0.7566 | 0.9203 | 0.3594 | 0.7431 | **0.6457** 🟩 | 0.5935 |
+| LaBraM | 0.6524 | 0.7566 | 0.9203 | 0.3594 | 0.7431 | **0.6457** | 0.5935 |
 | SensorLM | 0.6077 | 0.7062 | 0.8935 | 0.3337 | 0.6891 | 0.6155 | 0.5068 |
 | Combined | 0.6054 | 0.7412 | 0.8720 | 0.1761 | 0.7165 | 0.5745 | 0.6877 |
 | MOMENT | 0.5953 | 0.6918 | 0.8395 | 0.3035 | 0.7053 | 0.6089 | 0.5194 |
@@ -81,36 +89,44 @@ U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.
 
 ### BIOT full-modality ablation
 
+*Compared: signal groups, down each column, higher is better.*
+<!-- spec: block=none; items=signal groups; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Signal group | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| EEG + EOG | **0.7583** 🟩 | **0.8311** 🟩 | **0.9476** 🟩 | **0.5645** 🟩 | 0.7914 | **0.6645** 🟩 | **0.8235** 🟩 |
-| EEG + EOG + ECG | 0.7492 | 0.8252 | 0.9425 | 0.5388 | **0.7960** 🟩 | 0.6586 | 0.8102 |
+| EEG + EOG | **0.7583** | **0.8311** | **0.9476** | **0.5645** | 0.7914 | **0.6645** | **0.8235** |
+| EEG + EOG + ECG | 0.7492 | 0.8252 | 0.9425 | 0.5388 | **0.7960** | 0.6586 | 0.8102 |
 | EEG + EOG + ECG + respiration | 0.7418 | 0.8161 | 0.9371 | 0.5248 | 0.7867 | 0.6592 | 0.8010 |
 | EEG + EOG + ECG + respiration + EMG (all signals) | 0.7331 | 0.8054 | 0.9252 | 0.5177 | 0.7810 | 0.6502 | 0.7913 |
 
 ### SleepFM From-Scratch full-modality ablation (EEG+EOG encoder)
 
+*Compared: signal groups, down each column, higher is better.*
+<!-- spec: block=none; items=signal groups; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Signal group | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| EEG + EOG + ECG + respiration + EMG (all signals) | **0.6601** 🟩 | **0.7802** 🟩 | **0.9089** 🟩 | **0.2794** 🟩 | **0.7697** 🟩 | 0.6243 | **0.7583** 🟩 |
-| EEG + EOG | 0.6509 | 0.7702 | 0.8909 | 0.2203 | 0.7420 | 0.6550 | 0.7563 |
-| EEG + EOG + ECG + respiration | 0.6496 | 0.7755 | 0.9087 | 0.2255 | 0.7687 | **0.6644** 🟩 | 0.7106 |
+| EEG + EOG + ECG + respiration + EMG (all signals) | **0.6601** | **0.7802** | **0.9089** | **0.2794** | **0.7697** | 0.6243 | **0.7583** |
+| EEG + EOG | 0.6509 | 0.7702 | 0.8909 | 0.2203 | 0.7420 | 0.6550 | **0.7563** |
+| EEG + EOG + ECG + respiration | 0.6496 | 0.7755 | **0.9087** | 0.2255 | **0.7687** | **0.6644** | 0.7106 |
 | EEG + EOG + ECG | 0.6310 | 0.7610 | 0.8815 | 0.1784 | 0.7453 | 0.6498 | 0.7301 |
 
 ### Published checkpoint, 10-fold CV (encoder-level leakage, not a fair baseline)
 
+*Compared: signal groups, down each column, higher is better.*
+<!-- spec: block=none; items=signal groups; value_cols=Macro F1,Accuracy,Per-fold mean,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Signal group | Macro F1 | Accuracy | Per-fold mean | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| EEG + EOG + ECG + respiration + EMG (all signals) | **0.7305** 🟩 | **0.8259** 🟩 | 0.7298 ± 0.0148 | **0.9399** 🟩 | **0.4193** 🟩 | 0.7957 | 0.6528 | **0.8385** 🟩 |
-| EEG + EOG + ECG + respiration | 0.7269 | 0.8253 | 0.7263 ± 0.0118 | 0.9394 | 0.3916 | **0.7971** 🟩 | **0.6641** 🟩 | 0.8252 |
+| EEG + EOG + ECG + respiration + EMG (all signals) | **0.7305** | **0.8259** | **0.7298 ± 0.0148** | **0.9399** | **0.4193** | **0.7957** | 0.6528 | **0.8385** |
+| EEG + EOG + ECG + respiration | 0.7269 | **0.8253** | 0.7263 ± 0.0118 | **0.9394** | 0.3916 | **0.7971** | **0.6641** | 0.8252 |
 | EEG + EOG + ECG | 0.7237 | 0.8232 | 0.7230 ± 0.0129 | 0.9361 | 0.3829 | 0.7950 | 0.6571 | 0.8172 |
 | EEG + EOG | 0.7205 | 0.8216 | 0.7194 ± 0.0153 | 0.9326 | 0.3731 | 0.7942 | 0.6522 | 0.8148 |
 
 ### YASA, 10-fold CV reference (EEG1 + EOG-L + EMG)
 
+*No marks: single reference row, nothing to compare.*
+<!-- spec: items=a single reference row; marks=none; note=single reference row, nothing to compare -->
 | | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| Overall | **0.7304** | 0.83 | 0.93 | 0.43 | 0.82 | 0.63 | 0.84 |
+| Overall | 0.7304 | 0.83 | 0.93 | 0.43 | 0.82 | 0.63 | 0.84 |
 
 Mean fold macro F1: 0.7291 ± 0.0112.
 
@@ -118,6 +134,8 @@ Mean fold macro F1: 0.7291 ± 0.0112.
 
 **YASA 10-fold CV**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Fold | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Macro F1 | 0.7239 | 0.7440 | 0.7216 | 0.7406 | 0.7370 | 0.7247 | 0.7254 | 0.7291 | 0.7398 | 0.7044 |

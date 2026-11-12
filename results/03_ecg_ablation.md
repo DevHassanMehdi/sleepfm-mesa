@@ -10,6 +10,8 @@
 
 Every pretraining setup below was verified against its saved `config.json`/pretraining `.yaml` before naming it; see the per-row notes.
 
+*No marks: names and descriptions.*
+<!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
 | Pretrained on EEG + respiration + ECG + EMG (all 2056 subjects) | Verified from the config file `config_pretrain_fromscratch_ablation_A_fullcohort.yaml`: its modality list is EEG, respiration, ECG, and EMG; 2056 subjects |
@@ -28,16 +30,18 @@ All eight names above were checked against their configs; none disagreed with th
 
 **Setup:** Full MESA cohort, 2056 subjects ("Same 300 subjects..." and "Old 350-subject encoder..." use 300), fold5_v1, early-stopping patience 50.
 
-**Legend:** 🟩 best in column, bold value.
+**Legend:** bold = best (see each table's caption, and the "Table standard" in RESULTS.md).
 
 ## Main results
 
-| Pretraining setup | Pretraining subjects | ECG-only Macro F1 | EEG, 3 channels Macro F1 | EEG + ECG Macro F1 |
+*Compared: pretraining setups, down each column, higher is better.*
+<!-- spec: block=none; items=pretraining setups; value_cols=ECG-only Macro F1,EEG 3-channel Macro F1,EEG + ECG Macro F1; bold=down; green=none -->
+| Pretraining setup | Pretraining subjects | ECG-only Macro F1 | EEG 3-channel Macro F1 | EEG + ECG Macro F1 |
 |---|---|---|---|---|
-| Pretrained on ECG + respiration, no EEG | 2056 | **0.5602 ± 0.0061** 🟩 | -- | -- |
-| Same as the main run, second random seed | 2056 | 0.5596 ± 0.0055 | **0.7489 ± 0.0037** 🟩 | 0.7503 ± 0.0050 |
+| Pretrained on ECG + respiration, no EEG | 2056 | **0.5602 ± 0.0061** | -- | -- |
+| Same as the main run, second random seed | 2056 | **0.5596 ± 0.0055** | **0.7489 ± 0.0037** | **0.7503 ± 0.0050** |
 | Pretrained on EEG + ECG (main benchmark run) | 2056 | 0.5575 ± 0.0059 | 0.7451 | 0.7435 |
-| Pretrained on EEG + respiration + ECG + EMG (all 2056 subjects) | 2056 | 0.5405 ± 0.0060 | 0.7468 ± 0.0035 | **0.7505 ± 0.0032** 🟩 |
+| Pretrained on EEG + respiration + ECG + EMG (all 2056 subjects) | 2056 | 0.5405 ± 0.0060 | 0.7468 ± 0.0035 | **0.7505 ± 0.0032** |
 | Pretrained on respiration + ECG + EMG, no EEG | 2056 | 0.5329 ± 0.0057 | -- | -- |
 | Same 300 subjects as the old encoder, fixed training settings, EEG + respiration + ECG + EMG | 300 | 0.5231 ± 0.0064 | 0.7303 ± 0.0019 | -- |
 | Pretrained on ECG + EMG, no EEG | 2056 | 0.5173 ± 0.0084 | -- | -- |
@@ -49,6 +53,8 @@ All eight names above were checked against their configs; none disagreed with th
 
 ### Per-fold macro F1 (ECG-only)
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Pretraining setup | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | Pretrained on ECG + respiration, no EEG | 0.5596 | 0.5669 | 0.5602 | 0.5649 | 0.5493 |
@@ -62,7 +68,9 @@ All eight names above were checked against their configs; none disagreed with th
 
 ### Diff vs. main-benchmark-run mean
 
-| Pretraining setup | ECG-only diff | EEG, 3-channel diff | EEG + ECG diff |
+*No marks: diff columns.*
+<!-- spec: items=diffs from the main benchmark run; marks=none; note=diff columns -->
+| Pretraining setup | ECG-only diff | EEG 3-channel diff | EEG + ECG diff |
 |---|---|---|---|
 | Pretrained on ECG + respiration, no EEG | +0.0027 | -- | -- |
 | Same as the main run, second random seed | +0.0020 | +0.0038 | +0.0068 |
@@ -78,6 +86,8 @@ Per-fold accuracy (ECG-only, same fold order): "Pretrained on EEG + respiration 
 
 ### Per-fold macro F1 (EEG, 3 channels and EEG + ECG, where fine-tuned)
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Pretraining setup | Condition | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|---|
 | Pretrained on EEG + respiration + ECG + EMG (all 2056 subjects) | EEG, 3 channels | 0.7444 | 0.7524 | 0.7455 | 0.7491 | 0.7427 |

@@ -8,6 +8,8 @@
 
 ## Names used
 
+*No marks: names and descriptions.*
+<!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
 | EEG + EOG | EEG1, EEG2, EEG3, and both EOG leads, together |
@@ -22,7 +24,7 @@
 
 **Setup:** Full MESA cohort, 2056 subjects after the label fix, fold5_v1 standard. Early-stopping patience is not relevant to this file.
 
-**Legend:** 🟩 best in column, bold value. Lower is best for Std and SEM.
+**Legend:** bold = best (see each table's caption, and the "Table standard" in RESULTS.md). Std and SEM columns are never marked.
 
 Full details: [PIPELINE_VALIDATION_FINDINGS.md](../PIPELINE_VALIDATION_FINDINGS.md).
 
@@ -30,17 +32,21 @@ Full details: [PIPELINE_VALIDATION_FINDINGS.md](../PIPELINE_VALIDATION_FINDINGS.
 
 ### Label bug, before and after
 
+*Compared: label states, down each column, higher is better.*
+<!-- spec: block=none; items=label states; value_cols=Macro F1; bold=down; green=none -->
 | State | Cohort | Macro F1 |
 |---|---|---|
 | OLD, corrupted labels | 1944 subjects | ~0.53-0.54 |
-| **NEW, fixed labels (mean, all 20 runs)** | 2056 subjects | **0.7418-0.7518 (mean 0.7459)** 🟩 |
+| NEW, fixed labels (mean, all 20 runs) | 2056 subjects | **0.7418-0.7518 (mean 0.7459)** |
 | SleepFM published or leaky range | n/a | 0.70-0.78 |
 
 #### Published checkpoint, fixed labels, by signal group
 
-| Signal group | Macro F1 (mean ± std, 5 folds) |
+*Compared: signal groups, down each column, higher is better.*
+<!-- spec: block=none; items=signal groups; value_cols=Macro F1 (mean ± std over 5 folds); bold=down; green=none -->
+| Signal group | Macro F1 (mean ± std over 5 folds) |
 |---|---|
-| EEG + EOG + ECG + respiration + EMG (all signals) | **0.7518 ± 0.0022** 🟩 |
+| EEG + EOG + ECG + respiration + EMG (all signals) | **0.7518 ± 0.0022** |
 | EEG + EOG + ECG + respiration | 0.7476 ± 0.0022 |
 | EEG + EOG + ECG | 0.7424 ± 0.0038 |
 | EEG + EOG | 0.7418 ± 0.0022 |
@@ -49,58 +55,72 @@ Full details: [PIPELINE_VALIDATION_FINDINGS.md](../PIPELINE_VALIDATION_FINDINGS.
 
 ### 350-subject label check
 
+*No marks: counts, not macro F1.*
+<!-- spec: items=subject counts; marks=none; note=counts, not macro F1 -->
 | Rule | Subjects fine | Subjects bad |
 |---|---|---|
-| Lenient (confirmed) | **348 of 350** 🟩 | 2 |
+| Lenient (confirmed) | 348 of 350 | 2 |
 | Strict (exact row match) | 335 of 350 | 15 |
 
 ### 5-fold vs 10-fold comparison
 
+*Compared: condition/split combinations, down each column, higher is better.*
+<!-- spec: block=none; items=condition/split combinations; value_cols=Mean Macro F1; bold=down; green=none -->
 | Condition | Split | Folds | Mean Macro F1 | Std | SEM |
 |---|---|---|---|---|---|
-| EEG + ECG | fold10_v1 | 10 | **0.5187** 🟩 | 0.0182 | 0.0058 |
+| EEG + ECG | fold10_v1 | 10 | **0.5187** | 0.0182 | 0.0058 |
 | EEG, 3 channels | fold5_v1 | 5 | 0.5162 | 0.0080 | 0.0036 |
-| EEG + ECG | fold5_v1 | 5 | 0.5162 | 0.0090 | **0.0040** |
+| EEG + ECG | fold5_v1 | 5 | 0.5162 | 0.0090 | 0.0040 |
 | EEG, 3 channels | fold10_v1 | 10 | 0.5103 | 0.0215 | 0.0068 |
 | ECG only | fold10_v1 | 10 | 0.4006 | 0.0168 | 0.0053 |
-| ECG only | fold5_v1 | 5 | 0.3943 | **0.0109** | 0.0049 |
+| ECG only | fold5_v1 | 5 | 0.3943 | 0.0109 | 0.0049 |
 
 fold5_v1 recommended, tighter SEM despite half the folds, because its per-fold test sets are larger (388 vs 194 subjects).
 
 ### Historical reproductions
 
+*Compared: experiments, down each column, higher is better.*
+<!-- spec: block=none; items=experiments; value_cols=Macro F1; bold=down; green=none -->
 | Experiment | Macro F1 | Historical reference |
 |---|---|---|
-| **Fresh encoder, reproduced today** | **0.6592** 🟩 | 0.6582 |
+| Fresh encoder, reproduced today | **0.6592** | 0.6582 |
 | Pipeline-regression check, same encoder | 0.6482 | 0.6582 |
 
 #### Per-fold macro F1
 
 **EEG, 3 channels**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Split | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 | Fold 5 | Fold 6 | Fold 7 | Fold 8 | Fold 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| fold5_v1 | 0.5109 | 0.5227 | 0.5222 | 0.5030 | 0.5222 | | | | | |
+| fold5_v1 | 0.5109 | 0.5227 | 0.5222 | 0.5030 | 0.5222 |  |  |  |  |  |
 | fold10_v1 | 0.5145 | 0.4819 | 0.5096 | 0.5332 | 0.5058 | 0.5277 | 0.4691 | 0.4958 | 0.5349 | 0.5309 |
 
 **ECG only**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Split | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 | Fold 5 | Fold 6 | Fold 7 | Fold 8 | Fold 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| fold5_v1 | 0.4036 | 0.3776 | 0.3998 | 0.4051 | 0.3853 | | | | | |
+| fold5_v1 | 0.4036 | 0.3776 | 0.3998 | 0.4051 | 0.3853 |  |  |  |  |  |
 | fold10_v1 | 0.4312 | 0.3764 | 0.4008 | 0.3881 | 0.3974 | 0.4080 | 0.3860 | 0.4251 | 0.4070 | 0.3861 |
 
 **EEG + ECG**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Split | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 | Fold 5 | Fold 6 | Fold 7 | Fold 8 | Fold 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| fold5_v1 | 0.5159 | 0.5104 | 0.5067 | 0.5147 | 0.5331 | | | | | |
+| fold5_v1 | 0.5159 | 0.5104 | 0.5067 | 0.5147 | 0.5331 |  |  |  |  |  |
 | fold10_v1 | 0.5218 | 0.4833 | 0.5247 | 0.5388 | 0.5040 | 0.5342 | 0.4966 | 0.5245 | 0.5436 | 0.5156 |
 
 These three are the corrupted-label, 1944-subject fold5/fold10 comparison runs.
 
 **Published checkpoint, fixed labels, fold5_v1**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Signal group | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | EEG + EOG + ECG + respiration + EMG (all signals) | 0.753037 | 0.748314 | 0.754298 | 0.753054 | 0.750485 |
@@ -110,6 +130,8 @@ These three are the corrupted-label, 1944-subject fold5/fold10 comparison runs.
 
 **Published checkpoint, corrupted labels, fold5_v1 (OLD, before reference)**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Signal group | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | EEG + EOG + ECG + respiration | 0.5372 | 0.5367 | 0.5386 | 0.5217 | 0.5573 |

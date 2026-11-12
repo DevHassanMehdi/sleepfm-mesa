@@ -8,6 +8,8 @@
 
 ## Names used
 
+*No marks: names and descriptions.*
+<!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
 | SleepFM From-Scratch | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
@@ -21,54 +23,62 @@
 
 **Setup:** Full MESA cohort, 2056 subjects, fold5_v1.
 
-**Legend:** 🟩 best in column, bold value.
+**Legend:** bold = best (see each table's caption, and the "Table standard" in RESULTS.md).
 
 ## Main results
 
 ### Early-stopping patience ladder, EEG, 1 channel (C4-M1)
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Patience 10,Patience 20,Patience 50; bold=down; green=none -->
 | Model | Patience 10 | Patience 20 | Patience 50 |
 |---|---|---|---|
-| BIOT | **0.6998 ± 0.0088** 🟩 | -- | -- |
-| SleepFM Next-Token | 0.6964 ± 0.0091 | 0.7138 ± 0.0073 | -- |
-| SleepFM From-Scratch | 0.6886 ± 0.0121 | 0.6998 ± 0.0061 | **0.7100 ± 0.0021** 🟩 |
+| BIOT | **0.6998 ± 0.0088** | -- | -- |
+| SleepFM Next-Token | 0.6964 ± 0.0091 | **0.7138 ± 0.0073** | -- |
+| SleepFM From-Scratch | 0.6886 ± 0.0121 | 0.6998 ± 0.0061 | **0.7100 ± 0.0021** |
 
 "--" means that early-stopping patience was not run for that model.
 
 ### Matched patience-20, SleepFM From-Scratch
 
+*Compared: conditions, down each column, higher is better.*
+<!-- spec: block=none; items=conditions; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Condition | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| EEG, 3 channels | **0.7428 ± 0.0045** 🟩 | **0.8392** 🟩 | **0.9467** 🟩 | **0.4609** 🟩 | **0.8165** 🟩 | 0.6551 | **0.8348** 🟩 |
-| EEG + ECG | 0.7395 ± 0.0044 | 0.8377 | 0.9459 | 0.4470 | 0.8144 | **0.6607** 🟩 | 0.8297 |
+| EEG, 3 channels | **0.7428 ± 0.0045** | **0.8392** | **0.9467** | **0.4609** | **0.8165** | 0.6551 | **0.8348** |
+| EEG + ECG | 0.7395 ± 0.0044 | **0.8377** | **0.9459** | 0.4470 | 0.8144 | **0.6607** | 0.8297 |
 | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0061 | 0.8060 | 0.9202 | 0.3699 | 0.7830 | 0.6428 | 0.7833 |
 | ECG only | 0.5431 ± 0.0126 | 0.7027 | 0.8717 | 0.1415 | 0.6505 | 0.4231 | 0.6288 |
 
 ### Matched patience-20, SleepFM Next-Token
 
+*Compared: conditions, down each column, higher is better.*
+<!-- spec: block=none; items=conditions; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Condition | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| EEG, 3 channels | **0.7350 ± 0.0051** 🟩 | **0.8359** 🟩 | **0.9448** 🟩 | 0.4300 | **0.8149** 🟩 | **0.6684** 🟩 | 0.8171 |
-| EEG + ECG | 0.7322 ± 0.0024 | 0.8322 | 0.9439 | 0.4295 | 0.8078 | 0.6631 | **0.8169** 🟩 |
+| EEG, 3 channels | **0.7350 ± 0.0051** | **0.8359** | **0.9448** | **0.4300** | **0.8149** | **0.6684** | **0.8171** |
+| EEG + ECG | 0.7322 ± 0.0024 | 0.8322 | **0.9439** | **0.4295** | 0.8078 | 0.6631 | **0.8169** |
 | EEG, 1 channel (C4-M1) | 0.7138 ± 0.0073 | 0.8159 | 0.9256 | 0.3953 | 0.7925 | 0.6589 | 0.7969 |
-| ECG only | 0.4190 ± 0.0049 | 0.5980 | 0.8264 | **0.0106** | 0.5147 | 0.3120 | 0.4314 |
+| ECG only | 0.4190 ± 0.0049 | 0.5980 | 0.8264 | 0.0106 | 0.5147 | 0.3120 | 0.4314 |
 
 ### MESA vs Moody, early-stopping patience 20
 
+*Compared: models and conditions, down each column, higher is better. Green square: best dataset setting along each row.*
+<!-- spec: block=none; items=models and conditions; value_cols=MESA,Moody; bold=down; green=along -->
 | Model | Condition | MESA | Moody | MESA − Moody |
 |---|---|---|---|---|
-| SleepFM From-Scratch | EEG, 3 channels | **0.7428 ± 0.0045** | 0.7131 ± 0.0088 | +0.0297 |
-| SleepFM From-Scratch | EEG + ECG | 0.7395 ± 0.0044 | 0.7104 ± 0.0060 | +0.0291 |
-| BIOT | EEG, 3 channels | 0.7541 ± 0.0047 | 0.6932 ± 0.0096 | +0.0609 |
-| BIOT | EEG + ECG | 0.7479 ± 0.0044 | 0.6832 ± 0.0046 | **+0.0647** 🟩 |
-| SleepFM Next-Token | EEG, 3 channels | 0.7350 ± 0.0051 | 0.7033 ± 0.0080 | +0.0317 |
-| SleepFM Next-Token | EEG + ECG | 0.7322 ± 0.0024 | 0.7020 ± 0.0076 | +0.0302 |
-| BIOT | ECG only | 0.3235 ± 0.0101 | 0.2591 ± 0.0073 | 0.0644 |
-| SleepFM From-Scratch | ECG only | 0.5431 ± 0.0126 | 0.5062 ± 0.0132 | 0.0369 |
-| SleepFM Next-Token | ECG only | 0.4190 ± 0.0049 | 0.3742 ± 0.0107 | 0.0448 |
-| SleepFM From-Scratch | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0061 | 0.6955 ± 0.0116 | 0.0043 |
-| SleepFM Next-Token | EEG, 1 channel (C4-M1) | 0.7138 ± 0.0073 | 0.6983 ± 0.0080 | **0.0155** |
-| BIOT | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0088 (patience 10) | 0.6693 ± 0.0057 (patience 20) | n/a, patience mismatch |
+| SleepFM From-Scratch | EEG, 3 channels | 0.7428 ± 0.0045 🟩 | **0.7131 ± 0.0088** | +0.0297 |
+| SleepFM From-Scratch | EEG + ECG | 0.7395 ± 0.0044 🟩 | 0.7104 ± 0.0060 | +0.0291 |
+| BIOT | EEG, 3 channels | **0.7541 ± 0.0047** 🟩 | 0.6932 ± 0.0096 | +0.0609 |
+| BIOT | EEG + ECG | 0.7479 ± 0.0044 🟩 | 0.6832 ± 0.0046 | +0.0647 |
+| SleepFM Next-Token | EEG, 3 channels | 0.7350 ± 0.0051 🟩 | 0.7033 ± 0.0080 | +0.0317 |
+| SleepFM Next-Token | EEG + ECG | 0.7322 ± 0.0024 🟩 | 0.7020 ± 0.0076 | +0.0302 |
+| BIOT | ECG only | 0.3235 ± 0.0101 🟩 | 0.2591 ± 0.0073 | 0.0644 |
+| SleepFM From-Scratch | ECG only | 0.5431 ± 0.0126 🟩 | 0.5062 ± 0.0132 | 0.0369 |
+| SleepFM Next-Token | ECG only | 0.4190 ± 0.0049 🟩 | 0.3742 ± 0.0107 | 0.0448 |
+| SleepFM From-Scratch | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0061 🟩 | 0.6955 ± 0.0116 | 0.0043 |
+| SleepFM Next-Token | EEG, 1 channel (C4-M1) | 0.7138 ± 0.0073 🟩 | 0.6983 ± 0.0080 | 0.0155 |
+| BIOT | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0088 (patience 10) 🟩 | 0.6693 ± 0.0057 (patience 20) | n/a, patience mismatch |
 
 EEG, 1 channel (C4-M1) has the smallest MESA − Moody gap of every condition. ECG only and BIOT generally have the largest.
 
@@ -78,6 +88,8 @@ EEG, 1 channel (C4-M1) has the smallest MESA − Moody gap of every condition. E
 
 **EEG, 1 channel (C4-M1), early-stopping patience ladder**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Model | Early-stopping patience | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|---|
 | SleepFM From-Scratch | 10 | 0.6966 | 0.6947 | 0.6947 | 0.6923 | 0.6646 |
@@ -89,6 +101,8 @@ EEG, 1 channel (C4-M1) has the smallest MESA − Moody gap of every condition. E
 
 **Matched patience-20, other conditions**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Model | Condition | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|---|
 | SleepFM From-Scratch | EEG, 3 channels | 0.7399 | 0.7488 | 0.7400 | 0.7475 | 0.7377 |

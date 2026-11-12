@@ -8,6 +8,8 @@
 
 ## Names used
 
+*No marks: names and descriptions.*
+<!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
 | SleepFM From-Scratch | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
@@ -21,16 +23,18 @@
 
 **Setup:** Full MESA cohort, 2056 subjects, fold5_v1. Early-stopping patience 50 for SleepFM From-Scratch, SleepFM Spectral, SleepFM Next-Token. Early-stopping patience 20 for BIOT, LaBraM, SensorLM.
 
-**Legend:** 🟩 best in column, bold value.
+**Legend:** bold = best (see each table's caption, and the "Table standard" in RESULTS.md).
 
 ## Main results
 
 ### EEG, 3 channels
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Early-stopping patience | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| BIOT | 20 | **0.7541 ± 0.0047** 🟩 | 0.8274 | 0.9455 | **0.5363** 🟩 | 0.8023 | **0.6798** 🟩 | 0.8068 |
-| SleepFM From-Scratch | 50 | 0.7451 ± 0.0052 | **0.8403** 🟩 | **0.9468** 🟩 | 0.4661 | **0.8182** 🟩 | 0.6569 | **0.8373** 🟩 |
+| BIOT | 20 | **0.7541 ± 0.0047** | 0.8274 | **0.9455** | **0.5363** | 0.8023 | **0.6798** | 0.8068 |
+| SleepFM From-Scratch | 50 | 0.7451 ± 0.0052 | **0.8403** | **0.9468** | 0.4661 | **0.8182** | 0.6569 | **0.8373** |
 | SleepFM Next-Token | 50 | 0.7394 ± 0.0051 | 0.8373 | 0.9444 | 0.4443 | 0.8158 | 0.6684 | 0.8241 |
 | LaBraM | 20 | 0.7301 ± 0.0040 | 0.8108 | 0.9407 | 0.4787 | 0.7866 | 0.6704 | 0.7742 |
 | SleepFM Spectral | 50 | 0.7122 ± 0.0055 | 0.8185 | 0.9339 | 0.3971 | 0.7949 | 0.6298 | 0.8052 |
@@ -38,9 +42,11 @@
 
 ### ECG only
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Early-stopping patience | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| SleepFM From-Scratch | 50 | **0.5575 ± 0.0058** 🟩 | **0.7048** 🟩 | **0.8701** 🟩 | **0.2214** 🟩 | **0.6634** 🟩 | **0.4064** 🟩 | **0.6264** 🟩 |
+| SleepFM From-Scratch | 50 | **0.5575 ± 0.0058** | **0.7048** | **0.8701** | **0.2214** | **0.6634** | **0.4064** | **0.6264** |
 | SleepFM Next-Token | 50 | 0.4158 ± 0.0074 | 0.5987 | 0.8126 | 0.0369 | 0.5335 | 0.2803 | 0.4156 |
 | SleepFM Spectral | 50 | 0.3402 ± 0.0022 | 0.5106 | 0.7497 | 0.0001 | 0.4327 | 0.2119 | 0.3064 |
 | LaBraM | 20 | 0.3390 ± 0.0048 | 0.4822 | 0.7532 | 0.1638 | 0.4215 | 0.1417 | 0.2145 |
@@ -51,12 +57,14 @@ SleepFM From-Scratch pretrained on MESA ECG with a contrastive objective. BIOT, 
 
 ### EEG + ECG
 
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Early-stopping patience | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| BIOT | 20 | **0.7479 ± 0.0044** 🟩 | 0.8289 | **0.9471** 🟩 | **0.5343** 🟩 | 0.8009 | 0.6629 | 0.7944 |
-| SleepFM From-Scratch | 50 | 0.7435 ± 0.0035 | **0.8386** 🟩 | 0.9464 | 0.4720 | **0.8156** 🟩 | 0.6446 | **0.8388** 🟩 |
+| BIOT | 20 | **0.7479 ± 0.0044** | 0.8289 | **0.9471** | **0.5343** | 0.8009 | **0.6629** | 0.7944 |
+| SleepFM From-Scratch | 50 | 0.7435 ± 0.0035 | **0.8386** | **0.9464** | 0.4720 | **0.8156** | 0.6446 | **0.8388** |
 | SleepFM Next-Token | 50 | 0.7342 ± 0.0039 | 0.8339 | 0.9433 | 0.4368 | 0.8113 | 0.6530 | 0.8266 |
-| LaBraM | 20 | 0.7230 ± 0.0026 | 0.8068 | 0.9404 | 0.4700 | 0.7827 | **0.6640** 🟩 | 0.7578 |
+| LaBraM | 20 | 0.7230 ± 0.0026 | 0.8068 | 0.9404 | 0.4700 | 0.7827 | **0.6640** | 0.7578 |
 | SleepFM Spectral | 50 | 0.7149 ± 0.0071 | 0.8202 | 0.9322 | 0.4033 | 0.7983 | 0.6357 | 0.8049 |
 | SensorLM | 20 | 0.6425 ± 0.0137 | 0.7352 | 0.9094 | 0.3710 | 0.7086 | 0.6334 | 0.5903 |
 
@@ -66,6 +74,8 @@ SleepFM From-Scratch pretrained on MESA ECG with a contrastive objective. BIOT, 
 
 **EEG, 3 channels**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Model | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | BIOT | 0.7551 | 0.7626 | 0.7489 | 0.7508 | 0.7534 |
@@ -77,6 +87,8 @@ SleepFM From-Scratch pretrained on MESA ECG with a contrastive objective. BIOT, 
 
 **ECG only**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Model | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | SleepFM From-Scratch | 0.5595 | 0.5606 | 0.5601 | 0.5616 | 0.5459 |
@@ -88,6 +100,8 @@ SleepFM From-Scratch pretrained on MESA ECG with a contrastive objective. BIOT, 
 
 **EEG + ECG**
 
+*No marks: per-fold detail.*
+<!-- spec: items=per-fold detail; marks=none; note=per-fold detail -->
 | Model | Fold 0 | Fold 1 | Fold 2 | Fold 3 | Fold 4 |
 |---|---|---|---|---|---|
 | BIOT | 0.7507 | 0.7539 | 0.7419 | 0.7491 | 0.7439 |
