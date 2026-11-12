@@ -1,28 +1,28 @@
 # SleepFM-MESA: Results Index
 
-**Last updated:** 2026-11-11.
+**Last updated:** 2026-11-12.
 
 ## Files
 
 | File | Finding |
 |---|---|
-| [00_350_subject_work.md](00_350_subject_work.md) | BIOT scores best on EEG-only and EEG+ECG in the 350-subject work, superseded by 02. |
+| [00_350_subject_work.md](00_350_subject_work.md) | BIOT scores best on EEG, 3 channels and EEG + ECG in the 350-subject work, superseded by 02. |
 | [01_pipeline_validation.md](01_pipeline_validation.md) | A label-expansion bug capped every full-cohort score near 0.53, fixing it restored 0.70-0.78. |
-| [02_mesa_benchmark.md](02_mesa_benchmark.md) | BIOT leads EEG modalities, From-Scratch leads ECG-only by a wide margin. |
-| [03_ecg_ablation.md](03_ecg_ablation.md) | From-Scratch's ECG-only score rose from 0.39 to 0.56 mostly by fixing the training schedule. |
-| [04_eeg_channels.md](04_eeg_channels.md) | No single EEG channel is clearly best for From-Scratch or Next-Token, BIOT's EEG2 is clearly weakest. |
-| [05_patience_reruns.md](05_patience_reruns.md) | Higher patience helps a little and does not change which model wins. |
-| [06_moody.md](06_moody.md) | Moody tracks MESA closely, MESA beats Moody on every condition for every model at matched patience. |
+| [02_mesa_benchmark.md](02_mesa_benchmark.md) | BIOT leads EEG-based conditions, SleepFM From-Scratch leads ECG-only by a wide margin. |
+| [03_ecg_ablation.md](03_ecg_ablation.md) | SleepFM From-Scratch's ECG-only score rose from 0.39 to 0.56 mostly by fixing the training schedule. |
+| [04_eeg_channels.md](04_eeg_channels.md) | No single EEG channel is clearly best for SleepFM From-Scratch or SleepFM Next-Token, BIOT's EEG, 1 channel (Cz-Oz) is clearly weakest. |
+| [05_patience_reruns.md](05_patience_reruns.md) | Higher early-stopping patience helps a little and does not change which model wins. |
+| [06_moody.md](06_moody.md) | Moody tracks MESA closely, MESA beats Moody on every condition for every model at matched early-stopping patience. |
 
 See also [PIPELINE_VALIDATION_FINDINGS.md](../PIPELINE_VALIDATION_FINDINGS.md) for the full investigation log behind 01.
 
-## Headline: best macro F1 per modality
+## Headline: best macro F1 per condition
 
-| Modality | MESA best | Moody best |
+| Condition | MESA best | Moody best |
 |---|---|---|
-| EEG_ONLY | **0.7541** (BIOT, patience 20) | 0.7143 (From-Scratch, retrained, patience 50) |
-| EEG_ECG | 0.7479 (BIOT, patience 20) | 0.7145 (From-Scratch, retrained, patience 50) |
-| ECG_ONLY | 0.5575 (From-Scratch, patience 50) | 0.5189 (From-Scratch, retrained, patience 50) |
+| EEG, 3 channels | **0.7541** (BIOT, early-stopping patience 20) | 0.7143 (SleepFM From-Scratch, retrained, early-stopping patience 50) |
+| EEG + ECG | 0.7479 (BIOT, early-stopping patience 20) | 0.7145 (SleepFM From-Scratch, retrained, early-stopping patience 50) |
+| ECG only | 0.5575 (SleepFM From-Scratch, early-stopping patience 50) | 0.5189 (SleepFM From-Scratch, retrained, early-stopping patience 50) |
 
 ## Where things live
 
@@ -43,5 +43,6 @@ See also [PIPELINE_VALIDATION_FINDINGS.md](../PIPELINE_VALIDATION_FINDINGS.md) f
 
 1. Run it, land the aggregate `metrics.json` under `experiments_full_cohort/` on scratch, never commit per-subject files.
 2. Add its macro F1 and per-class numbers to the matching flat file above, or start a new one if it's a new family.
-3. Keep the file's own style: a Finding line, a few short bullets, a setup line, a legend, sorted tables, a per-fold table at the bottom.
-4. Before committing, scan the diff for record IDs, tokens, and keys.
+3. Keep the file's own style: a title, a one-line Finding, a few short bullets, a Names-used table, the main table, then detail tables.
+4. Use plain descriptive names in every header and row label; give early-stopping patience its own column, never bury it in a model or row name.
+5. Before committing, scan the diff for record IDs, tokens, and keys.

@@ -6,19 +6,38 @@
 - U-Sleep predicts Wake for every epoch, excluded from comparison.
 - Superseded by 02.
 
-**Setup:** 350-subject cohort (300 pretrain, 50 test), fold_0 only. Patience not recorded for this era's runs.
+## Names used
+
+| Name in this file | Plain description |
+|---|---|
+| SleepFM From-Scratch | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
+| SleepFM Next-Token | SleepFM's encoder, pretrained with a next-token-prediction objective, then fine-tuned for sleep staging |
+| SleepFM Spectral | SleepFM's encoder, pretrained on spectral features, then fine-tuned for sleep staging |
+| Combined | A SleepFM encoder variant combining more than one pretraining objective |
+| BIOT, LaBraM, SensorLM, MOMENT, YASA, U-Sleep | Published foundation models or baselines, fine-tuned (or run directly, for YASA/U-Sleep) for sleep staging |
+| EEG, 3 channels | All three EEG leads used together |
+| ECG only | The single ECG lead alone, no EEG |
+| EEG + ECG | The three EEG leads plus one ECG lead, together |
+| EEG + EOG | EEG1, EEG2, EEG3, and both EOG leads, together |
+| EEG + EOG + ECG | EEG + EOG, plus one ECG lead |
+| EEG + EOG + ECG + respiration | EEG + EOG + ECG, plus the respiration leads |
+| EEG + EOG + ECG + respiration + EMG (all signals) | Every signal group together: EEG, EOG, ECG, respiration, and EMG |
+
+**Setup:** 350-subject cohort (300 pretrain, 50 test), fold_0 only. Early-stopping patience not recorded for this era's runs.
 
 **Legend:** 🟩 best in column, bold value.
 
-## EEG Only
+## Main results
+
+### EEG, 3 channels
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
 | BIOT | **0.7237** 🟩 | 0.8007 | 0.9325 | **0.5327** 🟩 | 0.7639 | **0.6594** 🟩 | 0.7301 |
-| Next-Token | 0.7024 | **0.8143** 🟩 | **0.9334** 🟩 | 0.3473 | **0.7904** 🟩 | 0.6515 | **0.7896** 🟩 |
-| Spectral | 0.6971 | 0.8042 | 0.9237 | 0.3628 | 0.7788 | 0.6389 | 0.7811 |
+| SleepFM Next-Token | 0.7024 | **0.8143** 🟩 | **0.9334** 🟩 | 0.3473 | **0.7904** 🟩 | 0.6515 | **0.7896** 🟩 |
+| SleepFM Spectral | 0.6971 | 0.8042 | 0.9237 | 0.3628 | 0.7788 | 0.6389 | 0.7811 |
 | LaBraM | 0.6835 | 0.7737 | 0.9203 | 0.4257 | 0.7511 | 0.6557 | 0.6647 |
-| From-Scratch | 0.6582 | 0.7757 | 0.8941 | 0.2952 | 0.7653 | 0.6464 | 0.7201 |
+| SleepFM From-Scratch | 0.6582 | 0.7757 | 0.8941 | 0.2952 | 0.7653 | 0.6464 | 0.7201 |
 | SensorLM | 0.6264 | 0.7235 | 0.9132 | 0.3549 | 0.6657 | 0.6344 | 0.5639 |
 | Combined | 0.6160 | 0.7406 | 0.8658 | 0.1938 | 0.7074 | 0.6257 | 0.6875 |
 | MOMENT | 0.5894 | 0.6745 | 0.8163 | 0.3166 | 0.6900 | 0.6134 | 0.5105 |
@@ -26,30 +45,30 @@
 
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
 
-## ECG Only
+### ECG only
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| Next-Token | **0.3614** 🟩 | **0.5451** 🟩 | **0.8095** 🟩 | 0.0048 | **0.4666** 🟩 | **0.2252** 🟩 | 0.3010 |
+| SleepFM Next-Token | **0.3614** 🟩 | **0.5451** 🟩 | **0.8095** 🟩 | 0.0048 | **0.4666** 🟩 | **0.2252** 🟩 | 0.3010 |
 | Combined | 0.3380 | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
-| From-Scratch | 0.3353 | 0.5268 | 0.7566 | 0.0000 | 0.4148 | 0.2188 | **0.3165** 🟩 |
+| SleepFM From-Scratch | 0.3353 | 0.5268 | 0.7566 | 0.0000 | 0.4148 | 0.2188 | **0.3165** 🟩 |
 | MOMENT | 0.3096 | 0.4191 | 0.6239 | **0.1850** 🟩 | 0.4467 | 0.1498 | 0.1427 |
 | BIOT | 0.3086 | 0.4302 | 0.6815 | 0.1239 | 0.3933 | 0.1391 | 0.2051 |
 | SensorLM | 0.2821 | 0.3695 | 0.6257 | 0.1330 | 0.3307 | 0.1296 | 0.1914 |
 | LaBraM | 0.2803 | 0.4092 | 0.6211 | 0.1049 | 0.3920 | 0.1045 | 0.1792 |
-| Spectral | 0.2603 | 0.4216 | 0.6808 | 0.0000 | 0.2645 | 0.1502 | 0.2062 |
+| SleepFM Spectral | 0.2603 | 0.4216 | 0.6808 | 0.0000 | 0.2645 | 0.1502 | 0.2062 |
 | YASA | N/A, cannot run | | | | | | |
 
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
 
-## EEG + ECG
+### EEG + ECG
 
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| Next-Token | **0.7026** 🟩 | **0.8072** 🟩 | 0.9267 | 0.3722 | **0.7801** 🟩 | 0.6386 | **0.7953** 🟩 |
+| SleepFM Next-Token | **0.7026** 🟩 | **0.8072** 🟩 | 0.9267 | 0.3722 | **0.7801** 🟩 | 0.6386 | **0.7953** 🟩 |
 | BIOT | 0.7023 | 0.7975 | **0.9345** 🟩 | **0.5001** 🟩 | 0.7724 | 0.5733 | 0.7311 |
-| Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726 |
-| From-Scratch | 0.6529 | 0.7765 | 0.9069 | 0.2411 | 0.7542 | 0.6309 | 0.7415 |
+| SleepFM Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726 |
+| SleepFM From-Scratch | 0.6529 | 0.7765 | 0.9069 | 0.2411 | 0.7542 | 0.6309 | 0.7415 |
 | LaBraM | 0.6524 | 0.7566 | 0.9203 | 0.3594 | 0.7431 | **0.6457** 🟩 | 0.5935 |
 | SensorLM | 0.6077 | 0.7062 | 0.8935 | 0.3337 | 0.6891 | 0.6155 | 0.5068 |
 | Combined | 0.6054 | 0.7412 | 0.8720 | 0.1761 | 0.7165 | 0.5745 | 0.6877 |
@@ -58,34 +77,36 @@ U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.
 
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
 
-## BIOT full-modality ablation
+## Detail tables
 
-| Modality | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
+### BIOT full-modality ablation
+
+| Signal group | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| BAS | **0.7583** 🟩 | **0.8311** 🟩 | **0.9476** 🟩 | **0.5645** 🟩 | 0.7914 | **0.6645** 🟩 | **0.8235** 🟩 |
-| BAS_EKG | 0.7492 | 0.8252 | 0.9425 | 0.5388 | **0.7960** 🟩 | 0.6586 | 0.8102 |
-| BAS_EKG_RESP | 0.7418 | 0.8161 | 0.9371 | 0.5248 | 0.7867 | 0.6592 | 0.8010 |
-| BAS_EKG_RESP_EMG | 0.7331 | 0.8054 | 0.9252 | 0.5177 | 0.7810 | 0.6502 | 0.7913 |
+| EEG + EOG | **0.7583** 🟩 | **0.8311** 🟩 | **0.9476** 🟩 | **0.5645** 🟩 | 0.7914 | **0.6645** 🟩 | **0.8235** 🟩 |
+| EEG + EOG + ECG | 0.7492 | 0.8252 | 0.9425 | 0.5388 | **0.7960** 🟩 | 0.6586 | 0.8102 |
+| EEG + EOG + ECG + respiration | 0.7418 | 0.8161 | 0.9371 | 0.5248 | 0.7867 | 0.6592 | 0.8010 |
+| EEG + EOG + ECG + respiration + EMG (all signals) | 0.7331 | 0.8054 | 0.9252 | 0.5177 | 0.7810 | 0.6502 | 0.7913 |
 
-## From-Scratch full-modality ablation (BAS encoder)
+### SleepFM From-Scratch full-modality ablation (EEG+EOG encoder)
 
-| Modality | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
+| Signal group | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| BAS_EKG_RESP_EMG | **0.6601** 🟩 | **0.7802** 🟩 | **0.9089** 🟩 | **0.2794** 🟩 | **0.7697** 🟩 | 0.6243 | **0.7583** 🟩 |
-| BAS | 0.6509 | 0.7702 | 0.8909 | 0.2203 | 0.7420 | 0.6550 | 0.7563 |
-| BAS_EKG_RESP | 0.6496 | 0.7755 | 0.9087 | 0.2255 | 0.7687 | **0.6644** 🟩 | 0.7106 |
-| BAS_EKG | 0.6310 | 0.7610 | 0.8815 | 0.1784 | 0.7453 | 0.6498 | 0.7301 |
+| EEG + EOG + ECG + respiration + EMG (all signals) | **0.6601** 🟩 | **0.7802** 🟩 | **0.9089** 🟩 | **0.2794** 🟩 | **0.7697** 🟩 | 0.6243 | **0.7583** 🟩 |
+| EEG + EOG | 0.6509 | 0.7702 | 0.8909 | 0.2203 | 0.7420 | 0.6550 | 0.7563 |
+| EEG + EOG + ECG + respiration | 0.6496 | 0.7755 | 0.9087 | 0.2255 | 0.7687 | **0.6644** 🟩 | 0.7106 |
+| EEG + EOG + ECG | 0.6310 | 0.7610 | 0.8815 | 0.1784 | 0.7453 | 0.6498 | 0.7301 |
 
-## Published checkpoint, 10-fold CV (encoder-level leakage, not a fair baseline)
+### Published checkpoint, 10-fold CV (encoder-level leakage, not a fair baseline)
 
-| Modality | Macro F1 | Accuracy | Per-fold mean | Wake | N1 | N2 | N3 | REM |
+| Signal group | Macro F1 | Accuracy | Per-fold mean | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|---|
-| BAS+EKG+RESP+EMG (full) | **0.7305** 🟩 | **0.8259** 🟩 | 0.7298 ± 0.0148 | **0.9399** 🟩 | **0.4193** 🟩 | 0.7957 | 0.6528 | **0.8385** 🟩 |
-| BAS+EKG+RESP | 0.7269 | 0.8253 | 0.7263 ± 0.0118 | 0.9394 | 0.3916 | **0.7971** 🟩 | **0.6641** 🟩 | 0.8252 |
-| BAS+EKG | 0.7237 | 0.8232 | 0.7230 ± 0.0129 | 0.9361 | 0.3829 | 0.7950 | 0.6571 | 0.8172 |
-| BAS (EEG/EOG) | 0.7205 | 0.8216 | 0.7194 ± 0.0153 | 0.9326 | 0.3731 | 0.7942 | 0.6522 | 0.8148 |
+| EEG + EOG + ECG + respiration + EMG (all signals) | **0.7305** 🟩 | **0.8259** 🟩 | 0.7298 ± 0.0148 | **0.9399** 🟩 | **0.4193** 🟩 | 0.7957 | 0.6528 | **0.8385** 🟩 |
+| EEG + EOG + ECG + respiration | 0.7269 | 0.8253 | 0.7263 ± 0.0118 | 0.9394 | 0.3916 | **0.7971** 🟩 | **0.6641** 🟩 | 0.8252 |
+| EEG + EOG + ECG | 0.7237 | 0.8232 | 0.7230 ± 0.0129 | 0.9361 | 0.3829 | 0.7950 | 0.6571 | 0.8172 |
+| EEG + EOG | 0.7205 | 0.8216 | 0.7194 ± 0.0153 | 0.9326 | 0.3731 | 0.7942 | 0.6522 | 0.8148 |
 
-## YASA, 10-fold CV reference (EEG1 + EOG-L + EMG)
+### YASA, 10-fold CV reference (EEG1 + EOG-L + EMG)
 
 | | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
@@ -93,7 +114,7 @@ U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.
 
 Mean fold macro F1: 0.7291 ± 0.0112.
 
-### Per-fold macro F1
+#### Per-fold macro F1
 
 **YASA 10-fold CV**
 
