@@ -63,22 +63,22 @@
 
 ### MESA vs Moody, early-stopping patience 20
 
-*Compared: models and conditions, down each column, higher is better. Green square: best dataset setting along each row.*
-<!-- spec: block=none; items=models and conditions; value_cols=MESA,Moody; bold=down; green=along -->
+*Compared: models, down each column within each block, higher is better. Green square: best dataset setting along each row.*
+<!-- spec: block=Condition; items=models; value_cols=MESA,Moody; bold=down; green=along -->
 | Model | Condition | MESA | Moody | MESA − Moody |
 |---|---|---|---|---|
 | SleepFM From-Scratch | EEG, 3 channels | 0.7428 ± 0.0045 🟩 | **0.7131 ± 0.0088** | +0.0297 |
-| SleepFM From-Scratch | EEG + ECG | 0.7395 ± 0.0044 🟩 | 0.7104 ± 0.0060 | +0.0291 |
-| BIOT | EEG, 3 channels | **0.7541 ± 0.0047** 🟩 | 0.6932 ± 0.0096 | +0.0609 |
-| BIOT | EEG + ECG | 0.7479 ± 0.0044 🟩 | 0.6832 ± 0.0046 | +0.0647 |
 | SleepFM Next-Token | EEG, 3 channels | 0.7350 ± 0.0051 🟩 | 0.7033 ± 0.0080 | +0.0317 |
-| SleepFM Next-Token | EEG + ECG | 0.7322 ± 0.0024 🟩 | 0.7020 ± 0.0076 | +0.0302 |
-| BIOT | ECG only | 0.3235 ± 0.0101 🟩 | 0.2591 ± 0.0073 | 0.0644 |
-| SleepFM From-Scratch | ECG only | 0.5431 ± 0.0126 🟩 | 0.5062 ± 0.0132 | 0.0369 |
-| SleepFM Next-Token | ECG only | 0.4190 ± 0.0049 🟩 | 0.3742 ± 0.0107 | 0.0448 |
+| BIOT | EEG, 3 channels | **0.7541 ± 0.0047** 🟩 | 0.6932 ± 0.0096 | +0.0609 |
 | SleepFM From-Scratch | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0061 🟩 | 0.6955 ± 0.0116 | 0.0043 |
-| SleepFM Next-Token | EEG, 1 channel (C4-M1) | 0.7138 ± 0.0073 🟩 | 0.6983 ± 0.0080 | 0.0155 |
+| SleepFM Next-Token | EEG, 1 channel (C4-M1) | **0.7138 ± 0.0073** 🟩 | **0.6983 ± 0.0080** | 0.0155 |
 | BIOT | EEG, 1 channel (C4-M1) | 0.6998 ± 0.0088 (patience 10) 🟩 | 0.6693 ± 0.0057 (patience 20) | n/a, patience mismatch |
+| SleepFM From-Scratch | EEG + ECG | 0.7395 ± 0.0044 🟩 | **0.7104 ± 0.0060** | +0.0291 |
+| SleepFM Next-Token | EEG + ECG | 0.7322 ± 0.0024 🟩 | 0.7020 ± 0.0076 | +0.0302 |
+| BIOT | EEG + ECG | **0.7479 ± 0.0044** 🟩 | 0.6832 ± 0.0046 | +0.0647 |
+| SleepFM From-Scratch | ECG only | **0.5431 ± 0.0126** 🟩 | **0.5062 ± 0.0132** | 0.0369 |
+| SleepFM Next-Token | ECG only | 0.4190 ± 0.0049 🟩 | 0.3742 ± 0.0107 | 0.0448 |
+| BIOT | ECG only | 0.3235 ± 0.0101 🟩 | 0.2591 ± 0.0073 | 0.0644 |
 
 EEG, 1 channel (C4-M1) has the smallest MESA − Moody gap of every condition. ECG only and BIOT generally have the largest.
 

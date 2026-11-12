@@ -12,7 +12,7 @@
 <!-- spec: items=names and descriptions; marks=none; note=names and descriptions -->
 | Name in this file | Plain description |
 |---|---|
-| SleepFM From-Scratch | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
+| SleepFM From-Scratch (called SleepFM-FS in the paper) | SleepFM's encoder, trained from random initialization with a contrastive pretraining objective, then fine-tuned for sleep staging |
 | SleepFM Next-Token | SleepFM's encoder, pretrained with a next-token-prediction objective, then fine-tuned for sleep staging |
 | SleepFM Spectral | SleepFM's encoder, pretrained on spectral features, then fine-tuned for sleep staging |
 | Combined | A SleepFM encoder variant combining more than one pretraining objective |
@@ -31,59 +31,101 @@
 
 ## Main results
 
+Each condition below has two tables: the models reported in the BNAIC paper
+(arXiv:2609.22105, Tables II-IV), copied exactly in the paper's own row
+order, and the additional models we also ran in this 350-subject setting
+that the paper does not report.
+
 ### EEG, 3 channels
+
+**Reported in the BNAIC paper**
 
 *Compared: models, down each column, higher is better.*
 <!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| BIOT | **0.7237** | 0.8007 | **0.9325** | **0.5327** | 0.7639 | **0.6594** | 0.7301 |
-| SleepFM Next-Token | 0.7024 | **0.8143** | **0.9334** | 0.3473 | **0.7904** | 0.6515 | **0.7896** |
-| SleepFM Spectral | 0.6971 | 0.8042 | 0.9237 | 0.3628 | 0.7788 | 0.6389 | 0.7811 |
+| BIOT | **0.7237** | **0.8007** | **0.9325** | **0.5327** | **0.7639** | **0.6594** | **0.7301** |
 | LaBraM | 0.6835 | 0.7737 | 0.9203 | 0.4257 | 0.7511 | 0.6557 | 0.6647 |
-| SleepFM From-Scratch | 0.6582 | 0.7757 | 0.8941 | 0.2952 | 0.7653 | 0.6464 | 0.7201 |
+| SleepFM From-Scratch | 0.6582 | 0.7757 | 0.8941 | 0.2952 | **0.7653** | 0.6464 | 0.7201 |
 | SensorLM | 0.6264 | 0.7235 | 0.9132 | 0.3549 | 0.6657 | 0.6344 | 0.5639 |
-| Combined | 0.6160 | 0.7406 | 0.8658 | 0.1938 | 0.7074 | 0.6257 | 0.6875 |
 | MOMENT | 0.5894 | 0.6745 | 0.8163 | 0.3166 | 0.6900 | 0.6134 | 0.5105 |
 | YASA | 0.4720 | 0.6687 | 0.7843 | 0.1519 | 0.6913 | 0.1795 | 0.5531 |
+
+**Additional models, not in the paper**
+
+These models were run in the 350-subject setting described in the paper, but are not reported in it.
+
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
+| Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
+|---|---|---|---|---|---|---|---|
+| SleepFM Next-Token | **0.7024** | **0.8143** | **0.9334** | 0.3473 | **0.7904** | **0.6515** | **0.7896** |
+| SleepFM Spectral | 0.6971 | 0.8042 | 0.9237 | **0.3628** | 0.7788 | 0.6389 | 0.7811 |
+| Combined | 0.6160 | 0.7406 | 0.8658 | 0.1938 | 0.7074 | 0.6257 | 0.6875 |
 
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
 
 ### ECG only
 
+**Reported in the BNAIC paper**
+
 *Compared: models, down each column, higher is better.*
 <!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| SleepFM Next-Token | **0.3614** | **0.5451** | **0.8095** | 0.0048 | **0.4666** | **0.2252** | 0.3010 |
-| Combined | 0.3380 | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
-| SleepFM From-Scratch | 0.3353 | 0.5268 | 0.7566 | 0.0000 | 0.4148 | 0.2188 | **0.3165** |
-| MOMENT | 0.3096 | 0.4191 | 0.6239 | **0.1850** | 0.4467 | 0.1498 | 0.1427 |
+| SleepFM From-Scratch | **0.3353** | **0.5268** | **0.7566** | 0.0000 | 0.4148 | **0.2188** | **0.3165** |
+| MOMENT | 0.3096 | 0.4191 | 0.6239 | **0.1850** | **0.4467** | 0.1498 | 0.1427 |
 | BIOT | 0.3086 | 0.4302 | 0.6815 | 0.1239 | 0.3933 | 0.1391 | 0.2051 |
 | SensorLM | 0.2821 | 0.3695 | 0.6257 | 0.1330 | 0.3307 | 0.1296 | 0.1914 |
 | LaBraM | 0.2803 | 0.4092 | 0.6211 | 0.1049 | 0.3920 | 0.1045 | 0.1792 |
+| YASA | N/A (requires EEG) |  |  |  |  |  |  |
+
+**Additional models, not in the paper**
+
+These models were run in the 350-subject setting described in the paper, but are not reported in it.
+
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
+| Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
+|---|---|---|---|---|---|---|---|
+| SleepFM Next-Token | **0.3614** | **0.5451** | **0.8095** | **0.0048** | **0.4666** | **0.2252** | **0.3010** |
 | SleepFM Spectral | 0.2603 | 0.4216 | 0.6808 | 0.0000 | 0.2645 | 0.1502 | 0.2062 |
-| YASA | N/A, cannot run |  |  |  |  |  |  |
+| Combined | 0.3380 | 0.5201 | 0.7462 | 0.0000 | 0.4307 | 0.2180 | 0.2949 |
 
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
 
 ### EEG + ECG
 
+**Reported in the BNAIC paper**
+
 *Compared: models, down each column, higher is better.*
 <!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
 | Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
 |---|---|---|---|---|---|---|---|
-| SleepFM Next-Token | **0.7026** | **0.8072** | 0.9267 | 0.3722 | **0.7801** | 0.6386 | **0.7953** |
-| BIOT | **0.7023** | 0.7975 | **0.9345** | **0.5001** | 0.7724 | 0.5733 | 0.7311 |
-| SleepFM Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726 |
-| SleepFM From-Scratch | 0.6529 | 0.7765 | 0.9069 | 0.2411 | 0.7542 | 0.6309 | 0.7415 |
+| BIOT | **0.7023** | **0.7975** | **0.9345** | **0.5001** | **0.7724** | 0.5733 | 0.7311 |
+| SleepFM From-Scratch | 0.6529 | 0.7765 | 0.9069 | 0.2411 | 0.7542 | 0.6309 | **0.7415** |
 | LaBraM | 0.6524 | 0.7566 | 0.9203 | 0.3594 | 0.7431 | **0.6457** | 0.5935 |
 | SensorLM | 0.6077 | 0.7062 | 0.8935 | 0.3337 | 0.6891 | 0.6155 | 0.5068 |
-| Combined | 0.6054 | 0.7412 | 0.8720 | 0.1761 | 0.7165 | 0.5745 | 0.6877 |
 | MOMENT | 0.5953 | 0.6918 | 0.8395 | 0.3035 | 0.7053 | 0.6089 | 0.5194 |
 | YASA | 0.4720 | 0.6687 | 0.7843 | 0.1519 | 0.6913 | 0.1795 | 0.5531 |
 
+YASA uses EEG1 only.
+
+**Additional models, not in the paper**
+
+These models were run in the 350-subject setting described in the paper, but are not reported in it.
+
+*Compared: models, down each column, higher is better.*
+<!-- spec: block=none; items=models; value_cols=Macro F1,Accuracy,Wake,N1,N2,N3,REM; bold=down; green=none -->
+| Model | Macro F1 | Accuracy | Wake | N1 | N2 | N3 | REM |
+|---|---|---|---|---|---|---|---|
+| SleepFM Next-Token | **0.7026** | **0.8072** | **0.9267** | **0.3722** | **0.7801** | **0.6386** | **0.7953** |
+| SleepFM Spectral | 0.6875 | 0.7916 | 0.9133 | 0.3681 | 0.7641 | 0.6195 | 0.7726 |
+| Combined | 0.6054 | 0.7412 | 0.8720 | 0.1761 | 0.7165 | 0.5745 | 0.6877 |
+
 U-Sleep (excluded): 0.1202, 0.4298, Wake 0.60, N1 0.00, N2 0.00, N3 0.00, REM 0.00.
+
+In the SleepFM From-Scratch rows of the paper tables, the five per-class F1 values do not average exactly to the macro F1 (0.006 for EEG-only, 0.006 for ECG-only, 0.002 for EEG + ECG). The values are copied from the paper. The raw predictions no longer exist. The additional-model rows (SleepFM Next-Token, SleepFM Spectral, Combined) do not have this gap: each of their five per-class F1 values averages to its macro F1 within 0.0006.
 
 ## Detail tables
 

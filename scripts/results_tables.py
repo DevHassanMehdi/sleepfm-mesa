@@ -328,9 +328,52 @@ def rewrite_table_marks(table):
         table.lines[ridx] = join_row(new_cells)
 
 
+# Known, pre-existing rows whose five per-class F1 values do not average
+# exactly to the stated macro F1 -- confirmed unchanged from their source
+# (the BNAIC paper, for the SleepFM From-Scratch paper rows in
+# 00_350_subject_work.md; the raw per-window predictions behind the other
+# rows no longer exist either way), so the discrepancy can't be fixed
+# without altering a historical number. Keyed by (row label, macro F1);
+# the stored diff must match the one measured now, or this still fails --
+# this is not a blanket exemption for that row, only for this exact,
+# already-documented gap. Scoped per file: a mismatch in any other file,
+# or any row not listed here, still fails --check.
+CLASS_MEAN_ALLOWLIST = {
+    "00_350_subject_work.md": [
+        # SleepFM From-Scratch rows in the "Reported in the BNAIC paper"
+        # tables (arXiv:2609.22105, Tables II-IV) -- values copied exactly
+        # from the paper.
+        ("SleepFM From-Scratch", 0.6582, 0.0060),  # EEG, 3 channels
+        ("SleepFM From-Scratch", 0.3353, 0.0060),  # ECG only
+        ("SleepFM From-Scratch", 0.6529, 0.0020),  # EEG + ECG
+        # Pre-existing in the detail tables below (BIOT/From-Scratch
+        # full-modality ablation, published-checkpoint 10-fold CV),
+        # already flagged and left unaltered in an earlier task.
+        ("EEG + EOG + ECG + respiration + EMG (all signals)", 0.6601, 0.0080),
+        ("EEG + EOG", 0.6509, 0.0020),
+        ("EEG + EOG + ECG + respiration", 0.6496, 0.0060),
+        ("EEG + EOG + ECG", 0.6310, 0.0060),
+        ("EEG + EOG + ECG + respiration + EMG (all signals)", 0.7305, 0.0013),
+        ("EEG + EOG + ECG + respiration", 0.7269, 0.0034),
+        ("EEG + EOG + ECG", 0.7237, 0.0060),
+        ("EEG + EOG", 0.7205, 0.0071),
+    ],
+}
+
+
+def class_mean_allowed(filename, row_label, macro, diff):
+    for (label, allowed_macro, allowed_diff) in CLASS_MEAN_ALLOWLIST.get(filename, []):
+        if label == row_label and abs(macro - allowed_macro) < 1e-6 and abs(diff - allowed_diff) < 5e-5:
+            return True
+    return False
+
+
 def class_mean_check(table):
     """For tables with per-class columns Wake,N1,N2,N3,REM and a Macro F1
-    column, check mean(per-class) == Macro F1 within 0.0006 per row."""
+    column, check mean(per-class) == Macro F1 within 0.0006 per row.
+    Skips a row whose exact (row label, macro F1, measured diff) is on
+    CLASS_MEAN_ALLOWLIST for this file; any other mismatch still fails,
+    including a changed diff for an otherwise-listed row."""
     issues = []
     needed = ["Macro F1", "Wake", "N1", "N2", "N3", "REM"]
     idx = {c: table.col_index(c) for c in needed}
@@ -343,7 +386,11 @@ def class_mean_check(table):
         if macro is None or any(c is None for c in classes):
             continue
         mean_c = sum(classes) / 5
-        if abs(mean_c - macro) > 0.0006:
+        diff = abs(mean_c - macro)
+        if diff > 0.0006:
+            row_label = cells[0].replace("**", "").strip()
+            if class_mean_allowed(table.file, row_label, macro, diff):
+                continue
             issues.append((table.file, ridx + 1, mean_c, macro))
     return issues
 
@@ -440,7 +487,9 @@ def process_file(path, mode):
 SHORTHAND_PATTERNS = [
     r"\bArm [A-E]\b", r"\bold350enc\b", r"\bseed123\b", r"\bch3\b",
     r"\bEEG_ONLY\b", r"\bEEG_ECG\b", r"\bECG_ONLY\b", r"\bEEG3_ONLY\b",
-    r"\bFS\b", r"\bNT\b", r"\bZS\b", r"(?<![a-zA-Z0-9_])p10(?![a-zA-Z0-9_])",
+    # FS/NT are only flagged bare -- "SleepFM-FS" is the paper's own name for
+    # SleepFM From-Scratch, legitimately cited as such in a Names-used table.
+    r"(?<!-)\bFS\b", r"(?<!-)\bNT\b", r"\bZS\b", r"(?<![a-zA-Z0-9_])p10(?![a-zA-Z0-9_])",
     r"(?<![a-zA-Z0-9_])p20(?![a-zA-Z0-9_])", r"(?<![a-zA-Z0-9_])p50(?![a-zA-Z0-9_])",
 ]
 

@@ -213,3 +213,51 @@ def test_per_fold_table_marks_none_no_marks_added():
     out = _process(text)
     assert "**" not in out
     assert rt.GREEN not in out
+
+
+def _class_mean_table(macro):
+    # A single row whose five per-class values average 0.0060 above macro.
+    classes = [macro + 0.03, macro, macro, macro, macro]
+    text = (
+        "*caption*\n"
+        "<!-- spec: block=none; items=models; value_cols=Macro F1; bold=down; green=none -->\n"
+        "| Model | Macro F1 | Wake | N1 | N2 | N3 | REM |\n"
+        "|---|---|---|---|---|---|---|\n"
+        f"| SleepFM From-Scratch | {macro:.4f} | {classes[0]:.4f} | {classes[1]:.4f} | "
+        f"{classes[2]:.4f} | {classes[3]:.4f} | {classes[4]:.4f} |\n"
+    )
+    lines, tables = _process(text, mode="check")
+    t = tables[0]
+    t.file = "00_350_subject_work.md"
+    return rt.class_mean_check(t)
+
+
+def test_allowlisted_class_mean_mismatch_is_suppressed():
+    # 0.6582 is on CLASS_MEAN_ALLOWLIST for 00_350_subject_work.md with a
+    # recorded diff of 0.0060, which is exactly what this row produces.
+    issues = _class_mean_table(0.6582)
+    assert issues == []
+
+
+def test_non_allowlisted_class_mean_mismatch_still_fails():
+    # Same file, but a macro F1 not on the allow-list: must still be
+    # reported, proving the allow-list doesn't blanket-exempt the file.
+    issues = _class_mean_table(0.1234)
+    assert len(issues) == 1
+
+    # A row at an allow-listed macro F1, but a different measured diff
+    # (0.0100 instead of the recorded 0.0060), must also still fail --
+    # the allow-list is keyed to the specific, already-documented gap,
+    # not to the row in general.
+    text = (
+        "*caption*\n"
+        "<!-- spec: block=none; items=models; value_cols=Macro F1; bold=down; green=none -->\n"
+        "| Model | Macro F1 | Wake | N1 | N2 | N3 | REM |\n"
+        "|---|---|---|---|---|---|---|\n"
+        "| SleepFM From-Scratch | 0.6582 | 0.7082 | 0.6582 | 0.6582 | 0.6582 | 0.6582 |\n"
+    )
+    lines, tables = _process(text, mode="check")
+    t = tables[0]
+    t.file = "00_350_subject_work.md"
+    issues = rt.class_mean_check(t)
+    assert len(issues) == 1
