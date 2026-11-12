@@ -38,7 +38,12 @@ torch.backends.cuda.enable_math_sdp(True)
 @click.option("--split", type=str, default="test")
 @click.option("--dataset", type=str, default=None)
 @click.option("--fold", type=int, default=0)
-def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split, dataset, fold):
+@click.option("--allow_missing_subjects", is_flag=True, default=False,
+              help="Allow fewer subjects/files to load than the split lists for this "
+                   "split name. Default off: a shortfall raises instead of silently "
+                   "evaluating on fewer subjects than intended.")
+def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split, dataset, fold,
+                           allow_missing_subjects):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -59,6 +64,7 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
     if "config.json" in os.listdir(output_path):
         config = load_data(os.path.join(output_path, "config.json"))
         config = rebase_old_home_paths(config)
+    config["allow_missing_subjects"] = allow_missing_subjects
 
     # Set up logging
     logger.add("logs/evaluation_{time}.log", rotation="10 MB")

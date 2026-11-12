@@ -24,7 +24,16 @@ os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 from labram_dataset import LaBraMSleepDataset, MODALITY_CHANNELS, get_ch_names, HDF5_DIR
 from finetune_labram import build_model, forward_logits, get_input_chans
 from experiment_paths import experiment_from_checkpoint_dir, write_metrics_bundle
-from utils import rebase_old_home_paths
+# A bare `from utils import ...` here is ambiguous: LaBraM has its own
+# unrelated utils.py also on sys.path, and whichever "utils" another
+# import already cached in sys.modules silently wins. Load sleepfm's copy
+# from its exact file path instead (same fix as labram_dataset.py).
+import importlib.util as _importlib_util
+_spec = _importlib_util.spec_from_file_location(
+    "sleepfm_utils_for_evaluate_labram", os.path.join(REPO_ROOT, "sleepfm", "utils.py"))
+_sleepfm_utils = _importlib_util.module_from_spec(_spec)
+_spec.loader.exec_module(_sleepfm_utils)
+rebase_old_home_paths = _sleepfm_utils.rebase_old_home_paths
 
 STAGE_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
 
@@ -45,6 +54,10 @@ def main():
                               "for full-cohort evaluation -- must match "
                               "whatever --hdf5_dir the checkpoint was "
                               "fine-tuned with.")
+    parser.add_argument("--allow_missing_subjects", action="store_true", default=False,
+                         help="Allow fewer subjects/files to load than the split lists. "
+                              "Default off: a shortfall raises instead of silently "
+                              "evaluating on fewer subjects than intended.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,7 +74,8 @@ def main():
     # not a separately-passed, possibly-mismatched --split_id.
     split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
     test_ds = LaBraMSleepDataset(split_path, "test", args.modality, fold_key=args.fold_key,
-                                  hdf5_dir=args.hdf5_dir)
+                                  hdf5_dir=args.hdf5_dir,
+                                  allow_missing_subjects=args.allow_missing_subjects)
     test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False,
                               num_workers=args.num_workers)
     print(f"[{args.modality}] test={len(test_ds)}", flush=True)

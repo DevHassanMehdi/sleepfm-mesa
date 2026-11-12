@@ -46,6 +46,10 @@ torch.backends.cuda.enable_math_sdp(True)
 @click.option("--batch_size", type=int, default=128)
 @click.option("--fold", type=int, default=0)
 @click.option("--checkpoint_file", type=str, default="best.pt")
+@click.option("--allow_missing_subjects", is_flag=True, default=False,
+              help="Allow fewer files to index than were passed in for this split. "
+                   "Default off: a shortfall raises instead of silently generating "
+                   "embeddings for fewer subjects than intended.")
 def generate_embeddings(
     model_path,
     dataset_name,
@@ -57,11 +61,13 @@ def generate_embeddings(
     num_workers,
     batch_size,
     fold,
-    checkpoint_file
+    checkpoint_file,
+    allow_missing_subjects
 ):
     config_path = os.path.join(model_path, "config.json")
     config = load_config(config_path)
     config = rebase_old_home_paths(config)
+    config["allow_missing_subjects"] = allow_missing_subjects
     channel_groups = load_data(channel_groups_path)
 
     if split_path is None:

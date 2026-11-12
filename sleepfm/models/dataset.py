@@ -10,7 +10,7 @@ import multiprocessing
 import time
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_data, save_data
+from utils import load_data, save_data, check_subject_count
 import pandas as pd
 import json
 from loguru import logger
@@ -87,6 +87,15 @@ class SetTransformerDataset(Dataset):
 
         # Use multiprocessing to index files in parallel
         self.index_map = index_files(self.hdf5_paths, channel_like, self.samples_per_chunk, config["num_workers"], channel_groups=self.channel_groups, modality_types=config["modality_types"])
+
+        # index_file_helper silently drops any file that fails to open or
+        # has no matching channel for every requested modality (caught
+        # OSError/AttributeError, logged to problem_hdf5.txt, zero entries
+        # contributed) -- catch that here instead of leaving it silent.
+        n_indexed = len(set(entry[0] for entry in self.index_map))
+        check_subject_count(f"{config.get('dataset', 'embeddings')} {split}",
+                             len(self.hdf5_paths), n_indexed, config.get("data_path"),
+                             allow_missing=config.get("allow_missing_subjects", False))
 
         # random.shuffle(self.hdf5_paths)
         # self.index_map = sorted(self.index_map, key=lambda x: (x[1], x[2]))
@@ -191,6 +200,7 @@ class SleepEventClassificationDataset(Dataset):
         # label_files = [label_file for label_file in os.listdir(labels_path) if label_file.endswith(".csv")]
 
         hdf5_paths = load_data(config["split_path"])[split]
+        n_expected = len(hdf5_paths)
         hdf5_paths = [os.path.join(data_path, path) for path in hdf5_paths]
         study_ids = set([os.path.basename(label_file).split(".")[0] for label_file in label_files])
 
@@ -206,6 +216,12 @@ class SleepEventClassificationDataset(Dataset):
         hdf5_paths_new = [item for item in hdf5_paths_new if os.path.basename(item).split(".")[0] in hdf5_paths_ids]
         hdf5_paths = hdf5_paths_new
         hdf5_paths = [f for f in hdf5_paths if os.path.exists(f)]
+
+        # Checked before the deliberate --max_files truncation below (that
+        # cap is an intentional subset, not a missing-data problem).
+        check_subject_count(f"{dataset} {split}", n_expected, len(hdf5_paths),
+                             data_path, labels_path,
+                             allow_missing=config.get("allow_missing_subjects", False))
 
         if config["max_files"]:
             hdf5_paths = hdf5_paths[:config["max_files"]]

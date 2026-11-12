@@ -46,6 +46,10 @@ def main():
                               "for full-cohort evaluation -- must match "
                               "whatever --hdf5_dir the checkpoint was "
                               "fine-tuned with.")
+    parser.add_argument("--allow_missing_subjects", action="store_true", default=False,
+                         help="Allow fewer subjects/files to load than the split lists. "
+                              "Default off: a shortfall raises instead of silently "
+                              "evaluating on fewer subjects than intended.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,7 +65,8 @@ def main():
     # not a separately-passed, possibly-mismatched --split_id.
     split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
     test_ds = SensorLMSleepDataset(split_path, "test", args.modality, args.fold_key,
-                                    hdf5_dir=args.hdf5_dir)
+                                    hdf5_dir=args.hdf5_dir,
+                                    allow_missing_subjects=args.allow_missing_subjects)
     loader  = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False,
                          num_workers=args.num_workers, pin_memory=True)
     print(f"[{args.modality}] test={len(test_ds)}", flush=True)

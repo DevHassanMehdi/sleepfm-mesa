@@ -1,12 +1,24 @@
 """MESA HDF5 dataset for SensorLM fine-tuning — same pipeline as BIOT/MOMENT."""
 import json
 import os
+import importlib.util
 
 import h5py
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
+
+# Same defensive load as biot_dataset.py/labram_dataset.py: load sleepfm's
+# utils.py from its exact file path rather than a bare `import utils`, so
+# this is immune to another file's sys.path/sys.modules ordering (BIOT and
+# LaBraM each have their own unrelated utils.py on sys.path at the same
+# time in a shared process).
+_SLEEPFM_UTILS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sleepfm", "utils.py")
+_spec = importlib.util.spec_from_file_location("sleepfm_utils_for_sensorlm_dataset", _SLEEPFM_UTILS_PATH)
+_sleepfm_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_sleepfm_utils)
+check_subject_count = _sleepfm_utils.check_subject_count
 
 MESA_HZ    = 128
 EPOCH_SEC  = 30
@@ -26,7 +38,8 @@ _SPLIT_KEY = {"train": "train", "val": "validation", "validation": "validation",
 
 class SensorLMSleepDataset(Dataset):
     def __init__(self, split_path, split, modality, fold_key="fold_0",
-                 hdf5_dir=HDF5_DIR, labels_dir=LABELS_DIR, skip_unscored=False):
+                 hdf5_dir=HDF5_DIR, labels_dir=LABELS_DIR, skip_unscored=False,
+                 allow_missing_subjects=False):
         self.modality = modality
         self.channels = MODALITY_CHANNELS[modality]
         self.hdf5_dir = hdf5_dir
@@ -36,11 +49,13 @@ class SensorLMSleepDataset(Dataset):
 
         self.index = []
         self.skipped_subjects = []
+        self.missing_files = []
         for fname in files:
             sid        = fname.replace(".hdf5", "")
             hdf5_path  = os.path.join(hdf5_dir, fname)
             label_path = os.path.join(labels_dir, f"{sid}.csv")
             if not os.path.exists(hdf5_path) or not os.path.exists(label_path):
+                self.missing_files.append((sid, hdf5_path, label_path))
                 continue
             with h5py.File(hdf5_path, "r") as hf:
                 missing = [ch for ch in self.channels if ch not in hf]
@@ -66,6 +81,10 @@ class SensorLMSleepDataset(Dataset):
                 valid = valid & (stages != -1)
             for s, st in zip(starts[valid], stages[valid]):
                 self.index.append((hdf5_path, int(s), int(st)))
+
+        n_loaded = len(files) - len(self.missing_files) - len(self.skipped_subjects)
+        check_subject_count(f"SensorLM {modality} {split}", len(files), n_loaded,
+                             hdf5_dir, labels_dir, allow_missing=allow_missing_subjects)
 
     def __len__(self):
         return len(self.index)

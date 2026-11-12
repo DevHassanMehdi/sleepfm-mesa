@@ -47,18 +47,79 @@ reproduce their saved macro F1/accuracy to 6 decimals, and the real
 byte-identical (md5) before and after. Added a unit test,
 `tests/test_rebase_old_home_paths.py`.
 
-**A separate gotcha found along the way, not fixed here**: `evaluate_biot.py`/
-`finetune_biot.py` (and the LaBraM/SensorLM equivalents) default
-`--hdf5_dir` to the relative path `data/mesa/hdf5`, which currently
-resolves through the `mesa/hdf5` symlink to `hdf5_350_puhti_baseline`
-(the 350-subject baseline), not the full 2056-subject cohort. Every
-existing SLURM template passes `--hdf5_dir .../mesa/hdf5_full` explicitly,
-so production runs are unaffected, but any ad hoc invocation that omits
-the flag will silently evaluate against the wrong, much smaller cohort
-with no error. Confirmed directly: omitting `--hdf5_dir` on a BIOT
-re-evaluation gave 83,005 test epochs and macro F1 0.7542 (the 350-subject
-cohort); passing it explicitly gave the correct 515,461 epochs and macro
-F1 0.7551, matching the saved benchmark exactly.
+**Correction (12 Nov 2026)**: the earlier note below mischaracterized this
+as something that changed because of the `mesa/hdf5` symlink work. It
+didn't. `evaluate_biot.py`/`finetune_biot.py` (and the LaBraM/SensorLM
+equivalents) have always defaulted `--hdf5_dir` to the relative path
+`data/mesa/hdf5`, and their own `--help` text has always documented that
+default as "the built-in 350-subject Puhti-era path" -- by original
+design, not a regression. The symlink swap replaced a real 350-subject
+copy at that path with a symlink to a byte-identical 350-subject copy
+(`hdf5_350_puhti_baseline`); the default's *meaning* never changed.
+Every existing SLURM template already passes `--hdf5_dir
+.../mesa/hdf5_full` explicitly for full-cohort runs, so production was
+never at risk. What omitting the flag actually risked -- running on the
+wrong, much smaller cohort with no error at all -- is exactly what the
+new guard below now catches (confirmed directly: omitting `--hdf5_dir`
+on a BIOT re-evaluation now raises immediately, naming "expected 411
+subjects/files from the split, only 66 were actually loaded"). Original
+finding, for the record: 83,005 test epochs and macro F1 0.7542 on the
+350-subject set vs. 515,461 epochs and macro F1 0.7551 (matching the
+saved benchmark exactly) on the full cohort.
+
+**The silently-dropped-subjects guard (12 Nov 2026)**. Every Dataset
+loader here (`SleepEventClassificationDataset`/`SetTransformerDataset` in
+`sleepfm/models/dataset.py`, `BIOTSleepDataset`, `LaBraMSleepDataset`,
+`SensorLMSleepDataset`) silently `continue`d past a subject/file it
+couldn't open or match, with no count check against what the split
+actually listed -- the wrong-`--hdf5_dir` case above is one way to
+trigger it, but a partially-synced HDF5 directory or a stale split file
+would too, with the same silent symptom (fewer subjects than intended,
+no error). Added `check_subject_count()` to `sleepfm/utils.py`: compares
+subjects/files actually loaded against the split's own listed count for
+that split name and raises (naming both counts, the shortfall, and the
+HDF5/labels directories used) unless `--allow_missing_subjects` is
+passed. The per-epoch unscored-label exclusion is a separate, deliberate
+filter inside each dataset's per-epoch loop and is never counted as
+"missing" by this check. Wired into every loader in the paragraph above
+plus `generate_embeddings.py`. Along the way, fixed a real, independent
+bug the new import exposed: `biot_dataset.py`/`labram_dataset.py` (and,
+defensively, `sensorlm_dataset.py`) did a bare `from utils import ...`,
+which is ambiguous whenever BIOT/LaBraM's own unrelated `utils.py` is
+also on `sys.path` -- whichever module another import happened to cache
+first under the name `utils` silently won. Now loaded from its exact
+file path via `importlib`, immune to import order. Verified on the real
+checkpoints (no copies, no patches, temp output folders so nothing wrote
+into a checkpoint folder): BIOT EEG_ONLY fold 0 with the wrong
+`--hdf5_dir` now fails loudly with the exact counts; with the correct
+one it still gives macro F1 0.7551 / accuracy 0.8311 exactly; From-Scratch
+EEG_ONLY fold 0 on MESA and the Moody loader dry run both still pass with
+identical counts to before (1135 subjects, 956,610 epochs); the real
+`test_all_*.pickle` files were confirmed byte-identical (md5) throughout.
+Unit test: `tests/test_check_subject_count.py`.
+
+**Raw predictions archived (12 Nov 2026)**. The 1420 MESA and 800 Moody
+raw-prediction pickle files under `checkpoints/full_cohort` and
+`moody2026_pilot` (originals left in place, nothing deleted) are now also
+archived compressed:
+`/projappl/project_2019517/archive/raw_predictions_mesa_2026-11-12.tar.zst`
+(5.4 GiB) and `raw_predictions_moody_2026-11-12.tar.zst` (1.2 GiB), each
+with a `.md5` sidecar, mode 640, group `project_2019517`. zstd was chosen
+over gzip after measuring both on 30 random pickles (near-identical
+compression ratio, ~12x faster). To extract:
+```bash
+tar --use-compress-program="zstd -d" -xf raw_predictions_mesa_2026-11-12.tar.zst -C <dest>
+tar --use-compress-program="zstd -d" -xf raw_predictions_moody_2026-11-12.tar.zst -C <dest>
+```
+The MESA archive's paths are relative to the repo root; the Moody
+archive's paths are relative to `/scratch/project_2019517/moody2026_pilot/`.
+Verify with `md5sum -c <name>.tar.zst.md5`.
+
+**Scratch purge, re-confirmed (12 Nov 2026)**: per CSC's own docs
+(docs.csc.fi), files on `/scratch` are deleted after **180 days without
+being accessed** -- access time, not modification time. A file that's
+never opened again, even if nothing about it changes, is still on the
+clock.
 
 **Open fixes** (commands in the relevant section below, none run):
 1. **GitHub SSH key** — a new ed25519 key was generated on this account

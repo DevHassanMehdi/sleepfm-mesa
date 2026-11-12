@@ -192,6 +192,10 @@ def main():
                               "Off by default; a no-op for MESA either way, "
                               "since np.isin(stages, [0,1,2,3,4]) already "
                               "excludes -1 unconditionally.")
+    parser.add_argument("--allow_missing_subjects", action="store_true", default=False,
+                         help="Allow fewer subjects/files to load than the split lists. "
+                              "Default off: a shortfall raises instead of silently "
+                              "training/evaluating on fewer subjects than intended.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -216,9 +220,11 @@ def main():
         # with, even if --split_id isn't re-passed on resume.
         split_path = os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
         train_ds = LaBraMSleepDataset(split_path, "train", args.modality, fold_key=args.fold_key,
-                                       hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
+                                       hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored,
+                                       allow_missing_subjects=args.allow_missing_subjects)
         val_ds = LaBraMSleepDataset(split_path, "validation", args.modality, fold_key=args.fold_key,
-                                     hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
+                                     hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored,
+                                     allow_missing_subjects=args.allow_missing_subjects)
         print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
 
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,

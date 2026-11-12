@@ -31,6 +31,32 @@ def rebase_old_home_paths(obj):
     return obj
 
 
+def check_subject_count(split_name, n_expected, n_loaded, hdf5_dir, labels_dir=None,
+                         allow_missing=False):
+    """Guard against silently dropped subjects/files.
+
+    n_expected is how many entries the split file lists for split_name;
+    n_loaded is how many actually survived file-existence/channel checks
+    (never the per-epoch unscored-label exclusion, which is a separate,
+    deliberate filter inside each dataset's per-epoch loop and must not be
+    counted as "missing" here). Raises unless allow_missing is True, in
+    which case it prints a warning and lets the (smaller) run proceed --
+    for deliberate subset runs only, not the default.
+    """
+    if n_loaded >= n_expected:
+        return
+    n_missing = n_expected - n_loaded
+    msg = (f"{split_name}: expected {n_expected} subjects/files from the split, "
+           f"only {n_loaded} were actually loaded ({n_missing} missing). "
+           f"hdf5_dir={hdf5_dir}"
+           + (f" labels_dir={labels_dir}" if labels_dir is not None else "")
+           + ". Pass --allow_missing_subjects to proceed anyway if this is deliberate.")
+    if allow_missing:
+        print(f"WARNING: {msg}")
+    else:
+        raise RuntimeError(msg)
+
+
 def count_parameters(model):
     # Duck-typed on model.children()/.parameters()/.numel() -- never
     # references the torch module itself, so no import needed here.

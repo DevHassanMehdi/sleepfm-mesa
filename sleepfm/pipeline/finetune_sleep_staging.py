@@ -110,7 +110,11 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
                    "dataset, so it must go somewhere owner-only for any "
                    "dataset whose record names can't be shared. Default "
                    "(omitted) preserves existing behavior exactly.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience, root, split_tmp_dir):
+@click.option("--allow_missing_subjects", is_flag=True, default=False,
+              help="Allow fewer subjects/files to load than the split lists for a "
+                   "given split name. Default off: a shortfall raises instead of "
+                   "silently training/evaluating on fewer subjects than intended.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience, root, split_tmp_dir, allow_missing_subjects):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -204,6 +208,8 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         print(f"\n>>> OUTPUT PATH: {output}\n", flush=True)
         print(f">>> RESULTS DIR: {exp.results_dir}\n", flush=True)
         logger.info(f"Output path: {output}")
+
+    config["allow_missing_subjects"] = allow_missing_subjects
 
     # exp is None only on the --checkpoint_path resume branch, which doesn't
     # preserve pretrain_approach/split_id as robustly as the --checkpoint_dir

@@ -150,6 +150,11 @@ def main():
                               "Off by default; a no-op for MESA either way, "
                               "since np.isin(stages, [0,1,2,3,4]) already "
                               "excludes -1 unconditionally.")
+    parser.add_argument("--allow_missing_subjects", action="store_true", default=False,
+                         help="Allow fewer subjects/files to load than the split lists "
+                              "(e.g. a deliberate smoke-test subset). Default off: a "
+                              "shortfall raises instead of silently training/evaluating "
+                              "on fewer subjects than intended.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -177,7 +182,8 @@ def main():
         # again, same as --root), since exp.split_id alone can't express a
         # split file living outside sleepfm/configs/.
         split_path = args.split_path or os.path.join(REPO_ROOT, f"sleepfm/configs/dataset_split_{exp.split_id}.json")
-        biot_kwargs = dict(fold_key=args.fold_key, hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored)
+        biot_kwargs = dict(fold_key=args.fold_key, hdf5_dir=args.hdf5_dir, skip_unscored=args.skip_unscored,
+                           allow_missing_subjects=args.allow_missing_subjects)
         if args.labels_dir:
             biot_kwargs["labels_dir"] = args.labels_dir
         train_ds = BIOTSleepDataset(split_path, "train", args.modality, **biot_kwargs)

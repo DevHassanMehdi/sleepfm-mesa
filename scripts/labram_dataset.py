@@ -37,12 +37,26 @@ that in forward_logits() to match LaBraM's engine_for_finetuning.py.
 """
 import os
 import json
+import importlib.util
 import numpy as np
 import pandas as pd
 import h5py
 import torch
 from torch.utils.data import Dataset
 from scipy.signal import resample
+
+# Callers (evaluate_labram.py/finetune_labram.py) add scripts/, sleepfm/,
+# and /scratch/project_2019517/LaBraM to sys.path, and LaBraM has its own
+# unrelated utils.py -- whichever of the two "utils" modules happens to
+# already be cached in sys.modules (by another file's import order)
+# silently wins a bare `import utils`/`from utils import ...` here. Load
+# sleepfm's copy from its exact file path instead, immune to sys.path/
+# sys.modules order.
+_SLEEPFM_UTILS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sleepfm", "utils.py")
+_spec = importlib.util.spec_from_file_location("sleepfm_utils_for_labram_dataset", _SLEEPFM_UTILS_PATH)
+_sleepfm_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_sleepfm_utils)
+check_subject_count = _sleepfm_utils.check_subject_count
 
 MESA_HZ = 128
 LABRAM_HZ = 200
@@ -105,7 +119,8 @@ def get_ch_names(modality):
 
 class LaBraMSleepDataset(Dataset):
     def __init__(self, split_path, split, modality, fold_key="fold_0",
-                 hdf5_dir=HDF5_DIR, labels_dir=LABELS_DIR, skip_unscored=False):
+                 hdf5_dir=HDF5_DIR, labels_dir=LABELS_DIR, skip_unscored=False,
+                 allow_missing_subjects=False):
         self.modality = modality
         self.channels = MODALITY_CHANNELS[modality]
         self.hdf5_dir = hdf5_dir
@@ -118,11 +133,13 @@ class LaBraMSleepDataset(Dataset):
         # labelled 30s epoch of every subject in this split.
         self.index = []
         self.skipped_subjects = []
+        self.missing_files = []
         for filename in files:
             subject_id = get_subject_id(filename)
             hdf5_path = os.path.join(hdf5_dir, filename)
             label_path = os.path.join(labels_dir, f"{subject_id}.csv")
             if not os.path.exists(hdf5_path) or not os.path.exists(label_path):
+                self.missing_files.append((subject_id, hdf5_path, label_path))
                 continue
             with h5py.File(hdf5_path, "r") as hf:
                 missing = [ch for ch in self.channels if ch not in hf]
@@ -150,6 +167,10 @@ class LaBraMSleepDataset(Dataset):
                 valid = valid & (stages != -1)
             for start_sample, stage in zip(starts[valid], stages[valid]):
                 self.index.append((hdf5_path, int(start_sample), int(stage)))
+
+        n_loaded = len(files) - len(self.missing_files) - len(self.skipped_subjects)
+        check_subject_count(f"LaBraM {modality} {split}", len(files), n_loaded,
+                             hdf5_dir, labels_dir, allow_missing=allow_missing_subjects)
 
     def __len__(self):
         return len(self.index)
