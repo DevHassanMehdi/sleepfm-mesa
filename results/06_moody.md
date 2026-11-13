@@ -1,14 +1,14 @@
 # Moody / PhysioNet 2026 (I0006)
 
-**Finding:** Moody tracks MESA closely. MESA beats Moody on every condition, for every model, at matched patience.
+**Finding:** MESA scores are higher than Moody in every row. Retraining on Moody recovers about half of the zero-shot drop.
 
-- The biggest MESA advantage is on ECG only and BIOT, 0.04 to 0.12.
-- The smallest MESA advantage is EEG, 1 channel (C4-M1), the one electrode-exact channel, 0.004 to 0.016.
-- Retraining on Moody's own 1135 records closes most of the zero-shot gap to MESA.
+- Zero-shot drops are 0.06 to 0.125. BIOT loses the most (0.12 on EEG and EEG + ECG).
+- After retraining, drops are 0.007 to 0.065. The SleepFM models lose least on the 1-channel setup (0.007 and 0.014).
+- BIOT ECG only does not improve with retraining (0.266 zero-shot, 0.259 retrained).
 
-**Setup:** Site I0006, 1142 recordings downloaded, 1135 used. EEG1 and EEG2 (F4-M1, O2-M1) are stand-ins, not electrode matches. EEG3 (C4-M1) is an exact match to MESA's EEG3, and is the channel meant everywhere this file says "EEG, 1 channel (C4-M1)". SleepFM Next-Token's token cache needed `--reseed_empty` to fix one dead cluster. Total GPU-hours, this task: 137.09.
+**Setup:** Site I0006, 1142 recordings downloaded, 1135 used. EEG1 and EEG2 (F4-M1, O2-M1) are stand-ins, not electrode matches. EEG3 (C4-M1) is an exact match to MESA's EEG3, and is the channel meant everywhere this file says "EEG, 1 channel (C4-M1)". SleepFM Next-Token's token cache needed `--reseed_empty` to fix one dead cluster. Total GPU-hours for all Moody work: 137.09.
 
-**Legend:** bold = best (see each table's caption, and the "Table standard" in RESULTS.md).
+**Legend:** Bold: best model in the column within each condition (ties within 0.002 are all bold). Green square: highest dataset setting along the row. Drop columns are not marked.
 
 Data: BDSP Credentialed Health Data License. Record IDs are not included.
 
@@ -25,10 +25,12 @@ Data: BDSP Credentialed Health Data License. Record IDs are not included.
 | EEG, 1 channel (C4-M1) | A single EEG lead, bipolar C4-M1, the one lead that is an exact electrode match between Moody and MESA |
 | EEG + ECG | The three EEG leads plus one ECG lead, together |
 | ECG only | The single ECG lead alone, no EEG |
-| MESA | Trained and tested on the MESA cohort (2056 subjects) |
+| MESA | Trained and tested on the MESA cohort (2056 subjects), 5-fold cross-validation. Each cell is the best run available (patience 10, 20, or 50). † |
 | Moody zero-shot | A MESA-trained model evaluated directly on Moody, with no additional training on Moody data |
-| Moody retrained | The same architecture, trained from scratch on Moody's own 1135 subjects and tested on Moody |
+| Moody retrained | The same method trained on Moody's 1135 recordings and tested on Moody, 5-fold cross-validation. SleepFM models are pretrained on Moody without labels, then fine-tuned. BIOT starts from its published checkpoint and is fine-tuned. Each cell is the best run available (patience 20 or 50). † |
 | Early-stopping patience | Epochs without validation improvement allowed before training stops; higher patience trains longer |
+
+† Picking the best available run for each cell slightly favors both datasets equally: MESA cells may pick among patience 10/20/50, Moody-retrained cells among patience 20/50, so neither side's numbers are inflated relative to the other.
 
 ## Main results
 
@@ -40,12 +42,12 @@ Data: BDSP Credentialed Health Data License. Record IDs are not included.
 | EEG, 3 channels | SleepFM Next-Token | 0.739 🟩 | **0.670** | 0.703 | 0.069 | 0.036 |
 | EEG, 3 channels | BIOT | **0.754** 🟩 | 0.634 | 0.693 | 0.120 | 0.061 |
 | EEG, 1 channel (C4-M1) | SleepFM From-Scratch | 0.710 🟩 | 0.627 | **0.703** | 0.083 | 0.007 |
-| EEG, 1 channel (C4-M1) | SleepFM Next-Token | **0.714** 🟩 | **0.653** | 0.700 | 0.060 | 0.014 |
+| EEG, 1 channel (C4-M1) | SleepFM Next-Token | **0.714** 🟩 | **0.654** | 0.700 | 0.060 | 0.014 |
 | EEG, 1 channel (C4-M1) | BIOT | 0.700 🟩 | 0.623 | 0.669 | 0.077 | 0.030 \*\* |
 | EEG + ECG | SleepFM From-Scratch | 0.744 🟩 | 0.665 | **0.715** | 0.079 | 0.029 |
 | EEG + ECG | SleepFM Next-Token | 0.734 🟩 | **0.671** | 0.702 | 0.063 | 0.032 |
 | EEG + ECG | BIOT | **0.748** 🟩 | 0.623 | 0.683 | 0.125 | 0.065 |
-| ECG only | SleepFM From-Scratch | **0.557** 🟩 | **0.469** | **0.519** | 0.088 | 0.039 |
+| ECG only | SleepFM From-Scratch | **0.558** 🟩 | **0.469** | **0.519** | 0.088 | 0.039 |
 | ECG only | SleepFM Next-Token | 0.419 🟩 | 0.337 | 0.382 | 0.082 | 0.037 |
 | ECG only | BIOT | 0.324 🟩 | 0.266 | 0.259 | 0.058 | 0.064 |
 
@@ -184,13 +186,13 @@ Smallest gap, EEG, 1 channel (C4-M1): +0.004 to +0.016. Largest, ECG only and BI
 
 ## EEG minus ECG gap, per model
 
-*No marks: gap (EEG minus ECG) values, not absolute scores.*
-<!-- spec: items=an EEG-minus-ECG gap; marks=none; note=gap (EEG minus ECG) values, not absolute scores -->
+*Compared: models. Green square: highest dataset setting along each row.*
+<!-- spec: block=none; items=models; value_cols=MESA,Moody; bold=none; green=along -->
 | Model | MESA | Moody |
 |---|---|---|
-| BIOT | 0.4306 | 0.4341 |
-| SleepFM Next-Token | 0.3160 | 0.3291 |
-| SleepFM From-Scratch | 0.1997 | 0.2069 |
+| BIOT | 0.4306 | 0.4341 🟩 |
+| SleepFM Next-Token | 0.3160 | 0.3291 🟩 |
+| SleepFM From-Scratch | 0.1997 | 0.2069 🟩 |
 
 ## Flat-record sensitivity (8 of 1135 Moody records, all channels flat at once)
 

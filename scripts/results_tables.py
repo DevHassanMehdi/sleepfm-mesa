@@ -78,13 +78,17 @@ def make_caption(spec):
         return f"*No marks: {reason}.*"
     items = spec.get("items", "items")
     block = spec.get("block", "none")
-    if block and block.lower() != "none":
-        scope = "down each column within each block"
+    bold_down = spec.get("bold") == "down"
+    green_along = spec.get("green") == "along"
+    if bold_down:
+        scope = "down each column within each block" if block and block.lower() != "none" else "down each column"
+        cap = f"*Compared: {items}, {scope}, higher is better."
+        if green_along:
+            cap += " Green square: best dataset setting along each row."
+    elif green_along:
+        cap = f"*Compared: {items}. Green square: highest dataset setting along each row."
     else:
-        scope = "down each column"
-    cap = f"*Compared: {items}, {scope}, higher is better."
-    if spec.get("green") == "along":
-        cap += " Green square: best dataset setting along each row."
+        cap = f"*Compared: {items}."
     cap += "*"
     return cap
 
@@ -415,6 +419,22 @@ def process_file(path, mode):
             continue
         if t.caption_line_idx is None:
             issues.append(f"{path.name}: table at line {t.header_line_idx + 1} missing caption line")
+
+        # a table with both a MESA column and a Moody column is a
+        # dataset comparison: it must mark the best dataset setting along
+        # each row, and must never mark a drop column.
+        if any("MESA" in h for h in t.header) and any("Moody" in h for h in t.header):
+            if t.spec.get("green") != "along":
+                issues.append(
+                    f"{path.name}: table at line {t.header_line_idx + 1} has MESA and Moody columns "
+                    f"but green != along"
+                )
+            value_cols = [c.strip() for c in t.spec.get("value_cols", "").split(",") if c.strip()]
+            drop_in_value_cols = [c for c in value_cols if "Drop" in c]
+            if drop_in_value_cols:
+                issues.append(
+                    f"{path.name}: table at line {t.header_line_idx + 1} marks a Drop column: {drop_in_value_cols}"
+                )
 
         # leftover-shorthand scan within this table's own text span
         span_start = t.spec_line_idx if t.spec_line_idx is not None else t.header_line_idx

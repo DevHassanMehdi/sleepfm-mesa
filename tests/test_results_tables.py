@@ -1,9 +1,18 @@
 import os
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 import results_tables as rt  # noqa: E402
+
+
+def _check_file(text):
+    with tempfile.TemporaryDirectory() as d:
+        path = rt.Path(d) / "x.md"
+        path.write_text(text)
+        issues, _ = rt.process_file(path, "check")
+        return issues
 
 
 def _process(text, mode="fix"):
@@ -261,3 +270,51 @@ def test_non_allowlisted_class_mean_mismatch_still_fails():
     t.file = "00_350_subject_work.md"
     issues = rt.class_mean_check(t)
     assert len(issues) == 1
+
+
+def test_mesa_moody_table_requires_green_along():
+    text = (
+        "*caption*\n"
+        "<!-- spec: block=none; items=models; value_cols=MESA,Moody; bold=down; green=none -->\n"
+        "| Model | MESA | Moody |\n"
+        "|---|---|---|\n"
+        "| A | 0.7 | 0.5 |\n"
+    )
+    issues = _check_file(text)
+    assert any("green != along" in i for i in issues)
+
+
+def test_mesa_moody_table_with_green_along_passes():
+    text = (
+        "*Compared: models, down each column, higher is better. Green square: best dataset setting along each row.*\n"
+        "<!-- spec: block=none; items=models; value_cols=MESA,Moody; bold=down; green=along -->\n"
+        "| Model | MESA | Moody |\n"
+        "|---|---|---|\n"
+        "| A | **0.7** 🟩 | 0.5 |\n"
+    )
+    issues = _check_file(text)
+    assert not any("MESA and Moody" in i for i in issues)
+
+
+def test_mesa_moody_table_marks_none_still_flagged():
+    text = (
+        "*No marks: reference.*\n"
+        "<!-- spec: items=a gap; marks=none; note=reference -->\n"
+        "| Model | MESA | Moody |\n"
+        "|---|---|---|\n"
+        "| A | 0.7 | 0.5 |\n"
+    )
+    issues = _check_file(text)
+    assert any("green != along" in i for i in issues)
+
+
+def test_mesa_moody_table_drop_column_in_value_cols_flagged():
+    text = (
+        "*caption*\n"
+        "<!-- spec: block=none; items=models; value_cols=MESA,Moody,Drop; bold=down; green=along -->\n"
+        "| Model | MESA | Moody | Drop |\n"
+        "|---|---|---|---|\n"
+        "| A | 0.7 | 0.5 | 0.2 |\n"
+    )
+    issues = _check_file(text)
+    assert any("marks a Drop column" in i for i in issues)
