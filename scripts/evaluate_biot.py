@@ -74,6 +74,19 @@ def main():
                               "(e.g. a deliberate smoke-test subset). Default off: a "
                               "shortfall raises instead of silently evaluating on fewer "
                               "subjects than intended.")
+    parser.add_argument("--save_predictions", action="store_true", default=False,
+                         help="Also save raw per-window predictions (labels, "
+                              "predictions, softmax probabilities, and a parallel "
+                              "subject-id array) as a .npz file under "
+                              "~/analysis/eeg_channels/biot_predictions/<run_name>/"
+                              "fold_<N>/predictions.npz -- never inside the "
+                              "checkpoint folder. Default off.")
+    parser.add_argument("--no_checkpoint_link", action="store_true", default=False,
+                         help="Never write into checkpoint_dir's own config.json "
+                              "(normally write_metrics_bundle cross-links it with "
+                              "the current results_dir path). Use this for read-only "
+                              "analysis reruns against existing checkpoints. Default "
+                              "off preserves the original training/eval behavior.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -100,7 +113,7 @@ def main():
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model.eval()
 
-    all_preds, all_targets, all_paths = [], [], []
+    all_preds, all_targets, all_paths, all_probs = [], [], [], []
     with torch.no_grad():
         for x, y, paths in tqdm(test_loader, desc="Evaluating"):
             x = x.to(device)
@@ -108,6 +121,8 @@ def main():
             all_preds.append(logits.argmax(dim=-1).cpu().numpy())
             all_targets.append(y.numpy())
             all_paths.extend(paths)
+            if args.save_predictions:
+                all_probs.append(torch.softmax(logits, dim=-1).cpu().numpy())
 
     all_preds = np.concatenate(all_preds)
     all_targets = np.concatenate(all_targets)
@@ -133,6 +148,17 @@ def main():
             "n_valid_windows": len(idx),
         })
 
+    if args.save_predictions:
+        all_probs = np.concatenate(all_probs)
+        subject_index = np.array([os.path.basename(p).replace(".hdf5", "") for p in all_paths])
+        out_dir = os.path.expanduser(
+            f"~/analysis/eeg_channels/biot_predictions/{exp.run_name}/fold_{fold_num}")
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, "predictions.npz")
+        np.savez(out_path, labels=all_targets, predictions=all_preds,
+                 probabilities=all_probs, subject_index=subject_index)
+        print(f"Raw predictions saved to {out_path}")
+
     config_path = fold_dir / "config.json"
     import json
     config = json.load(open(config_path)) if config_path.exists() else {}
@@ -151,6 +177,7 @@ def main():
         classification_report_text=report,
         per_subject_rows=per_subject_rows,
         config=config,
+        no_checkpoint_link=args.no_checkpoint_link,
     )
     print(f"\nWritten to {exp.results_dir / f'fold_{fold_num}'}")
 

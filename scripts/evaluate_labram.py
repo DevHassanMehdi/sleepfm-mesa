@@ -58,6 +58,12 @@ def main():
                          help="Allow fewer subjects/files to load than the split lists. "
                               "Default off: a shortfall raises instead of silently "
                               "evaluating on fewer subjects than intended.")
+    parser.add_argument("--no_checkpoint_link", action="store_true", default=False,
+                         help="Never write into checkpoint_dir's own config.json "
+                              "(normally write_metrics_bundle cross-links it with "
+                              "the current results_dir path). Use this for read-only "
+                              "analysis reruns against existing checkpoints. Default "
+                              "off preserves the original training/eval behavior.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -136,6 +142,7 @@ def main():
         classification_report_text=report,
         per_subject_rows=per_subject_rows,
         config=config,
+        no_checkpoint_link=args.no_checkpoint_link,
     )
     print(f"\nWritten to {exp.results_dir / f'fold_{fold_num}'}")
 

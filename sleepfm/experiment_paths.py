@@ -156,7 +156,8 @@ def experiment_from_checkpoint_dir(checkpoint_dir, root=None) -> ExperimentID:
                          split_id=split_id, timestamp=timestamp, root=root)
 
 
-def link_checkpoint_and_results(exp: ExperimentID, fold_num: int = None) -> None:
+def link_checkpoint_and_results(exp: ExperimentID, fold_num: int = None,
+                                 skip_checkpoint_side: bool = False) -> None:
     """Cross-link the two config.json files, once each exists.
 
     Updates whichever side(s) currently exist without clobbering the rest
@@ -168,13 +169,18 @@ def link_checkpoint_and_results(exp: ExperimentID, fold_num: int = None) -> None
     fold_num=None targets the experiment-level (cross-fold aggregate)
     checkpoint_dir/results_dir directly, for callers like compute_metrics.py
     that summarize across all folds rather than reporting a single fold.
+
+    skip_checkpoint_side: when True, never touch ckpt_config_path (the
+    checkpoint folder's own config.json) -- for read-only analysis reruns
+    against existing checkpoints. The results-side write (results_dir's
+    own config.json, not a checkpoint folder) still happens either way.
     """
     ckpt_dir = exp.fold_dir(fold_num) if fold_num is not None else exp.checkpoint_dir
     results_dir = (exp.results_dir / f"fold_{fold_num}") if fold_num is not None else exp.results_dir
     ckpt_config_path = ckpt_dir / "config.json"
     results_config_path = results_dir / "config.json"
 
-    if ckpt_config_path.exists():
+    if not skip_checkpoint_side and ckpt_config_path.exists():
         with open(ckpt_config_path) as f:
             ckpt_config = json.load(f)
         ckpt_config["results_dir"] = str(results_dir)
@@ -191,7 +197,8 @@ def link_checkpoint_and_results(exp: ExperimentID, fold_num: int = None) -> None
 
 def write_metrics_bundle(exp: ExperimentID, fold_num: int, metrics: dict,
                           classification_report_text: str,
-                          per_subject_rows: list, config: dict) -> None:
+                          per_subject_rows: list, config: dict,
+                          no_checkpoint_link: bool = False) -> None:
     """Write the four results files (metrics.json, classification_report.txt,
     per_subject_results.csv, config.json) and cross-link with checkpoint_dir.
 
@@ -208,6 +215,13 @@ def write_metrics_bundle(exp: ExperimentID, fold_num: int, metrics: dict,
 
     per_subject_rows: list of dicts, each with at least
         {model, condition, subject_id, macro_f1, accuracy, n_valid_windows}
+
+    no_checkpoint_link: when True, never write into the checkpoint folder
+    (skips only the checkpoint-side half of link_checkpoint_and_results;
+    everything above, including the results-side config.json, is under
+    results_dir, never a checkpoint folder, and is unaffected). Default
+    False preserves the original behavior exactly for training and for
+    any existing caller that doesn't pass this.
     """
     fold_results_dir = (exp.results_dir / f"fold_{fold_num}") if fold_num is not None else exp.results_dir
     fold_checkpoint_dir = exp.fold_dir(fold_num) if fold_num is not None else exp.checkpoint_dir
@@ -231,4 +245,4 @@ def write_metrics_bundle(exp: ExperimentID, fold_num: int, metrics: dict,
     with open(fold_results_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
 
-    link_checkpoint_and_results(exp, fold_num)
+    link_checkpoint_and_results(exp, fold_num, skip_checkpoint_side=no_checkpoint_link)
