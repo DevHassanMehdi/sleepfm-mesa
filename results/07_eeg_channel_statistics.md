@@ -46,13 +46,13 @@
 | Part C: mean of 5 per-class values equals macro F1 (tolerance 0.0006) | OK (built directly from sklearn f1_score per class; see note below D.1) |
 | Part C: undefined-value counts | kappa=0, f1/recall_N1=294, f1/recall_N3=2394, f1/recall_REM=616 (table below) |
 | Part D.1: pooled/fold-mean reproduce the documented 3-channel-benchmark fold means (02/04/06) | OK, diff=0.0000 on all 3 |
-| Part E5: training cost from sacct | not recoverable -- see note below |
+| Part E5: training cost from sacct | recovered, 275.6 GPU-hours across 82 rows -- see note below |
 | `scripts/results_tables.py --check` | 0 issues (run after --fix, see Part F commit) |
 | `scripts/check_results_numbers.py` | run after --fix; see commit |
-| Unit tests (test_channel_stats.py, test_compute_profile.py, test_experiment_paths.py, full suite) | 65 passed |
+| Unit tests (test_channel_stats.py, test_compute_profile.py, test_experiment_paths.py, full suite) | 62 passed |
 | Link check | 0 broken links |
 
-**E5 note:** training cost (GPU-hours, wall time, epochs to stop, best epoch) for the original pretraining and fine-tuning jobs in this task's scope could not be recovered. `sacct` has no records before approximately 2026-11-11 (checked explicitly: querying August 2026 returns nothing), and `logs/` in this repository holds only files from the current migration-era work -- nothing from when these runs were originally trained (July-October 2026). Checkpoint `config.json` files record `epochs` as the configured maximum (e.g. 500), not the actual stop epoch, and no `best_epoch` field is saved anywhere. This is a hard data-availability gap, not a measurement choice; no numbers are given in its place.
+**E5 note:** the Phase 1 report's original conclusion -- that training cost was unrecoverable because `sacct` has no records before approximately 2026-11-11 -- was querying the wrong account. `sacct -S 2026-07-01 -u hamehdi` (the pre-migration account these jobs actually ran under) returns full historical accounting data back to July 2026. Training cost for the pretraining, CPU-cache, embedding, and fine-tuning jobs in this task's scope is now in Part E5, with GPU-hours confirmed via sacct for every row. Epoch counts (stop/best) are also recovered for most rows via per-job `.log` files or (for the two pretraining runs) the checkpoint's own `epoch` field -- except for the SleepFM and BIOT 3-channel-benchmark fine-tuning runs, whose logs sit under the old account's unreadable home directory; Part E5 gives the exact recovery command for those.
 
 ## Part A: inventory
 
@@ -425,57 +425,98 @@ SleepFM's SetTransformer encoder and BIOT's encoder both have channel-count-inva
 Counted with `torch.utils.flop_counter.FlopCounterMode`: matmuls and convolutions (including the internal matmuls of attention), both forward passes only (inference, no backward). Excludes elementwise ops, normalization, and BIOT's `torch.stft` front end (not a matmul/conv). SleepFM's head operates once per whole night on precomputed per-epoch embeddings (not per 30s epoch at inference time in the same sense as the encoder), so its "per epoch" FLOPs are reported as that night-level cost divided by the night's epoch count, for comparability; "encoder+head together" sums the two. BIOT's end-to-end FLOPs/epoch is about 39x the SleepFM encoder's at both 1 channel (381,982,720 / 9,796,608 = 39.0x) and 3 channels (1,145,943,040 / 29,389,824 = 39.0x).
 
 ### E3: latency, throughput, and peak GPU memory
-Run as one short job per node type (45-minute limit each), 10 warm-up + 100 timed runs per device/batch combination, CUDA-synchronized, median and 95th percentile reported. **Deviation from the task's "repeat 3 times": `compute_profile.py`'s `run_benchmark()` ran this 10+100 pattern once per device, not three separate repeats -- noted here as a shortfall against the spec, not papered over; the single-run median/p95 below should be read with that in mind.** Excludes data loading and preprocessing (the HDF5/npz read and any normalization) in both cases -- only the model forward pass is timed. **Also note:** `run_benchmark()` always feeds a 3-channel input (BIOT's `(b, 3, 6000)`, SleepFM encoder's `(b, 3, 3840)`) and never a separate 1-channel shape, so the GPU batch=128 latency figure quoted again in E6 is the same number for both the "1 channel" and "3 channels" rows there -- a real gap against a literal per-channel-count reading of the task, though consistent with both models' channel-count-invariant parameter counts (E1).
+Redone from the first version of this report, which (a) fed a fixed 3-channel input to both models regardless of the labeled condition, (b) never benchmarked the SleepFM staging head, and (c) ran the 10-warmup/100-timed pattern once instead of three repeats. Now: BIOT is fed its own `(B, 1, 6000)` / `(B, 3, 6000)` per condition; the SleepFM encoder is fed `(B, 1, 3840)` / `(B, 3, 3840)` per condition; the staging head is benchmarked separately on a whole night of embeddings (`n_ch=3`, the shape it is actually trained/used with -- see E2's note). Every (model, condition, device) cell is measured 3 independent times, each with its own 10 warm-up and 100 timed calls, CUDA-synchronized around every call; the 3 repeats' medians/p95s are listed separately below, not averaged away. Excludes data loading and preprocessing -- only the model forward pass is timed. GPU: exclusive GH200 node (`gpumedium`, `--exclusive`, 45-minute limit). CPU: exclusive node on the `medium` CPU partition (`--exclusive`, 45-minute limit) -- the `small` partition rejects `--exclusive` ("administratively prohibited on shared partitions"); `medium` accepts it. The shared-node run (no `--exclusive`, normal `gpumedium`) is kept alongside, labeled.
 
-**Shared-node:**
+**Shared-node (GPU + CPU together, `gpumedium`, no `--exclusive`):**
 
 *No marks: latency benchmark, not a ranked comparison.*
 <!-- spec: items=latency benchmark (shared-node); marks=none; note=latency benchmark, not a ranked comparison -->
-| Model | Component | Device | Median latency (ms) | p95 latency (ms) | Throughput (epochs/s) | Peak GPU memory at batch 128 (MB) |
-|---|---|---|---|---|---|---|
-| BIOT | end-to-end | GPU batch=1 | 3.501 | 5.524 | 285.6 | n/a |
-| BIOT | end-to-end | GPU batch=16 | 3.995 | 6.120 | 4004.5 | n/a |
-| BIOT | end-to-end | GPU batch=128 | 6.980 | 7.678 | 18339.4 | 335.178 |
-| BIOT | end-to-end | CPU threads=1 | 248.927 | 249.320 | 64.3 | n/a |
-| BIOT | end-to-end | CPU threads=8 | 207.867 | 208.258 | 77.0 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | GPU batch=1 | 2.818 | 2.930 | 354.9 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | GPU batch=16 | 3.181 | 3.242 | 5029.9 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | GPU batch=128 | 3.138 | 3.205 | 40793.3 | 104.180 |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | CPU threads=1 | 42.582 | 42.782 | 375.7 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | CPU threads=8 | 29.253 | 29.510 | 546.9 | n/a |
+| Model | Component | Condition | Device | Median latency (ms, 3 repeats) | p95 latency (ms, 3 repeats) | Throughput (epochs/s, 3 repeats) | Peak GPU memory at batch 128 (MB) |
+|---|---|---|---|---|---|---|---|
+| BIOT | end-to-end | 1 channel | GPU batch=1 | 2.878 / 2.860 / 2.878 | 2.978 / 2.919 / 2.941 | 347.4 / 349.6 / 347.5 | n/a |
+| BIOT | end-to-end | 1 channel | GPU batch=16 | 2.905 / 2.932 / 2.924 | 2.983 / 4.807 / 4.791 | 5507.9 / 5456.6 / 5472.0 | n/a |
+| BIOT | end-to-end | 1 channel | GPU batch=128 | 3.037 / 3.052 / 3.076 | 4.793 / 4.847 / 4.812 | 42144.7 / 41940.8 / 41606.2 | 154.285 |
+| BIOT | end-to-end | 1 channel | CPU threads=1 | 85.599 / 85.568 / 85.545 | 85.788 / 85.745 / 85.755 | 186.9 / 187.0 / 187.0 | n/a |
+| BIOT | end-to-end | 1 channel | CPU threads=8 | 72.155 / 72.047 / 71.689 | 76.105 / 75.756 / 74.889 | 221.7 / 222.1 / 223.2 | n/a |
+| BIOT | end-to-end | 3 channels | GPU batch=1 | 3.302 / 3.295 / 3.288 | 3.393 / 3.366 / 3.353 | 302.8 / 303.5 / 304.2 | n/a |
+| BIOT | end-to-end | 3 channels | GPU batch=16 | 3.407 / 3.435 / 3.396 | 5.595 / 5.638 / 5.554 | 4696.8 / 4658.5 / 4711.1 | n/a |
+| BIOT | end-to-end | 3 channels | GPU batch=128 | 7.001 / 6.952 / 6.970 | 7.565 / 7.568 / 7.567 | 18283.5 / 18412.4 / 18365.7 | 335.178 |
+| BIOT | end-to-end | 3 channels | CPU threads=1 | 250.121 / 249.862 / 249.950 | 251.019 / 250.099 / 250.347 | 64.0 / 64.0 / 64.0 | n/a |
+| BIOT | end-to-end | 3 channels | CPU threads=8 | 205.466 / 207.916 / 207.829 | 215.836 / 217.157 / 217.772 | 77.9 / 77.0 / 77.0 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | GPU batch=1 | 2.360 / 2.313 / 2.313 | 2.500 / 2.360 / 2.356 | 423.7 / 432.4 / 432.4 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | GPU batch=16 | 2.717 / 2.714 / 2.744 | 2.771 / 2.758 / 4.517 | 5889.2 / 5895.7 / 5831.0 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | GPU batch=128 | 2.735 / 2.720 / 2.735 | 4.511 / 4.498 / 4.485 | 46795.8 / 47062.6 / 46801.3 | 81.680 |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | CPU threads=1 | 23.344 / 23.279 / 23.287 | 23.606 / 23.362 / 23.467 | 685.4 / 687.3 / 687.1 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | CPU threads=8 | 19.379 / 19.353 / 19.309 | 22.890 / 22.790 / 22.724 | 825.6 / 826.7 / 828.6 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | GPU batch=1 | 2.806 / 2.782 / 2.788 | 2.898 / 2.835 / 2.854 | 356.4 / 359.4 / 358.7 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | GPU batch=16 | 3.240 / 3.227 / 3.215 | 5.310 / 5.263 / 5.292 | 4939.0 / 4957.5 / 4976.7 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | GPU batch=128 | 3.233 / 3.214 / 3.201 | 5.260 / 5.260 / 5.228 | 39587.9 / 39827.8 / 39984.3 | 104.180 |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | CPU threads=1 | 42.592 / 42.524 / 42.454 | 42.863 / 42.603 / 42.546 | 375.7 / 376.3 / 376.9 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | CPU threads=8 | 30.216 / 30.404 / 30.328 | 33.016 / 32.903 / 33.025 | 529.5 / 526.3 / 527.6 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | GPU batch=1 | 2.928 / 2.910 / 2.907 | 2.988 / 2.937 / 2.938 | 341.6 / 343.7 / 344.0 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | GPU batch=16 | 6.418 / 6.441 / 6.430 | 6.445 / 6.537 / 6.531 | 2493.1 / 2483.9 / 2488.3 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | GPU batch=128 | 35.237 / 35.253 / 35.403 | 35.938 / 35.909 / 36.029 | 3632.5 / 3630.9 / 3615.5 | 4213.954 |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | CPU threads=1 | 2092.230 / 2091.918 / 2093.617 | 2100.658 / 2102.365 / 2101.814 | 7.6 / 7.6 / 7.6 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | CPU threads=8 | 1366.866 / 1365.596 / 1366.684 | 1389.813 / 1387.770 / 1395.329 | 11.7 / 11.7 / 11.7 | n/a |
 
-Node: `rg2127`. `squeue -w <node>`: (unavailable on this node: [Errno 2] No such file or directory: 'squeue') GPU before: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
-0, 0 %, 0 %, 1 MiB, 97871 MiB`. GPU after: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
-0, 0 %, 0 %, 1257 MiB, 97871 MiB`.
+Node: `rg1104`. `squeue -w <node>`: (unavailable on this node: [Errno 2] No such file or directory: 'squeue') GPU before: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
+0, 0 %, 0 %, 9 MiB, 97871 MiB`. GPU after: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
+0, 0 %, 0 %, 7686 MiB, 97871 MiB`.
 
-**Exclusive-node:** an exclusive-node probe job returned in about 3 seconds (well under the 12-hour fallback threshold checked beforehand), so the real exclusive-node benchmark below was run opportunistically in parallel with Part C, in addition to -- not instead of -- the shared-node run above, without holding up Parts A-D/F.
+**Exclusive-node, GPU (`gpumedium --exclusive`, 4x GH200):**
 
 *No marks: latency benchmark, not a ranked comparison.*
-<!-- spec: items=latency benchmark (exclusive-node); marks=none; note=latency benchmark, not a ranked comparison -->
-| Model | Component | Device | Median latency (ms) | p95 latency (ms) | Throughput (epochs/s) | Peak GPU memory at batch 128 (MB) |
-|---|---|---|---|---|---|---|
-| BIOT | end-to-end | GPU batch=1 | 4.120 | 4.254 | 242.7 | n/a |
-| BIOT | end-to-end | GPU batch=16 | 3.719 | 7.760 | 4302.7 | n/a |
-| BIOT | end-to-end | GPU batch=128 | 6.983 | 7.026 | 18331.3 | 335.178 |
-| BIOT | end-to-end | CPU threads=1 | 251.904 | 252.441 | 63.5 | n/a |
-| BIOT | end-to-end | CPU threads=8 | 207.331 | 207.740 | 77.2 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | GPU batch=1 | 3.265 | 3.414 | 306.3 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | GPU batch=16 | 3.702 | 3.799 | 4322.3 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | GPU batch=128 | 3.633 | 3.703 | 35230.0 | 104.180 |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | CPU threads=1 | 43.106 | 43.225 | 371.2 | n/a |
-| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | CPU threads=8 | 30.022 | 30.257 | 532.9 | n/a |
+<!-- spec: items=latency benchmark (exclusive-node, GPU); marks=none; note=latency benchmark, not a ranked comparison -->
+| Model | Component | Condition | Device | Median latency (ms, 3 repeats) | p95 latency (ms, 3 repeats) | Throughput (epochs/s, 3 repeats) | Peak GPU memory at batch 128 (MB) |
+|---|---|---|---|---|---|---|---|
+| BIOT | end-to-end | 1 channel | GPU batch=1 | 3.957 / 3.908 / 3.905 | 4.068 / 3.975 / 3.969 | 252.7 / 255.9 / 256.1 | n/a |
+| BIOT | end-to-end | 1 channel | GPU batch=16 | 3.994 / 3.986 / 4.005 | 4.121 / 4.040 / 4.077 | 4005.9 / 4013.6 / 3995.2 | n/a |
+| BIOT | end-to-end | 1 channel | GPU batch=128 | 4.048 / 4.019 / 4.040 | 4.119 / 4.077 / 4.107 | 31617.4 / 31849.6 / 31684.5 | 154.285 |
+| BIOT | end-to-end | 3 channels | GPU batch=1 | 4.565 / 4.538 / 4.527 | 4.673 / 4.607 / 4.603 | 219.1 / 220.3 / 220.9 | n/a |
+| BIOT | end-to-end | 3 channels | GPU batch=16 | 4.694 / 4.676 / 4.693 | 4.753 / 4.761 / 4.759 | 3408.9 / 3421.8 / 3409.4 | n/a |
+| BIOT | end-to-end | 3 channels | GPU batch=128 | 7.253 / 7.254 / 7.240 | 7.285 / 7.288 / 7.271 | 17647.0 / 17646.2 / 17680.7 | 335.178 |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | GPU batch=1 | 2.923 / 2.869 / 2.858 | 3.130 / 2.914 / 2.902 | 342.2 / 348.5 / 349.8 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | GPU batch=16 | 3.343 / 3.317 / 3.300 | 3.400 / 3.367 / 5.445 | 4785.8 / 4824.0 / 4848.9 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | GPU batch=128 | 3.048 / 3.030 / 3.030 | 3.100 / 3.072 / 3.075 | 41990.3 / 42237.7 / 42241.0 | 81.680 |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | GPU batch=1 | 3.129 / 3.124 / 3.113 | 3.193 / 3.164 / 3.161 | 319.6 / 320.1 / 321.2 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | GPU batch=16 | 3.563 / 3.552 / 3.544 | 3.606 / 3.583 / 3.614 | 4490.3 / 4503.9 / 4514.3 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | GPU batch=128 | 3.512 / 3.516 / 3.513 | 3.569 / 3.567 / 3.558 | 36446.3 / 36408.7 / 36436.5 | 104.180 |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | GPU batch=1 | 3.085 / 3.069 / 3.061 | 3.149 / 3.098 / 3.092 | 324.2 / 325.9 / 326.6 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | GPU batch=16 | 6.438 / 6.444 / 6.444 | 6.453 / 6.474 / 6.469 | 2485.1 / 2482.9 / 2483.0 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | GPU batch=128 | 34.579 / 34.605 / 34.607 | 34.846 / 34.909 / 34.931 | 3701.7 / 3698.9 / 3698.7 | 4219.580 |
 
-Node: `rg1113`. `squeue -w <node>`: (unavailable on this node: [Errno 2] No such file or directory: 'squeue') GPU before: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
-0, 0 %, 0 %, 4 MiB, 97871 MiB
-1, 0 %, 0 %, 3 MiB, 97871 MiB
-2, 0 %, 0 %, 4 MiB, 97871 MiB
-3, 0 %, 0 %, 3 MiB, 97871 MiB`. GPU after: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
-0, 0 %, 0 %, 1259 MiB, 97871 MiB
-1, 0 %, 0 %, 3 MiB, 97871 MiB
-2, 0 %, 0 %, 4 MiB, 97871 MiB
-3, 0 %, 0 %, 3 MiB, 97871 MiB`.
+Node: `rg2121`. `squeue -w <node>`: (unavailable on this node: [Errno 2] No such file or directory: 'squeue') GPU before: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
+0, 0 %, 0 %, 5 MiB, 97871 MiB
+1, 0 %, 0 %, 5 MiB, 97871 MiB
+2, 0 %, 0 %, 5 MiB, 97871 MiB
+3, 0 %, 0 %, 27 MiB, 97871 MiB`. GPU after: `index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
+0, 100 %, 42 %, 7685 MiB, 97871 MiB
+1, 0 %, 0 %, 4 MiB, 97871 MiB
+2, 0 %, 0 %, 5 MiB, 97871 MiB
+3, 0 %, 0 %, 27 MiB, 97871 MiB`.
 
-`squeue`/co-tenancy could not be queried directly from inside either job (`squeue` is not on the compute node's PATH); GPU memory/utilization before and after, and the node's hostname, were captured via `nvidia-smi` instead and are the only direct signal available for shared-vs-exclusive co-tenancy here. The shared-node and exclusive-node numbers above are close throughout (within benchmarking noise), consistent with this specific shared node having had little contending load at measurement time.
+**Exclusive-node, CPU (`medium --exclusive`, 384 CPUs):**
+
+*No marks: latency benchmark, not a ranked comparison.*
+<!-- spec: items=latency benchmark (exclusive-node, CPU); marks=none; note=latency benchmark, not a ranked comparison -->
+| Model | Component | Condition | Device | Median latency (ms, 3 repeats) | p95 latency (ms, 3 repeats) | Throughput (epochs/s, 3 repeats) | Peak GPU memory at batch 128 (MB) |
+|---|---|---|---|---|---|---|---|
+| BIOT | end-to-end | 1 channel | CPU threads=1 | 69.104 / 70.353 / 69.644 | 72.208 / 73.901 / 72.533 | 231.5 / 227.4 / 229.7 | n/a |
+| BIOT | end-to-end | 1 channel | CPU threads=8 | 17.316 / 16.976 / 16.966 | 20.602 / 20.808 / 20.716 | 924.0 / 942.5 / 943.0 | n/a |
+| BIOT | end-to-end | 3 channels | CPU threads=1 | 202.521 / 202.468 / 202.449 | 202.954 / 203.045 / 202.640 | 79.0 / 79.0 / 79.0 | n/a |
+| BIOT | end-to-end | 3 channels | CPU threads=8 | 39.288 / 39.269 / 38.692 | 39.506 / 40.632 / 39.016 | 407.2 / 407.4 / 413.5 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | CPU threads=1 | 12.542 / 12.527 / 12.503 | 12.711 / 12.607 / 12.546 | 1275.7 / 1277.3 / 1279.7 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 1 channel | CPU threads=8 | 5.715 / 5.717 / 5.723 | 5.799 / 5.811 / 5.819 | 2799.6 / 2798.7 / 2795.8 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | CPU threads=1 | 21.346 / 21.212 / 21.125 | 21.427 / 21.269 / 21.179 | 749.6 / 754.3 / 757.4 | n/a |
+| SleepFM (From-Scratch/Next-Token share this encoder architecture) | encoder | 3 channels | CPU threads=8 | 7.672 / 7.672 / 7.670 | 7.746 / 7.753 / 7.770 | 2085.4 / 2085.6 / 2086.0 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | CPU threads=1 | 2269.021 / 2273.877 / 2278.488 | 2271.706 / 2279.420 / 2281.624 | 7.1 / 7.0 / 7.0 | n/a |
+| SleepFM (From-Scratch/Next-Token share this architecture) | head (whole night, n_ch=3) | n/a (operates on embeddings) | CPU threads=8 | 598.459 / 594.915 / 591.921 | 604.498 / 601.992 / 599.822 | 26.7 / 26.9 / 27.0 | n/a |
+
+Node: `rc4153`. `squeue -w <node>`:              JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+           3105306    medium         channel_e3_excl_cpu_v2   hamehd  R       0:05      1 rc4153
+ GPU before: `(unavailable on this node: [Errno 2] No such file or directory: 'nvidia-smi')`. GPU after: `(unavailable on this node: [Errno 2] No such file or directory: 'nvidia-smi')`.
+
+`squeue`/co-tenancy could not be queried directly from inside any of these jobs (`squeue` is not on the compute node's PATH); GPU memory/utilization before and after, and the node's hostname, were captured via `nvidia-smi` instead and are the only direct signal available for shared-vs-exclusive co-tenancy here. The shared-node and exclusive-node GPU numbers above are close throughout (within benchmarking noise), consistent with this specific shared node having had little contending load at measurement time.
 
 ### E4: input data size per channel per night
 
@@ -489,38 +530,144 @@ Node: `rg1113`. `squeue -w <node>`: (unavailable on this node: [Errno 2] No such
 
 
 ### E5: training cost from sacct
-**Not recoverable.** See the E5 note under "Summary of tests" above: `sacct` retains no records before approximately 2026-11-11 on this cluster, and no surviving log or config field records the actual stop epoch or best epoch for the original (July-October 2026) pretraining and fine-tuning jobs in this task's scope. No numbers are substituted in their place.
+Revised: `sacct -S 2026-07-01 -u hamehdi` (the pre-migration account) returns full historical accounting data -- the earlier "not recoverable" conclusion was querying the wrong account. Every job id below was matched to its (model, condition, fold) by its own `SubmitLine` (sacct), which names the exact config file and timestamp -- unambiguous. Epoch counts for most fine-tuning runs came from a `.log` file either recovered from `/projappl/project_2019517/archive/logs_2026-11-11.tar.gz` (extracted to a temp dir, deleted after use) or, for both pretraining runs, the `epoch` field inside the actual encoder checkpoint, cross-checked against a per-epoch training log whose filename timestamp matches the job's start time. Reproducible via `scripts/analysis/training_cost.py`.
+
+
+*No marks: training-cost ledger, not a ranked comparison.*
+<!-- spec: items=training-cost ledger; marks=none; note=training-cost ledger, not a ranked comparison -->
+| Step | Model | Condition | Fold | Job ID(s) | Elapsed | GPUs | GPU-hours | Stop epoch (log) | Best epoch (log) | Source |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Pretrain | SleepFM From-Scratch | n/a (shared across 1ch/3ch) |  | 548808 | 6:01:30 | 1 | 6.025 | 99 | 98 | sacct (hamehdi) + checkpoint 'epoch' field |
+| Pretrain | SleepFM Next-Token | n/a (shared across 1ch/3ch) |  | 539096 | 29:00:02 | 1 | 29.001 | 38 | 28 | sacct (hamehdi) + checkpoint 'epoch' field |
+| CPU cache | SleepFM Next-Token | Next-Token spectral cache (CPU, prerequisite for token cache) |  | 539038 | 17:19:35 | 0 | 0.000 | n/a | n/a | sacct (hamehdi) |
+| CPU cache | SleepFM Next-Token | Next-Token token cache (CPU, k-means) |  | 539095 | 0:01:49 | 0 | 0.000 | n/a | n/a | sacct (hamehdi) |
+| Embed | SleepFM From-Scratch | EEG1 only |  | 2579548 | 0:10:15 | 1 | 0.171 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM From-Scratch | EEG2 only |  | 2579549 | 0:10:31 | 1 | 0.175 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM From-Scratch | EEG3 only |  | 2579550 | 0:10:04 | 1 | 0.168 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM Next-Token | EEG1 only |  | 2579551 | 0:12:04 | 1 | 0.201 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM Next-Token | EEG2 only |  | 2579552 | 0:11:02 | 1 | 0.184 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM Next-Token | EEG3 only |  | 2579553 | 0:10:43 | 1 | 0.179 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM From-Scratch | 3-channel benchmark |  | 1418746 | 0:14:44 | 1 | 0.246 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Embed | SleepFM Next-Token | 3-channel benchmark |  | 1390165 | 0:15:21 | 1 | 0.256 | n/a | n/a | sacct (hamehdi); n/a, inference only |
+| Fine-tune | SleepFM From-Scratch | EEG1 only | 0 | 2580321 | 0:09:38 | 1 | 0.161 | 89 | 79 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG1 only | 1 | 2580963 | 0:05:41 | 1 | 0.095 | 60 | 50 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG1 only | 2 | 2580964 | 0:03:25 | 1 | 0.057 | 34 | 24 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG1 only | 3 | 2580965 | 0:08:34 | 1 | 0.143 | 91 | 81 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG1 only | 4 | 2580966 | 0:07:13 | 1 | 0.120 | 66 | 56 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG2 only | 0 | 2580967 | 0:06:13 | 1 | 0.104 | 52 | 42 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG2 only | 1 | 2580968 | 0:06:33 | 1 | 0.109 | 65 | 55 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG2 only | 2 | 2580969 | 0:05:09 | 1 | 0.086 | 51 | 41 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG2 only | 3 | 2580970 | 0:05:08 | 1 | 0.086 | 50 | 40 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG2 only | 4 | 2580971 | 0:05:18 | 1 | 0.088 | 55 | 45 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG3 only | 0 | 2580972 | 0:08:31 | 1 | 0.142 | 88 | 78 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG3 only | 1 | 2580973 | 0:05:54 | 1 | 0.098 | 51 | 41 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG3 only | 2 | 2580974 | 0:09:19 | 1 | 0.155 | 87 | 77 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG3 only | 3 | 2580975 | 0:05:01 | 1 | 0.084 | 50 | 40 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | EEG3 only | 4 | 2580976 | 0:04:14 | 1 | 0.071 | 34 | 24 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | 3-channel, patience 10 | 0 | 2613261 | 0:04:49 | 1 | 0.080 | 38 | 28 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | 3-channel, patience 10 | 1 | 2613262 | 0:07:20 | 1 | 0.122 | 74 | 64 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | 3-channel, patience 10 | 2 | 2613263 | 0:05:47 | 1 | 0.096 | 59 | 49 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | 3-channel, patience 10 | 3 | 2613264 | 0:05:02 | 1 | 0.084 | 48 | 38 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | 3-channel, patience 10 | 4 | 2613265 | 0:06:52 | 1 | 0.114 | 57 | 47 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM From-Scratch | 3-channel benchmark | 0 | 1418927 | 0:10:06 | 1 | 0.168 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM From-Scratch | 3-channel benchmark | 1 | 1418928 | 0:10:07 | 1 | 0.169 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM From-Scratch | 3-channel benchmark | 2 | 1418929 | 0:17:05 | 1 | 0.285 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM From-Scratch | 3-channel benchmark | 3 | 1418930 | 0:14:51 | 1 | 0.247 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM From-Scratch | 3-channel benchmark | 4 | 1418931 | 0:13:56 | 1 | 0.232 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM Next-Token | EEG1 only | 0 | 2580322 | 0:06:45 | 1 | 0.113 | 63 | 53 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG1 only | 1 | 2580977 | 0:08:06 | 1 | 0.135 | 72 | 62 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG1 only | 2 | 2580978 | 0:06:15 | 1 | 0.104 | 58 | 48 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG1 only | 3 | 2580979 | 0:06:06 | 1 | 0.102 | 52 | 42 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG1 only | 4 | 2580980 | 0:08:09 | 1 | 0.136 | 67 | 57 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG2 only | 0 | 2580981 | 0:07:54 | 1 | 0.132 | 84 | 74 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG2 only | 1 | 2580982 | 0:05:31 | 1 | 0.092 | 56 | 46 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG2 only | 2 | 2580983 | 0:06:15 | 1 | 0.104 | 67 | 57 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG2 only | 3 | 2580984 | 0:08:44 | 1 | 0.146 | 78 | 68 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG2 only | 4 | 2580985 | 0:05:39 | 1 | 0.094 | 49 | 39 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG3 only | 0 | 2580986 | 0:06:11 | 1 | 0.103 | 62 | 52 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG3 only | 1 | 2580987 | 0:05:02 | 1 | 0.084 | 50 | 40 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG3 only | 2 | 2580988 | 0:03:56 | 1 | 0.066 | 40 | 30 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG3 only | 3 | 2580989 | 0:08:14 | 1 | 0.137 | 80 | 70 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | EEG3 only | 4 | 2580990 | 0:04:02 | 1 | 0.067 | 42 | 32 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | 3-channel, patience 10 | 0 | 2613266 | 0:05:53 | 1 | 0.098 | 58 | 48 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | 3-channel, patience 10 | 1 | 2613267 | 0:06:46 | 1 | 0.113 | 55 | 45 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | 3-channel, patience 10 | 2 | 2613268 | 0:09:05 | 1 | 0.151 | 75 | 65 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | 3-channel, patience 10 | 3 | 2613270 | 0:09:36 | 1 | 0.160 | 97 | 87 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | 3-channel, patience 10 | 4 | 2613271 | 0:10:46 | 1 | 0.179 | 92 | 82 | sacct (hamehdi) + log (archive) |
+| Fine-tune | SleepFM Next-Token | 3-channel benchmark | 0 | 1390519 | 0:15:11 | 1 | 0.253 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM Next-Token | 3-channel benchmark | 1 | 1390520 | 0:13:34 | 1 | 0.226 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM Next-Token | 3-channel benchmark | 2 | 1390521 | 0:13:40 | 1 | 0.228 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM Next-Token | 3-channel benchmark | 3 | 1390522 | 0:12:46 | 1 | 0.213 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | SleepFM Next-Token | 3-channel benchmark | 4 | 1390523 | 0:13:07 | 1 | 0.219 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | BIOT | EEG1 only | 0 | 2580385 | 6:42:08 | 1 | 6.702 | 15 | 5 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG1 only | 1 | 2613241 | 12:28:31 | 1 | 12.475 | 22 | 12 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG1 only | 2 | 2613242 | 8:56:41 | 1 | 8.945 | 17 | 7 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG1 only | 3 | 2613243 | 9:04:38 | 1 | 9.077 | 16 | 6 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG1 only | 4 | 2613244 | 16:47:39 | 1 | 16.794 | 30 | 20 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG2 only | 0 | 2613245 | 13:09:45 | 1 | 13.162 | 23 | 13 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG2 only | 1 | 2613246 | 12:36:12 | 1 | 12.603 | 23 | 13 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG2 only | 2 | 2613247 | 11:34:20 | 1 | 11.572 | 30 | 20 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG2 only | 3 | 2613248 | 9:47:37 | 1 | 9.794 | 26 | 16 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG2 only | 4 | 2613249 | 9:00:38 | 1 | 9.011 | 16 | 6 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG3 only | 0 | 2613250 | 9:02:14 | 1 | 9.037 | 23 | 13 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG3 only | 1 | 2613251 | 10:46:52 | 1 | 10.781 | 24 | 14 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG3 only | 2 | 2613252 | 9:45:33 | 1 | 9.759 | 17 | 7 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG3 only | 3 | 2613253 | 8:44:08 | 1 | 8.736 | 22 | 12 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | EEG3 only | 4 | 2613254 | 10:55:56 | 1 | 10.932 | 28 | 18 | sacct (hamehdi) + log (archive) |
+| Fine-tune | BIOT | 3-channel benchmark | 0 | 539039,561752 | 20:03:15 | 1 | 20.054 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | BIOT | 3-channel benchmark | 1 | 539040 | 11:55:30 | 1 | 11.925 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | BIOT | 3-channel benchmark | 2 | 539041,561779 | 15:45:49 | 1 | 15.764 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | BIOT | 3-channel benchmark | 3 | 539042 | 10:54:59 | 1 | 10.916 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+| Fine-tune | BIOT | 3-channel benchmark | 4 | 539043,561780 | 14:15:26 | 1 | 14.257 | n/a | n/a | sacct (hamehdi); epoch count not recovered -- see recovery command |
+
+Total across every row above: **275.6 GPU-hours** (82 job-rows, 85 distinct SLURM jobs). This is historical training cost for the runs already in `results/`, not part of this task's own GPU-hours (see "GPU-hours used" at the end of this file, which covers only the jobs run while producing this report).
+
+**Not recovered:** epoch counts for the SleepFM and BIOT **3-channel benchmark** fine-tuning runs (10 + 8 job-rows above, elapsed/GPU-hours still confirmed via sacct) -- their `.log` files were written under the old account's home directory (`/users/hamehdi/...`, mode 0700, not group-readable) and predate the Nov-2026 archive. Exact command to recover them, **run from the hamehdi account**, writing to a location `hamehd` can read:
+
+```
+mkdir -p /scratch/project_2019517/archive/recovered_logs_07_e5 && cd /users/hamehdi/projects/sleepfm-mesa/logs && cp ft_ss_fullcohort_ft_ss_fullcohort_1418927.log ft_ss_fullcohort_ft_ss_fullcohort_1418928.log ft_ss_fullcohort_ft_ss_fullcohort_1418929.log ft_ss_fullcohort_ft_ss_fullcohort_1418930.log ft_ss_fullcohort_ft_ss_fullcohort_1418931.log ft_ss_fullcohort_ft_ss_fullcohort_1390519.log ft_ss_fullcohort_ft_ss_fullcohort_1390520.log ft_ss_fullcohort_ft_ss_fullcohort_1390521.log ft_ss_fullcohort_ft_ss_fullcohort_1390522.log ft_ss_fullcohort_ft_ss_fullcohort_1390523.log biot_fullcohort_biot_fullcohort_539039.log biot_fullcohort_biot_fullcohort_539040.log biot_fullcohort_biot_fullcohort_539041.log biot_fullcohort_biot_fullcohort_539042.log biot_fullcohort_biot_fullcohort_539043.log biot_resume_biot_resume_561752.log biot_resume_biot_resume_561779.log biot_resume_biot_resume_561780.log /scratch/project_2019517/archive/recovered_logs_07_e5/ && chmod -R g+r /scratch/project_2019517/archive/recovered_logs_07_e5
+```
 
 ### E6: accuracy against compute
+Fixed from the first version of this report: each condition now shows its OWN latency and FLOPs (previously both 1-channel and 3-channel rows repeated the same 3-channel-only figures).
+
 
 *Compared: models, down each column within each block, higher is better.*
 <!-- spec: block=Condition; items=models; value_cols=Pooled macro F1 (95% CI); bold=down; green=none -->
-| Model | Condition | Pooled macro F1 (95% CI) | Total params | FLOPs / epoch (end-to-end) | GPU batch=128 median latency (ms, shared-node) |
+| Model | Condition | Pooled macro F1 (95% CI) | Total params | FLOPs / epoch | GPU batch=128 median latency (ms, mean of 3 repeats, exclusive-node) |
 |---|---|---|---|---|---|
-| SleepFM From-Scratch | EEG3 only | 0.6427 [0.6373, 0.6481] | 7,019,179 | 9,797,888 | 3.138 |
-| SleepFM From-Scratch | 3-channel benchmark | 0.6984 [0.6938, 0.7031] | 7,019,179 | 29,391,104 | 3.138 |
-| SleepFM Next-Token | EEG3 only | **0.6584 [0.6528, 0.6642]** | 7,019,179 | 9,797,888 | 3.138 |
-| SleepFM Next-Token | 3-channel benchmark | 0.6960 [0.6914, 0.7009] | 7,019,179 | 29,391,104 | 3.138 |
-| BIOT | EEG3 only | 0.6538 [0.6479, 0.6596] | 3,443,991 | 381,982,720 | 6.980 |
-| BIOT | 3-channel benchmark | **0.7084 [0.7036, 0.7130]** | 3,443,991 | 1,145,943,040 | 6.980 |
+| SleepFM From-Scratch | EEG3 only | 0.6427 [0.6373, 0.6481] | 7,019,179 | 9,796,608 | 3.036 |
+| SleepFM From-Scratch | 3-channel benchmark | 0.6984 [0.6938, 0.7031] | 7,019,179 | 29,389,824 | 3.514 |
+| SleepFM Next-Token | EEG3 only | **0.6584 [0.6528, 0.6642]** | 7,019,179 | 9,796,608 | 3.036 |
+| SleepFM Next-Token | 3-channel benchmark | 0.6960 [0.6914, 0.7009] | 7,019,179 | 29,389,824 | 3.514 |
+| BIOT | EEG3 only | 0.6538 [0.6479, 0.6596] | 3,443,991 | 381,982,720 | 4.036 |
+| BIOT | 3-channel benchmark | **0.7084 [0.7036, 0.7130]** | 3,443,991 | 1,145,943,040 | 7.249 |
 
-"1 channel" uses EEG3 (the C4-M1 electrode match to MESA's own lead) as the representative single channel; "3 channels" uses each model's 3-channel benchmark run. SleepFM's `flops_per_epoch` here is "encoder+head together" (see E2's note on how the head's per-night cost is divided into a per-epoch figure).
+"1 channel" uses EEG3 (the C4-M1 electrode match to MESA's own lead) as the representative single channel; "3 channels" uses each model's 3-channel benchmark run. FLOPs and latency here are each model's end-to-end/encoder-only cost at that condition's actual channel count (BIOT: end-to-end; SleepFM: encoder only, since the head's cost is amortized over a whole night rather than per epoch -- see E2).
 
 ## GPU-hours used
-All 8 GPU jobs run for this task (`sacct -u hamehd --starttime 2026-11-10`, excluding `.batch`/`.extern` sub-steps). Part A, C, E1, and E4 needed no GPU and ran on a login-node CPU venv, so they do not appear here.
+Covers every job run while producing this report (Phase 1 and this follow-up), via `sacct -u hamehd` (excluding `.batch`/`.extern` sub-steps). Part A, C, E1, and E4 needed no GPU and ran on a login-node CPU venv, so they do not appear here. This is this task's OWN compute cost, distinct from Part E5's historical training-cost ledger for the runs already in `results/`.
 
 *No marks: job list, GPU-hours summed below.*
 <!-- spec: items=job list; marks=none; note=job list, GPU-hours summed below -->
-| Job ID | Purpose | Elapsed | GPUs |
-|---|---|---|---|
-| 3084148 | BIOT eval rerun (first attempt, pre-incident) | 01:15:05 | 1 |
-| 3092867 | BIOT eval rerun (clean, verified, --no_checkpoint_link) | 01:10:45 | 1 |
-| 3093075 | Part E2 FLOPs (first attempt) | 00:00:10 | 1 |
-| 3093089 | Part E3 exclusive-node probe (returned in ~3s) | 00:00:03 | 4 |
-| 3093108 | Part E3 shared-node (first attempt) | 00:00:07 | 1 |
-| 3093150 | Part E3 shared-node (real benchmark, used above) | 00:01:15 | 1 |
-| 3093319 | Part E2 FLOPs (canonical run, used above) | 00:00:10 | 1 |
-| 3094289 | Part E3 exclusive-node (real benchmark, used above) | 00:01:17 | 4 |
+| Job ID | Purpose | Elapsed | GPUs | State |
+|---|---|---|---|---|
+| 3084148 | Phase 1: BIOT eval rerun (first attempt, pre-incident) | 01:15:05 | 1 | completed |
+| 3092867 | Phase 1: BIOT eval rerun (clean, verified, --no_checkpoint_link) | 01:10:45 | 1 | completed |
+| 3093075 | Phase 1: Part E2 FLOPs (first attempt) | 00:00:10 | 1 | completed |
+| 3093089 | Phase 1: Part E3 exclusive-node probe (returned in ~3s) | 00:00:03 | 4 | completed |
+| 3093108 | Phase 1: Part E3 shared-node (first attempt, superseded this round) | 00:00:07 | 1 | completed |
+| 3093150 | Phase 1: Part E3 shared-node (superseded this round) | 00:01:15 | 1 | completed |
+| 3093319 | Phase 1: Part E2 FLOPs (canonical run, still used above) | 00:00:10 | 1 | completed |
+| 3094289 | Phase 1: Part E3 exclusive-node (superseded this round) | 00:01:17 | 4 | completed |
+| 3105302 | Follow-up: E3 shared-node v2, attempt 1 -- crashed, missing `module load python-pytorch/2.10` | 00:00:02 | 1 | FAILED |
+| 3105303 | Follow-up: E3 exclusive-GPU v2, attempt 1 -- same missing-module crash | 00:00:02 | 4 | FAILED |
+| 3105315 | Follow-up: E3 shared-node v2, attempt 2 -- ran CPU-only (CUDA silently unavailable, same missing module), cancelled once diagnosed | 00:06:11 | 1 | cancelled |
+| 3105316 | Follow-up: E3 exclusive-GPU v2, attempt 2 -- completed but produced 0 rows (same missing module) | 00:00:10 | 4 | completed, unused |
+| 3105366 | Follow-up: E3 exclusive-GPU v2, attempt 3 -- cancelled while still queued, once the fix was ready | 00:00:00 | 0 | cancelled |
+| 3105306 | Follow-up: E3 exclusive-CPU v2 (real benchmark, used above) | 00:18:00 | 0 | completed |
+| 3105424 | Follow-up: E3 shared-node v2 (real benchmark, used above) | 00:23:45 | 1 | completed |
+| 3105425 | Follow-up: E3 exclusive-GPU v2 (real benchmark, used above) | 00:00:46 | 4 | completed |
 
-Total: (4505 + 4245 + 10 + 3x4 + 7 + 75 + 10 + 77x4) GPU-seconds = 9172 GPU-seconds = **2.55 GPU-hours**, almost entirely the two full BIOT evaluation reruns (01:15:05 and 01:10:45 on 1 GPU each); every Part E job ran in under 2 minutes.
+Total across every row above: **3.11 GPU-hours** (includes the three failed/superseded attempts caused by a missing `module load python-pytorch/2.10` line in the new v2 SLURM scripts -- caught quickly, since the shared-node job's log showed the same CUDA driver-mismatch warning the exclusive-node job had silently eaten; fixed by copying the module-load line from the original, working Phase 1 scripts, which I had omitted when rewriting the benchmark for item 3).
 

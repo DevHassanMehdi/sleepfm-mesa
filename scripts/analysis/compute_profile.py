@@ -195,7 +195,15 @@ def run_input_size():
 # same logic, callable via --benchmark.
 # ---------------------------------------------------------------------------
 
-def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100):
+def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100, n_repeats=3, device_scope="both"):
+    """Benchmarks each model with ITS OWN per-condition input shape (BIOT:
+    (B, n_ch, 6000); SleepFM encoder: (B, n_ch, 3840) with n_ch in {1, 3}),
+    plus the SleepFM staging head on embeddings (n_ch=3, the shape it is
+    actually trained/used with -- see run_flops()'s head FLOPs note).
+    Each (model, condition, device) cell is measured n_repeats independent
+    times, each with its own n_warmup warm-up calls and n_timed timed calls,
+    CUDA-synchronized around every call. Excludes data loading and
+    preprocessing -- only the model forward pass is timed."""
     import numpy as np
     import torch
 
@@ -229,76 +237,126 @@ def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100):
             latencies.append(time.perf_counter() - t0)
         return np.array(latencies)
 
-    def summarize(latencies, batch_size):
-        median = float(np.median(latencies))
-        return dict(median_s=median, p95_s=float(np.percentile(latencies, 95)),
-                    throughput_epochs_per_s=batch_size / median)
+    def repeated_cell(fn, device, batch_size, peak_mem_device=None):
+        """Runs n_repeats independent (warmup + timed) measurements and
+        returns per-repeat median/p95 lists plus one peak-memory reading
+        (memory doesn't need repeating -- it's deterministic per shape)."""
+        medians, p95s, throughputs = [], [], []
+        peak_mb = None
+        for rep in range(n_repeats):
+            if peak_mem_device == "cuda":
+                torch.cuda.reset_peak_memory_stats()
+            lat = timed_runs(fn, device)
+            medians.append(float(np.median(lat)))
+            p95s.append(float(np.percentile(lat, 95)))
+            throughputs.append(batch_size / float(np.median(lat)))
+            if peak_mem_device == "cuda" and rep == n_repeats - 1:
+                peak_mb = torch.cuda.max_memory_allocated() / 1024 / 1024
+        out = dict(median_s_per_repeat=medians, p95_s_per_repeat=p95s,
+                    throughput_epochs_per_s_per_repeat=throughputs)
+        if peak_mb is not None:
+            out["peak_gpu_memory_mb"] = peak_mb
+        return out
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     node_name, squeue_before = node_squeue_record()
     gpu_before = gpu_memory_record()
 
     from finetune_biot import build_model as biot_build_model
-    from models.models import SetTransformer
+    from models.models import SetTransformer, SleepEventLSTMClassifier
 
     rows = []
-    biot_model = biot_build_model().to(device).eval()
-    for b in [1, 16, 128]:
-        x = torch.randn(b, 3, 6000, device=device)
-        with torch.no_grad():
-            if device == "cuda":
-                torch.cuda.reset_peak_memory_stats()
-            lat = timed_runs(lambda: biot_model(x), device)
-            peak_mb = torch.cuda.max_memory_allocated() / 1024 / 1024 if device == "cuda" and b == 128 else None
-        s = summarize(lat, b)
-        s.update(model="BIOT", component="end-to-end", device=f"GPU batch={b}", node_label=node_label)
-        if peak_mb is not None:
-            s["peak_gpu_memory_mb"] = peak_mb
-        rows.append(s)
 
-    biot_cpu = biot_build_model().to("cpu").eval()
-    for n_threads in [1, 8]:
-        torch.set_num_threads(n_threads)
-        x = torch.randn(16, 3, 6000)
-        with torch.no_grad():
-            lat = timed_runs(lambda: biot_cpu(x), "cpu")
-        s = summarize(lat, 16)
-        s.update(model="BIOT", component="end-to-end", device=f"CPU threads={n_threads}", node_label=node_label)
-        rows.append(s)
+    want_gpu = device_scope in ("both", "gpu") and device == "cuda"
+    want_cpu = device_scope in ("both", "cpu")
 
-    encoder = SetTransformer(in_channels=1, embed_dim=128, num_heads=8, num_layers=6,
-                              pooling_head=8, dropout=0.0, patch_size=640).to(device).eval()
-    for b in [1, 16, 128]:
-        x = torch.randn(b, 3, 3840, device=device)
-        mask = torch.zeros(b, 3, dtype=torch.bool, device=device)
-        with torch.no_grad():
-            if device == "cuda":
-                torch.cuda.reset_peak_memory_stats()
-            lat = timed_runs(lambda: encoder(x, mask), device)
-            peak_mb = torch.cuda.max_memory_allocated() / 1024 / 1024 if device == "cuda" and b == 128 else None
-        s = summarize(lat, b)
-        s.update(model="SleepFM (From-Scratch/Next-Token share this encoder architecture)",
-                  component="encoder", device=f"GPU batch={b}", node_label=node_label)
-        if peak_mb is not None:
-            s["peak_gpu_memory_mb"] = peak_mb
-        rows.append(s)
+    # --- BIOT: end-to-end, per channel-count condition ---
+    for n_ch, label in [(1, "1 channel"), (3, "3 channels")]:
+        if want_gpu:
+            biot_model = biot_build_model().to(device).eval()
+            for b in [1, 16, 128]:
+                x = torch.randn(b, n_ch, 6000, device=device)
+                with torch.no_grad():
+                    cell = repeated_cell(lambda: biot_model(x), device, b,
+                                          peak_mem_device="cuda" if b == 128 else None)
+                cell.update(model="BIOT", component="end-to-end", condition=label,
+                            device=f"GPU batch={b}", node_label=node_label)
+                rows.append(cell)
 
-    encoder_cpu = SetTransformer(in_channels=1, embed_dim=128, num_heads=8, num_layers=6,
-                                  pooling_head=8, dropout=0.0, patch_size=640).to("cpu").eval()
-    for n_threads in [1, 8]:
-        torch.set_num_threads(n_threads)
-        x = torch.randn(16, 3, 3840)
-        mask = torch.zeros(16, 3, dtype=torch.bool)
-        with torch.no_grad():
-            lat = timed_runs(lambda: encoder_cpu(x, mask), "cpu")
-        s = summarize(lat, 16)
-        s.update(model="SleepFM (From-Scratch/Next-Token share this encoder architecture)",
-                  component="encoder", device=f"CPU threads={n_threads}", node_label=node_label)
-        rows.append(s)
+        if want_cpu:
+            biot_cpu = biot_build_model().to("cpu").eval()
+            for n_threads in [1, 8]:
+                torch.set_num_threads(n_threads)
+                x = torch.randn(16, n_ch, 6000)
+                with torch.no_grad():
+                    cell = repeated_cell(lambda: biot_cpu(x), "cpu", 16)
+                cell.update(model="BIOT", component="end-to-end", condition=label,
+                            device=f"CPU threads={n_threads}", node_label=node_label)
+                rows.append(cell)
+
+    # --- SleepFM encoder, per channel-count condition ---
+    for n_ch, label in [(1, "1 channel"), (3, "3 channels")]:
+        if want_gpu:
+            encoder = SetTransformer(in_channels=1, embed_dim=128, num_heads=8, num_layers=6,
+                                      pooling_head=8, dropout=0.0, patch_size=640).to(device).eval()
+            for b in [1, 16, 128]:
+                x = torch.randn(b, n_ch, 3840, device=device)
+                mask = torch.zeros(b, n_ch, dtype=torch.bool, device=device)
+                with torch.no_grad():
+                    cell = repeated_cell(lambda: encoder(x, mask), device, b,
+                                          peak_mem_device="cuda" if b == 128 else None)
+                cell.update(model="SleepFM (From-Scratch/Next-Token share this encoder architecture)",
+                            component="encoder", condition=label, device=f"GPU batch={b}", node_label=node_label)
+                rows.append(cell)
+
+        if want_cpu:
+            encoder_cpu = SetTransformer(in_channels=1, embed_dim=128, num_heads=8, num_layers=6,
+                                          pooling_head=8, dropout=0.0, patch_size=640).to("cpu").eval()
+            for n_threads in [1, 8]:
+                torch.set_num_threads(n_threads)
+                x = torch.randn(16, n_ch, 3840)
+                mask = torch.zeros(16, n_ch, dtype=torch.bool)
+                with torch.no_grad():
+                    cell = repeated_cell(lambda: encoder_cpu(x, mask), "cpu", 16)
+                cell.update(model="SleepFM (From-Scratch/Next-Token share this encoder architecture)",
+                            component="encoder", condition=label, device=f"CPU threads={n_threads}", node_label=node_label)
+                rows.append(cell)
+
+    # --- SleepFM staging head, on embeddings (n_ch=3, as actually trained -- see run_flops()) ---
+    EPOCHS_PER_NIGHT = 960
+    n_ch_head = 3
+    if want_gpu:
+        head = SleepEventLSTMClassifier(embed_dim=128, num_heads=4, num_layers=2, num_classes=5,
+                                         pooling_head=4, dropout=0.0, max_seq_length=EPOCHS_PER_NIGHT).to(device).eval()
+        for b in [1, 16, 128]:
+            emb = torch.randn(b, n_ch_head, EPOCHS_PER_NIGHT, 128, device=device)
+            m = torch.zeros(b, n_ch_head, EPOCHS_PER_NIGHT, dtype=torch.bool, device=device)
+            with torch.no_grad():
+                cell = repeated_cell(lambda: head(emb, m, m), device, b,
+                                      peak_mem_device="cuda" if b == 128 else None)
+            cell.update(model="SleepFM (From-Scratch/Next-Token share this architecture)",
+                        component="head (whole night, n_ch=3)", condition="n/a (operates on embeddings)",
+                        device=f"GPU batch={b}", node_label=node_label)
+            rows.append(cell)
+
+    if want_cpu:
+        head_cpu = SleepEventLSTMClassifier(embed_dim=128, num_heads=4, num_layers=2, num_classes=5,
+                                             pooling_head=4, dropout=0.0, max_seq_length=EPOCHS_PER_NIGHT).to("cpu").eval()
+        for n_threads in [1, 8]:
+            torch.set_num_threads(n_threads)
+            emb = torch.randn(16, n_ch_head, EPOCHS_PER_NIGHT, 128)
+            m = torch.zeros(16, n_ch_head, EPOCHS_PER_NIGHT, dtype=torch.bool)
+            with torch.no_grad():
+                cell = repeated_cell(lambda: head_cpu(emb, m, m), "cpu", 16)
+            cell.update(model="SleepFM (From-Scratch/Next-Token share this architecture)",
+                        component="head (whole night, n_ch=3)", condition="n/a (operates on embeddings)",
+                        device=f"CPU threads={n_threads}", node_label=node_label)
+            rows.append(cell)
 
     gpu_after = gpu_memory_record()
     _, squeue_after = node_squeue_record()
-    return dict(node=node_name, node_label=node_label, squeue_before=squeue_before, squeue_after=squeue_after,
+    return dict(node=node_name, node_label=node_label, n_repeats=n_repeats,
+                squeue_before=squeue_before, squeue_after=squeue_after,
                 gpu_before=gpu_before, gpu_after=gpu_after, results=rows)
 
 
@@ -310,6 +368,12 @@ def main():
     ap.add_argument("--benchmark", action="store_true", help="needs a GPU")
     ap.add_argument("--node-label", default="shared-node",
                      help="'shared-node' (default) or 'exclusive-node', recorded in the output")
+    ap.add_argument("--n-repeats", type=int, default=3)
+    ap.add_argument("--n-warmup", type=int, default=10)
+    ap.add_argument("--n-timed", type=int, default=100)
+    ap.add_argument("--device-scope", default="both", choices=["both", "gpu", "cpu"],
+                     help="restrict --benchmark to just the GPU or just the CPU measurements "
+                          "(for running each on its own dedicated exclusive node)")
     args = ap.parse_args()
     if not any([args.params, args.flops, args.input_size, args.benchmark]):
         args.params = args.flops = args.input_size = True
@@ -335,9 +399,13 @@ def main():
             json.dump(rows, f, indent=2)
 
     if args.benchmark:
-        data = run_benchmark(node_label=args.node_label)
+        data = run_benchmark(node_label=args.node_label, n_warmup=args.n_warmup,
+                              n_timed=args.n_timed, n_repeats=args.n_repeats,
+                              device_scope=args.device_scope)
         print(json.dumps(data, indent=2))
-        with open(os.path.join(OUT_DIR, "part_e3_latency.json"), "w") as f:
+        suffix = "shared" if args.node_label == "shared-node" else "exclusive"
+        scope_tag = "" if args.device_scope == "both" else f"_{args.device_scope}"
+        with open(os.path.join(OUT_DIR, f"part_e3_latency_{suffix}{scope_tag}.json"), "w") as f:
             json.dump(data, f, indent=2)
 
 
