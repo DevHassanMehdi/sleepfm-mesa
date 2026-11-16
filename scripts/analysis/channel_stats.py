@@ -85,6 +85,57 @@ def paired_wilcoxon(a, b):
     return median_diff, float(p), eff
 
 
+def paired_ttest(a, b):
+    """Paired (one-sample on the differences) t-test. Returns a dict with
+    mean_diff, sd_diff (sample sd, ddof=1), t, df, p (two-sided),
+    cohens_dz (mean_diff/sd_diff -- the standardized effect size for a
+    paired t-test), and the analytic 95% CI of the mean difference
+    (mean_diff +/- t_crit(df, 0.975) * sd_diff/sqrt(n)). a - b throughout."""
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    diffs = a - b
+    n = len(diffs)
+    mean_diff = float(np.mean(diffs))
+    sd_diff = float(np.std(diffs, ddof=1))
+    df = n - 1
+    if sd_diff == 0:
+        t_stat, p = (np.inf if mean_diff != 0 else 0.0), (0.0 if mean_diff != 0 else 1.0)
+        dz = np.inf if mean_diff != 0 else 0.0
+        ci_lo = ci_hi = mean_diff
+    else:
+        se = sd_diff / np.sqrt(n)
+        t_stat = mean_diff / se
+        p = float(2 * scipy_stats.t.sf(abs(t_stat), df))
+        dz = mean_diff / sd_diff
+        t_crit = scipy_stats.t.ppf(0.975, df)
+        ci_lo = mean_diff - t_crit * se
+        ci_hi = mean_diff + t_crit * se
+    return dict(mean_diff=mean_diff, sd_diff=sd_diff, t=float(t_stat), df=df, p=float(p),
+                cohens_dz=float(dz), ci95_lo=float(ci_lo), ci95_hi=float(ci_hi), n=n)
+
+
+def skewness(x):
+    """Sample skewness (Fisher-Pearson, bias-corrected -- scipy default
+    `bias=True` is the population estimator; this project reports the
+    bias-corrected (adjusted Fisher-Pearson) version, matching what most
+    stats packages label plain "skewness" for a sample)."""
+    return float(scipy_stats.skew(np.asarray(x, dtype=float), bias=False))
+
+
+def excess_kurtosis(x):
+    """Sample excess kurtosis (Fisher's definition: normal distribution
+    -> 0), bias-corrected."""
+    return float(scipy_stats.kurtosis(np.asarray(x, dtype=float), fisher=True, bias=False))
+
+
+def kendalls_w(friedman_statistic, n_subjects, k_conditions):
+    """Kendall's W (coefficient of concordance) from a Friedman chi-square
+    statistic: W = statistic / (n * (k - 1)). In [0, 1]; 0 = no agreement
+    across the n rankers (subjects) on the k related conditions, 1 =
+    perfect agreement."""
+    return float(friedman_statistic / (n_subjects * (k_conditions - 1)))
+
+
 def holm_adjust(pvalues):
     """Holm step-down adjustment. Returns adjusted p-values in the
     original order of `pvalues`."""
@@ -224,68 +275,83 @@ def aligned_cm_pair(confusion_data, model, cond_a, cond_b, subjects=None):
     return keys, da["cm"][[idx_a[s] for s in keys]], db["cm"][[idx_b[s] for s in keys]]
 
 
-def pooled_cluster_bootstrap_cm(cm_array, n_resamples=2000, seed=0, confidence=0.95):
+def accuracy_from_cm(cm):
+    """Pooled accuracy from one pooled confusion matrix: trace / total."""
+    cm = np.asarray(cm, dtype=float)
+    total = cm.sum()
+    return float(np.trace(cm) / total) if total > 0 else 0.0
+
+
+def pooled_cluster_bootstrap_cm(cm_array, n_resamples=2000, seed=0, confidence=0.95, stat_fn=macro_f1_from_cm):
     """Resample subjects (rows of cm_array) with replacement, pool
-    (sum) their confusion matrices, recompute macro F1 from the pooled
-    counts each draw -- exactly the task's "resample subjects ... and
-    recompute the pooled macro F1 from pooled counts in each resample."
-    Point estimate = macro F1 from the ACTUAL (non-resampled) pooled sum
-    over all subjects, not from the bootstrap distribution's own mean."""
+    (sum) their confusion matrices, recompute `stat_fn` (macro F1 by
+    default; pass accuracy_from_cm for the accuracy version) from the
+    pooled counts each draw -- exactly the task's "resample subjects ...
+    and recompute the pooled [statistic] from pooled counts in each
+    resample." Point estimate = stat_fn from the ACTUAL (non-resampled)
+    pooled sum over all subjects, not from the bootstrap distribution's
+    own mean."""
     n = cm_array.shape[0]
-    point = macro_f1_from_cm(cm_array.sum(axis=0))
+    point = stat_fn(cm_array.sum(axis=0))
     rng = np.random.default_rng(seed)
     boot = np.empty(n_resamples, dtype=float)
     for i in range(n_resamples):
         idx = rng.integers(0, n, size=n)
-        boot[i] = macro_f1_from_cm(cm_array[idx].sum(axis=0))
+        boot[i] = stat_fn(cm_array[idx].sum(axis=0))
     alpha = (1 - confidence) / 2
     lo, hi = np.quantile(boot, [alpha, 1 - alpha])
     return point, float(lo), float(hi), boot
 
 
-def paired_pooled_bootstrap_cm(cm_a, cm_b, n_resamples=2000, seed=0, confidence=0.95):
+def paired_pooled_bootstrap_cm(cm_a, cm_b, n_resamples=2000, seed=0, confidence=0.95, stat_fn=macro_f1_from_cm):
     """Same subject-resampling indices drawn for both conditions each
-    draw (paired, preserving within-subject pairing), pooled macro F1
-    difference (a - b) recomputed from pooled counts each draw."""
+    draw (paired, preserving within-subject pairing), pooled statistic
+    difference (a - b) recomputed from pooled counts each draw. `stat_fn`
+    defaults to macro F1; pass accuracy_from_cm for the accuracy version."""
     assert cm_a.shape[0] == cm_b.shape[0]
     n = cm_a.shape[0]
-    point = macro_f1_from_cm(cm_a.sum(axis=0)) - macro_f1_from_cm(cm_b.sum(axis=0))
+    point = stat_fn(cm_a.sum(axis=0)) - stat_fn(cm_b.sum(axis=0))
     rng = np.random.default_rng(seed)
     boot = np.empty(n_resamples, dtype=float)
     for i in range(n_resamples):
         idx = rng.integers(0, n, size=n)
-        boot[i] = macro_f1_from_cm(cm_a[idx].sum(axis=0)) - macro_f1_from_cm(cm_b[idx].sum(axis=0))
+        boot[i] = stat_fn(cm_a[idx].sum(axis=0)) - stat_fn(cm_b[idx].sum(axis=0))
     alpha = (1 - confidence) / 2
     lo, hi = np.quantile(boot, [alpha, 1 - alpha])
     return point, float(lo), float(hi), boot
 
 
-def part_d1_primary_pooled(confusion_data, common_subjects, fold_level_df, n_resamples=2000, seed=0):
+def part_d1_primary_pooled(confusion_data, common_subjects, fold_level_df, n_resamples=2000, seed=0,
+                            stat_fn=macro_f1_from_cm, stat_name="macro_f1", fold_metric="macro_f1"):
     """D.1 (PRIMARY stat): epoch-pooled macro F1 per run (all 2056
     subjects pooled, regardless of fold) with a 95% subject-cluster
     bootstrap CI from pooled counts, next to the per-fold values (already
     epoch-pooled, one confusion matrix per fold -- must equal the
-    published 02/04/06 fold macro F1 exactly, carried in fold_level_df)."""
+    published 02/04/06 fold macro F1 exactly, carried in fold_level_df).
+    `stat_fn`/`stat_name`/`fold_metric` switch this to the accuracy
+    version (pass accuracy_from_cm, "accuracy", "accuracy")."""
     rows = []
     for (model, cond), d in confusion_data.items():
         keys, cm = aligned_cm(confusion_data, model, cond, common_subjects)
-        point, lo, hi, _ = pooled_cluster_bootstrap_cm(cm, n_resamples=n_resamples, seed=seed)
+        point, lo, hi, _ = pooled_cluster_bootstrap_cm(cm, n_resamples=n_resamples, seed=seed, stat_fn=stat_fn)
         fold_g = fold_level_df[(fold_level_df["model"] == model) & (fold_level_df["condition"] == cond)]
-        rows.append(dict(model=model, condition=cond,
-                          run_pooled_macro_f1=point, ci95_lo=lo, ci95_hi=hi,
-                          n_subjects=len(keys),
-                          per_fold_macro_f1=fold_g.sort_values("fold")["macro_f1"].tolist()))
+        rows.append({
+            "model": model, "condition": cond,
+            f"run_pooled_{stat_name}": point, "ci95_lo": lo, "ci95_hi": hi,
+            "n_subjects": len(keys),
+            f"per_fold_{stat_name}": fold_g.sort_values("fold")[fold_metric].tolist(),
+        })
     return rows
 
 
-def part_d2_primary_paired(confusion_data, common_subjects, n_resamples=2000, seed=0):
+def part_d2_primary_paired(confusion_data, common_subjects, n_resamples=2000, seed=0, stat_fn=macro_f1_from_cm):
     """D.2 (PRIMARY stat): paired differences on the run-level pooled
-    macro F1, same pairs as the secondary D.2, 95% CI via paired pooled
-    bootstrap, Holm-adjusted per model. No Wilcoxon p-value here -- the
-    pooled statistic is a single number per run, not a per-subject
-    sample, so there is nothing to rank-sum; significance is read off the
-    bootstrap CI (excludes zero or not), per the task's own wording
-    ("paired difference intervals")."""
+    macro F1 (or accuracy_from_cm for the accuracy version), same pairs
+    as the secondary D.2, 95% CI via paired pooled bootstrap. No
+    Wilcoxon p-value here -- the pooled statistic is a single number per
+    run, not a per-subject sample, so there is nothing to rank-sum;
+    significance is read off the bootstrap CI (excludes zero or not),
+    per the task's own wording ("paired difference intervals")."""
     all_rows = []
     for model in MODELS:
         ref_cond, ref_label = REFERENCE_CONDITION[model]
@@ -296,7 +362,7 @@ def part_d2_primary_paired(confusion_data, common_subjects, n_resamples=2000, se
             keys, cm_a, cm_b = aligned_cm_pair(confusion_data, model, cond_a, cond_b, common_subjects)
             if len(keys) == 0:
                 continue
-            point, lo, hi, _ = paired_pooled_bootstrap_cm(cm_a, cm_b, n_resamples=n_resamples, seed=seed)
+            point, lo, hi, _ = paired_pooled_bootstrap_cm(cm_a, cm_b, n_resamples=n_resamples, seed=seed, stat_fn=stat_fn)
             all_rows.append(dict(model=model, condition_a=cond_a, condition_b=cond_b,
                                   reference_label=(ref_label if cond_b == ref_cond else ""),
                                   n_subjects=len(keys), point_diff=point,
@@ -304,9 +370,11 @@ def part_d2_primary_paired(confusion_data, common_subjects, n_resamples=2000, se
     return all_rows
 
 
-def part_d3_primary_tost(confusion_data, common_subjects, margins=(0.01, 0.02), n_resamples=2000, seed=0):
+def part_d3_primary_tost(confusion_data, common_subjects, margins=(0.01, 0.02), n_resamples=2000, seed=0,
+                          stat_fn=macro_f1_from_cm):
     """D.3 (PRIMARY stat): TOST equivalence on the run-level pooled macro
-    F1 difference, 90% CI via the same paired pooled bootstrap."""
+    F1 difference (or accuracy_from_cm for the accuracy version), 90% CI
+    via the same paired pooled bootstrap."""
     rows = []
     for model in MODELS:
         ref_cond, ref_label = REFERENCE_CONDITION[model]
@@ -318,7 +386,7 @@ def part_d3_primary_tost(confusion_data, common_subjects, margins=(0.01, 0.02), 
             if len(keys) == 0:
                 continue
             point, lo90, hi90, _ = paired_pooled_bootstrap_cm(cm_a, cm_b, n_resamples=n_resamples,
-                                                               seed=seed, confidence=0.90)
+                                                               seed=seed, confidence=0.90, stat_fn=stat_fn)
             for margin in margins:
                 verdict = tost_verdict(lo90, hi90, margin)
                 rows.append(dict(model=model, condition_a=cond_a, condition_b=cond_b,
@@ -476,6 +544,83 @@ def part_d2_paired_within_model(df, common_subjects, n_resamples=2000, seed=0):
     return all_rows
 
 
+def part_d2_ttest_vs_wilcoxon(df, common_subjects, metric="macro_f1", n_resamples=2000, seed=0):
+    """D.2 extended (task item 1): for every D.2 pair, a paired t-test
+    (mean diff, sd of diffs, t, df, two-sided p, Cohen's dz, analytic 95%
+    CI of the mean diff) next to the paired Wilcoxon (p, rank-biserial,
+    Hodges-Lehmann estimate), plus the skewness and excess kurtosis of
+    the paired differences. Holm-adjustment is done SEPARATELY for the
+    t-test p-values and the Wilcoxon p-values, each within one model
+    across its 6 pairs -- the two tests' multiplicity corrections must
+    not interact, since they are two different hypotheses about the same
+    data, not one family. `metric` is "macro_f1" or "accuracy"."""
+    all_rows = []
+    for model in MODELS:
+        ref_cond, ref_label = REFERENCE_CONDITION[model]
+        pairs = [("EEG1 only", "EEG2 only"), ("EEG1 only", "EEG3 only"), ("EEG2 only", "EEG3 only")]
+        for ch in SINGLE_CHANNEL_CONDITIONS:
+            pairs.append((ch, ref_cond))
+        model_rows = []
+        for cond_a, cond_b in pairs:
+            subs, a, b = aligned_pair(df, model, cond_a, cond_b, metric, common_subjects)
+            if len(subs) == 0:
+                continue
+            diffs = a - b
+            tt = paired_ttest(a, b)
+            med, p_w, eff_w = paired_wilcoxon(a, b)
+            hl = hodges_lehmann(diffs)
+            model_rows.append(dict(
+                model=model, condition_a=cond_a, condition_b=cond_b,
+                reference_label=(ref_label if cond_b == ref_cond else ""),
+                n_subjects=len(subs),
+                mean_diff=tt["mean_diff"], sd_diff=tt["sd_diff"], t=tt["t"], df=tt["df"],
+                ttest_p=tt["p"], cohens_dz=tt["cohens_dz"],
+                ttest_ci95_lo=tt["ci95_lo"], ttest_ci95_hi=tt["ci95_hi"],
+                median_diff=med, wilcoxon_p=p_w, rank_biserial=eff_w, hodges_lehmann_diff=hl,
+                skewness=skewness(diffs), excess_kurtosis=excess_kurtosis(diffs),
+            ))
+        ttest_holm = holm_adjust([r["ttest_p"] for r in model_rows]) if model_rows else []
+        wilcoxon_holm = holm_adjust([r["wilcoxon_p"] for r in model_rows]) if model_rows else []
+        for r, thp, whp in zip(model_rows, ttest_holm, wilcoxon_holm):
+            r["ttest_holm_p"] = float(thp)
+            r["wilcoxon_holm_p"] = float(whp)
+        all_rows.extend(model_rows)
+    return all_rows
+
+
+def find_ttest_wilcoxon_disagreements(rows, alpha=0.05):
+    """Pairs where the Holm-adjusted t-test and Holm-adjusted Wilcoxon
+    disagree about significance at `alpha` (task item 1)."""
+    return [r for r in rows if (r["ttest_holm_p"] < alpha) != (r["wilcoxon_holm_p"] < alpha)]
+
+
+def part_fold_level_ttest(fold_level_df, metric="macro_f1"):
+    """Supplement (task item 2): a paired t-test on the 5 fold-level
+    values (df=4) for each D.2 pair. Low power (n=5) and the folds are
+    NOT independent observations (k-fold CV: every pair of folds shares
+    most of its training data, since each fold's training set is the
+    other 4 folds' subjects) -- reported as a labeled supplement, not a
+    substitute for the subject-level tests."""
+    rows = []
+    for model in MODELS:
+        ref_cond, ref_label = REFERENCE_CONDITION[model]
+        pairs = [("EEG1 only", "EEG2 only"), ("EEG1 only", "EEG3 only"), ("EEG2 only", "EEG3 only")]
+        for ch in SINGLE_CHANNEL_CONDITIONS:
+            pairs.append((ch, ref_cond))
+        for cond_a, cond_b in pairs:
+            a = fold_level_df[(fold_level_df["model"] == model) & (fold_level_df["condition"] == cond_a)] \
+                .sort_values("fold")[metric].to_numpy()
+            b = fold_level_df[(fold_level_df["model"] == model) & (fold_level_df["condition"] == cond_b)] \
+                .sort_values("fold")[metric].to_numpy()
+            if len(a) == 0 or len(b) == 0:
+                continue
+            tt = paired_ttest(a, b)
+            rows.append(dict(model=model, condition_a=cond_a, condition_b=cond_b,
+                              reference_label=(ref_label if cond_b == ref_cond else ""),
+                              n_folds=len(a), **tt))
+    return rows
+
+
 def find_significant_but_ci_includes_zero(d2_secondary_rows, alpha=0.05):
     """Task item 2: list every pair where Holm p < alpha but the 95% CI
     of the MEAN difference (mean_diff_macro_f1's bootstrap CI) includes
@@ -511,13 +656,31 @@ def part_d3_tost(df, common_subjects, margins=(0.01, 0.02), n_resamples=2000, se
     return rows
 
 
-def part_d4_friedman(df, common_subjects):
+def find_tost_verdict_changes(primary_rows, secondary_rows):
+    """Pairs whose TOST verdict differs between the PRIMARY (epoch-pooled)
+    and SECONDARY (mean per-subject) statistics, matched by
+    (model, condition_a, condition_b, margin) (task item 3)."""
+    sec_by_key = {(r["model"], r["condition_a"], r["condition_b"], r["margin"]): r["verdict"]
+                  for r in secondary_rows}
+    changes = []
+    for r in primary_rows:
+        key = (r["model"], r["condition_a"], r["condition_b"], r["margin"])
+        sec_verdict = sec_by_key.get(key)
+        if sec_verdict is not None and sec_verdict != r["verdict"]:
+            changes.append(dict(model=r["model"], condition_a=r["condition_a"], condition_b=r["condition_b"],
+                                 margin=r["margin"], primary_verdict=r["verdict"], secondary_verdict=sec_verdict))
+    return changes
+
+
+def part_d4_friedman(df, common_subjects, metric="macro_f1"):
     """D.4: Friedman test across EEG1/EEG2/EEG3 per model, Holm-adjusted
-    pairwise Wilcoxon after."""
+    pairwise Wilcoxon after. `metric` is "macro_f1" (default) or
+    "accuracy". Each friedman_row also carries Kendall's W (df=k-1=2,
+    computed from the statistic via kendalls_w) for task item 5's Table C."""
     friedman_rows = []
     posthoc_rows = []
     for model in MODELS:
-        subs1, a, _ = aligned_pair(df, model, "EEG1 only", "EEG2 only", "macro_f1", common_subjects)
+        subs1, a, _ = aligned_pair(df, model, "EEG1 only", "EEG2 only", metric, common_subjects)
         common3 = (set(df[(df["model"] == model) & (df["condition"] == "EEG1 only")]["subject_id"])
                    & set(df[(df["model"] == model) & (df["condition"] == "EEG2 only")]["subject_id"])
                    & set(df[(df["model"] == model) & (df["condition"] == "EEG3 only")]["subject_id"]))
@@ -526,10 +689,12 @@ def part_d4_friedman(df, common_subjects):
         common3 = sorted(common3)
         vals = {}
         for ch in SINGLE_CHANNEL_CONDITIONS:
-            s = df[(df["model"] == model) & (df["condition"] == ch)].set_index("subject_id")["macro_f1"]
+            s = df[(df["model"] == model) & (df["condition"] == ch)].set_index("subject_id")[metric]
             vals[ch] = s.loc[common3].to_numpy()
         stat, p = friedman(vals["EEG1 only"], vals["EEG2 only"], vals["EEG3 only"])
-        friedman_rows.append(dict(model=model, n_subjects=len(common3), statistic=stat, p_value=p))
+        w = kendalls_w(stat, len(common3), 3)
+        friedman_rows.append(dict(model=model, n_subjects=len(common3), statistic=stat, df=2, p_value=p,
+                                   kendalls_w=w))
 
         pairs = [("EEG1 only", "EEG2 only"), ("EEG1 only", "EEG3 only"), ("EEG2 only", "EEG3 only")]
         model_posthoc = []

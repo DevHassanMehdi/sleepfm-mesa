@@ -2,6 +2,7 @@ import os
 import sys
 
 import numpy as np
+from scipy import stats as scipy_stats
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts", "analysis"))
 
@@ -101,6 +102,68 @@ def test_hodges_lehmann_robust_to_one_outlier():
     assert cs.hodges_lehmann(diffs) < 1.0
 
 
+def test_paired_ttest_matches_scipy():
+    rng = np.random.default_rng(5)
+    a = rng.normal(0.7, 0.05, size=50)
+    b = a - 0.03 + rng.normal(0, 0.01, size=50)
+    result = cs.paired_ttest(a, b)
+    t_ref, p_ref = scipy_stats.ttest_rel(a, b)
+    assert abs(result["t"] - t_ref) < 1e-9
+    assert abs(result["p"] - p_ref) < 1e-9
+    assert result["df"] == 49
+    assert result["ci95_lo"] < result["mean_diff"] < result["ci95_hi"]
+
+
+def test_paired_ttest_cohens_dz_matches_mean_over_sd():
+    a = np.array([0.8, 0.7, 0.9, 0.6, 0.75])
+    b = np.array([0.7, 0.65, 0.8, 0.55, 0.70])
+    result = cs.paired_ttest(a, b)
+    diffs = a - b
+    expected_dz = np.mean(diffs) / np.std(diffs, ddof=1)
+    assert abs(result["cohens_dz"] - expected_dz) < 1e-9
+
+
+def test_paired_ttest_zero_for_identical_arrays():
+    a = np.array([0.7, 0.8, 0.6, 0.75, 0.65])
+    result = cs.paired_ttest(a, a)
+    assert result["mean_diff"] == 0.0
+    assert result["sd_diff"] == 0.0
+    assert result["p"] == 1.0
+    assert result["cohens_dz"] == 0.0
+
+
+def test_skewness_zero_for_symmetric_data():
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
+    assert abs(cs.skewness(x)) < 1e-9
+
+
+def test_skewness_positive_for_right_skewed_data():
+    x = np.array([1.0, 1.0, 1.0, 1.0, 10.0])
+    assert cs.skewness(x) > 0
+
+
+def test_excess_kurtosis_near_zero_for_normal_like_data():
+    rng = np.random.default_rng(9)
+    x = rng.normal(0, 1, size=100000)
+    assert abs(cs.excess_kurtosis(x)) < 0.2
+
+
+def test_excess_kurtosis_positive_for_heavy_tailed_data():
+    rng = np.random.default_rng(9)
+    x = rng.standard_t(df=2, size=10000)  # heavy-tailed
+    assert cs.excess_kurtosis(x) > 1.0
+
+
+def test_kendalls_w_in_unit_range():
+    w = cs.kendalls_w(friedman_statistic=20.0, n_subjects=100, k_conditions=3)
+    assert 0 <= w <= 1
+    assert abs(w - 20.0 / (100 * 2)) < 1e-12
+
+
+def test_kendalls_w_zero_for_zero_statistic():
+    assert cs.kendalls_w(0.0, 100, 3) == 0.0
+
+
 def test_macro_f1_from_cm_perfect_classifier():
     cm = np.eye(5) * 10
     assert cs.macro_f1_from_cm(cm) == 1.0
@@ -126,6 +189,25 @@ def test_pooled_cluster_bootstrap_cm_point_is_exact_pooled_value():
     assert point == cs.macro_f1_from_cm(cm_array.sum(axis=0))
     assert lo <= point <= hi
     assert len(boot) == 300
+
+
+def test_accuracy_from_cm_matches_trace_over_total():
+    cm = np.array([[8, 1, 1], [2, 7, 1], [0, 1, 9]])
+    assert abs(cs.accuracy_from_cm(cm) - (8 + 7 + 9) / cm.sum()) < 1e-12
+
+
+def test_accuracy_from_cm_perfect_classifier():
+    cm = np.eye(5) * 10
+    assert cs.accuracy_from_cm(cm) == 1.0
+
+
+def test_pooled_cluster_bootstrap_cm_accepts_accuracy_stat_fn():
+    rng = np.random.default_rng(1)
+    cm_array = rng.integers(0, 20, size=(20, 5, 5))
+    point, lo, hi, boot = cs.pooled_cluster_bootstrap_cm(cm_array, n_resamples=300, seed=0,
+                                                          stat_fn=cs.accuracy_from_cm)
+    assert point == cs.accuracy_from_cm(cm_array.sum(axis=0))
+    assert lo <= point <= hi
 
 
 def test_paired_pooled_bootstrap_cm_zero_for_identical_inputs():
@@ -256,6 +338,65 @@ def test_part_d2_detects_the_injected_3channel_bump():
     for r in fs_vs_ref:
         assert r["median_diff_macro_f1"] < -0.02  # single channel scores lower than the +0.05 reference
         assert "holm_adjusted_p" in r
+
+
+def test_part_d2_ttest_vs_wilcoxon_detects_the_injected_3channel_bump():
+    df = _synthetic_df(n_subjects=40)
+    _, _, common = cs.check_same_2056_subjects(df)
+    rows = cs.part_d2_ttest_vs_wilcoxon(df, common, metric="macro_f1", n_resamples=200, seed=1)
+    fs_vs_ref = [r for r in rows if r["model"] == "SleepFM From-Scratch" and r["reference_label"]]
+    assert len(fs_vs_ref) == 3
+    for r in fs_vs_ref:
+        assert r["mean_diff"] < -0.02
+        assert r["ttest_p"] < 0.001
+        assert r["ttest_holm_p"] < 0.001
+        assert r["ttest_ci95_lo"] <= r["mean_diff"] <= r["ttest_ci95_hi"]
+        for k in ("skewness", "excess_kurtosis", "wilcoxon_p", "wilcoxon_holm_p", "hodges_lehmann_diff"):
+            assert k in r
+
+
+def test_part_d2_ttest_vs_wilcoxon_accepts_accuracy_metric():
+    df = _synthetic_df(n_subjects=40)
+    _, _, common = cs.check_same_2056_subjects(df)
+    rows = cs.part_d2_ttest_vs_wilcoxon(df, common, metric="accuracy", n_resamples=200, seed=1)
+    assert len(rows) > 0
+
+
+def test_find_ttest_wilcoxon_disagreements_flags_opposite_significance():
+    rows = [
+        dict(model="m", condition_a="a", condition_b="b", ttest_holm_p=0.2, wilcoxon_holm_p=0.001),  # disagree
+        dict(model="m", condition_a="a", condition_b="c", ttest_holm_p=0.001, wilcoxon_holm_p=0.001),  # agree
+        dict(model="m", condition_a="a", condition_b="d", ttest_holm_p=0.2, wilcoxon_holm_p=0.3),  # agree
+    ]
+    disagreements = cs.find_ttest_wilcoxon_disagreements(rows)
+    assert len(disagreements) == 1
+    assert disagreements[0]["condition_b"] == "b"
+
+
+def test_part_fold_level_ttest_low_df_and_detects_bump():
+    df = _synthetic_df(n_subjects=40)
+    fold_level_df = _synthetic_fold_level_df(df)
+    rows = cs.part_fold_level_ttest(fold_level_df, metric="macro_f1")
+    fs_vs_ref = [r for r in rows if r["model"] == "SleepFM From-Scratch" and r["reference_label"]]
+    assert len(fs_vs_ref) == 3
+    for r in fs_vs_ref:
+        assert r["df"] == 4  # 5 folds
+        assert r["mean_diff"] < -0.02
+
+
+def test_find_tost_verdict_changes_detects_a_flip():
+    primary = [dict(model="m", condition_a="a", condition_b="b", margin=0.01, verdict="inconclusive")]
+    secondary = [dict(model="m", condition_a="a", condition_b="b", margin=0.01, verdict="equivalent")]
+    changes = cs.find_tost_verdict_changes(primary, secondary)
+    assert len(changes) == 1
+    assert changes[0]["primary_verdict"] == "inconclusive"
+    assert changes[0]["secondary_verdict"] == "equivalent"
+
+
+def test_find_tost_verdict_changes_empty_when_identical():
+    primary = [dict(model="m", condition_a="a", condition_b="b", margin=0.01, verdict="equivalent")]
+    secondary = [dict(model="m", condition_a="a", condition_b="b", margin=0.01, verdict="equivalent")]
+    assert cs.find_tost_verdict_changes(primary, secondary) == []
 
 
 def test_part_d3_tost_runs_and_returns_known_verdicts():

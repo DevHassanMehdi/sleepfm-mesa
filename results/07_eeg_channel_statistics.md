@@ -235,6 +235,100 @@ Diff = condition A minus condition B. Holm adjustment is applied within each mod
 | SleepFM Next-Token | EEG2 only | EEG3 only | 4.15e-05 | 0.0011 | [-0.0044, 0.0070] | 0.0059 |
 
 
+### D.2 extended: paired t-test against the paired Wilcoxon (task item 1)
+Per-subject macro F1 and accuracy, same 2056 subjects, same D.2 pairs. The paired t-test (mean difference, sd of differences, t, df, two-sided p, Cohen's dz, analytic 95% CI of the mean difference) is reported next to the paired Wilcoxon (p, rank-biserial, Hodges-Lehmann estimate). Holm adjustment is done SEPARATELY for the t-test p-values and the Wilcoxon p-values, each within one model across its 6 pairs -- these are two different hypotheses about the same data, not one family, so their multiplicity corrections must not interact. Skewness and excess kurtosis of the paired differences are also given (both 0 for a normal distribution).
+
+**Per-subject macro F1:**
+
+*No marks: paired comparison statistics, not a ranked comparison.*
+<!-- spec: items=paired t-test vs Wilcoxon (macro F1); marks=none; note=paired comparison statistics, not a ranked comparison -->
+| Model | Condition A | Condition B | Reference | Mean diff | sd of diff | t | df | t-test p | t-test Holm p | Cohen's dz | t-test 95% CI | Wilcoxon p | Wilcoxon Holm p | Rank-biserial | Hodges-Lehmann diff | Skewness | Excess kurtosis |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | -0.0012 | 0.0993 | -0.552 | 2055 | 0.5809 | 1.0000 | -0.012 | [-0.0055, 0.0031] | 0.0001 | 0.0003 | -0.099 | -0.0050 | +0.628 | +8.318 |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | -0.0012 | 0.1160 | -0.484 | 2055 | 0.6284 | 1.0000 | -0.011 | [-0.0063, 0.0038] | 0.4594 | 0.4594 | +0.019 | +0.0012 | -0.107 | +4.479 |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | -0.0000 | 0.1211 | -0.011 | 2055 | 0.9912 | 1.0000 | -0.000 | [-0.0053, 0.0052] | 0.0099 | 0.0198 | +0.066 | +0.0041 | -0.319 | +4.689 |
+| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0447 | 0.0823 | -24.628 | 2055 | 1.43e-117 | 8.57e-117 | -0.543 | [-0.0483, -0.0411] | 5.19e-142 | 3.12e-141 | -0.646 | -0.0359 | -1.330 | +6.430 |
+| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0435 | 0.0848 | -23.257 | 2055 | 2.11e-106 | 8.44e-106 | -0.513 | [-0.0472, -0.0398] | 3.65e-137 | 1.83e-136 | -0.635 | -0.0316 | -1.928 | +6.477 |
+| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0435 | 0.0840 | -23.465 | 2055 | 4.46e-108 | 2.23e-107 | -0.518 | [-0.0471, -0.0398] | 8.62e-133 | 3.45e-132 | -0.624 | -0.0349 | -1.627 | +5.992 |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.0029 | 0.1045 | 1.266 | 2055 | 0.2055 | 0.4110 | +0.028 | [-0.0016, 0.0074] | 0.0480 | 0.0480 | -0.050 | -0.0023 | +0.434 | +11.936 |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.0041 | 0.1226 | 1.505 | 2055 | 0.1325 | 0.3975 | +0.033 | [-0.0012, 0.0094] | 0.0037 | 0.0074 | +0.074 | +0.0041 | -0.001 | +7.280 |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.0011 | 0.1269 | 0.411 | 2055 | 0.6813 | 0.6813 | +0.009 | [-0.0043, 0.0066] | 1.38e-05 | 4.15e-05 | +0.111 | +0.0059 | -0.155 | +6.732 |
+| SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0304 | 0.0831 | -16.578 | 2055 | 4.99e-58 | 2.00e-57 | -0.366 | [-0.0340, -0.0268] | 6.35e-84 | 3.17e-83 | -0.494 | -0.0215 | -2.327 | +12.770 |
+| SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0333 | 0.0875 | -17.254 | 2055 | 2.11e-62 | 1.06e-61 | -0.381 | [-0.0371, -0.0295] | 9.05e-83 | 3.62e-82 | -0.491 | -0.0205 | -2.207 | +8.815 |
+| SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0345 | 0.0877 | -17.821 | 2055 | 3.55e-66 | 2.13e-65 | -0.393 | [-0.0383, -0.0307] | 2.92e-93 | 1.75e-92 | -0.522 | -0.0254 | -2.034 | +9.914 |
+| BIOT | EEG1 only | EEG2 only |  | 0.0083 | 0.1026 | 3.649 | 2055 | 0.0003 | 0.0005 | +0.080 | [0.0038, 0.0127] | 0.0010 | 0.0020 | +0.084 | +0.0043 | +0.695 | +10.744 |
+| BIOT | EEG1 only | EEG3 only |  | -0.0041 | 0.1259 | -1.459 | 2055 | 0.1446 | 0.1446 | -0.032 | [-0.0095, 0.0014] | 0.1587 | 0.1587 | -0.036 | -0.0024 | -0.157 | +5.233 |
+| BIOT | EEG2 only | EEG3 only |  | -0.0123 | 0.1299 | -4.297 | 2055 | 1.81e-05 | 5.44e-05 | -0.095 | [-0.0179, -0.0067] | 3.97e-07 | 1.19e-06 | -0.129 | -0.0081 | -0.295 | +5.023 |
+| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0586 | 0.0820 | -32.407 | 2055 | 1.87e-186 | 9.34e-186 | -0.715 | [-0.0622, -0.0551] | 1.04e-234 | 5.22e-234 | -0.833 | -0.0475 | -2.161 | +8.502 |
+| BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0669 | 0.0916 | -33.124 | 2055 | 3.67e-193 | 2.20e-192 | -0.731 | [-0.0708, -0.0629] | 7.50e-244 | 4.50e-243 | -0.849 | -0.0530 | -2.210 | +7.553 |
+| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0546 | 0.0879 | -28.149 | 2055 | 9.83e-148 | 3.93e-147 | -0.621 | [-0.0584, -0.0508] | 3.08e-201 | 1.23e-200 | -0.771 | -0.0433 | -2.021 | +8.359 |
+
+**Per-subject accuracy:**
+
+*No marks: paired comparison statistics, not a ranked comparison.*
+<!-- spec: items=paired t-test vs Wilcoxon (accuracy); marks=none; note=paired comparison statistics, not a ranked comparison -->
+| Model | Condition A | Condition B | Reference | Mean diff | sd of diff | t | df | t-test p | t-test Holm p | Cohen's dz | t-test 95% CI | Wilcoxon p | Wilcoxon Holm p | Rank-biserial | Hodges-Lehmann diff | Skewness | Excess kurtosis |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | 0.0030 | 0.0870 | 1.542 | 2055 | 0.1232 | 0.3695 | +0.034 | [-0.0008, 0.0067] | 0.1659 | 0.1659 | +0.036 | +0.0013 | -0.104 | +10.649 |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | 0.0013 | 0.1036 | 0.552 | 2055 | 0.5810 | 0.9168 | +0.012 | [-0.0032, 0.0057] | 0.0008 | 0.0025 | +0.085 | +0.0041 | -0.253 | +6.709 |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | -0.0017 | 0.1038 | -0.742 | 2055 | 0.4584 | 0.9168 | -0.016 | [-0.0062, 0.0028] | 0.0566 | 0.1133 | +0.049 | +0.0022 | -0.280 | +6.151 |
+| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0307 | 0.0769 | -18.112 | 2055 | 3.83e-68 | 1.53e-67 | -0.399 | [-0.0340, -0.0274] | 9.19e-87 | 3.68e-86 | -0.506 | -0.0188 | -2.358 | +11.400 |
+| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0337 | 0.0745 | -20.485 | 2055 | 5.16e-85 | 3.10e-84 | -0.452 | [-0.0369, -0.0304] | 9.05e-113 | 5.43e-112 | -0.578 | -0.0206 | -2.477 | +8.900 |
+| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0320 | 0.0743 | -19.498 | 2055 | 7.98e-78 | 3.99e-77 | -0.430 | [-0.0352, -0.0288] | 6.08e-111 | 3.04e-110 | -0.572 | -0.0216 | -2.484 | +11.603 |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.0040 | 0.0964 | 1.871 | 2055 | 0.0615 | 0.1844 | +0.041 | [-0.0002, 0.0081] | 0.9774 | 1.0000 | +0.001 | +0.0000 | +0.027 | +14.808 |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.0000 | 0.1139 | 0.011 | 2055 | 0.9913 | 0.9913 | +0.000 | [-0.0049, 0.0050] | 0.5167 | 1.0000 | +0.017 | +0.0007 | -0.135 | +9.825 |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | -0.0040 | 0.1145 | -1.564 | 2055 | 0.1180 | 0.2360 | -0.034 | [-0.0089, 0.0010] | 0.9876 | 1.0000 | +0.000 | +0.0000 | +0.064 | +7.777 |
+| SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0280 | 0.0807 | -15.728 | 2055 | 1.02e-52 | 5.12e-52 | -0.347 | [-0.0315, -0.0245] | 1.46e-85 | 7.32e-85 | -0.503 | -0.0159 | -3.143 | +17.515 |
+| SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0320 | 0.0823 | -17.606 | 2055 | 9.83e-65 | 5.90e-64 | -0.388 | [-0.0355, -0.0284] | 1.73e-102 | 1.04e-101 | -0.551 | -0.0167 | -2.522 | +10.253 |
+| SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0280 | 0.0827 | -15.356 | 2055 | 1.83e-50 | 7.31e-50 | -0.339 | [-0.0316, -0.0244] | 2.52e-79 | 1.01e-78 | -0.482 | -0.0157 | -2.945 | +15.968 |
+| BIOT | EEG1 only | EEG2 only |  | 0.0030 | 0.0904 | 1.500 | 2055 | 0.1337 | 0.2675 | +0.033 | [-0.0009, 0.0069] | 0.9966 | 1.0000 | -0.000 | +0.0000 | +0.567 | +10.710 |
+| BIOT | EEG1 only | EEG3 only |  | -0.0017 | 0.1050 | -0.729 | 2055 | 0.4663 | 0.4663 | -0.016 | [-0.0062, 0.0029] | 0.9876 | 1.0000 | +0.000 | +0.0000 | -0.232 | +6.387 |
+| BIOT | EEG2 only | EEG3 only |  | -0.0047 | 0.1084 | -1.956 | 2055 | 0.0506 | 0.1517 | -0.043 | [-0.0094, 0.0000] | 0.5774 | 1.0000 | -0.014 | -0.0007 | -0.293 | +5.715 |
+| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0485 | 0.0707 | -31.106 | 2055 | 2.07e-174 | 1.24e-173 | -0.686 | [-0.0516, -0.0454] | 7.28e-238 | 4.37e-237 | -0.841 | -0.0374 | -2.596 | +10.644 |
+| BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0515 | 0.0788 | -29.619 | 2055 | 7.29e-161 | 3.64e-160 | -0.653 | [-0.0549, -0.0481] | 6.60e-223 | 3.30e-222 | -0.813 | -0.0379 | -2.342 | +8.349 |
+| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0468 | 0.0753 | -28.194 | 2055 | 3.95e-148 | 1.58e-147 | -0.622 | [-0.0501, -0.0436] | 8.01e-213 | 3.21e-212 | -0.794 | -0.0361 | -2.404 | +10.511 |
+
+**Pairs where the Holm-adjusted t-test and the Holm-adjusted Wilcoxon disagree about significance at alpha=0.05 (5 of 18 for macro F1, 1 of 18 for accuracy):**
+
+*No marks: diagnostic list, not a ranked comparison.*
+<!-- spec: items=t-test vs Wilcoxon disagreements; marks=none; note=diagnostic list, not a ranked comparison -->
+| Metric | Model | Condition A | Condition B | t-test Holm p | Wilcoxon Holm p |
+|---|---|---|---|---|---|
+| macro F1 | SleepFM From-Scratch | EEG1 only | EEG2 only | 1.0000 | 0.0003 |
+| macro F1 | SleepFM From-Scratch | EEG2 only | EEG3 only | 1.0000 | 0.0198 |
+| macro F1 | SleepFM Next-Token | EEG1 only | EEG2 only | 0.4110 | 0.0480 |
+| macro F1 | SleepFM Next-Token | EEG1 only | EEG3 only | 0.3975 | 0.0074 |
+| macro F1 | SleepFM Next-Token | EEG2 only | EEG3 only | 0.6813 | 4.15e-05 |
+| accuracy | SleepFM From-Scratch | EEG1 only | EEG3 only | 0.9168 | 0.0025 |
+
+Every disagreement listed is the SAME direction: Wilcoxon calls it significant, the t-test does not -- the mirror image never happens here. This matches the skewness/excess-kurtosis columns above: every disagreeing pair has |skewness| roughly 0.4-0.7 and excess kurtosis roughly 7-12 (vs. 0/0 for a normal distribution) in the per-subject differences -- a few subjects have large outlying differences in one direction, which inflates the t-test's variance estimate (and hence shrinks |t|) far more than it shifts the sign-based Wilcoxon statistic. **Given this -- heavy-tailed, skewed per-subject differences on essentially every pair, not just the disagreeing ones -- the Wilcoxon/Hodges-Lehmann pair should be treated as primary for the per-subject (secondary) statistic, with the t-test reported for comparison but not trusted on its own**, especially for the small, near-zero-mean channel-pair comparisons where the disagreements concentrate. For the large, clearly nonzero single-channel-vs-reference effects, both tests agree at p < 0.0001 regardless of this concern.
+
+### D.2 supplement: fold-level paired t-test (task item 2)
+A paired t-test on the 5 fold-level (epoch-pooled) macro F1 values for each D.2 pair -- df=4. **Low power** (n=5) **and not independent observations**: in 5-fold cross-validation every pair of folds' TRAINING sets share 3 of the other 4 folds' subjects (each fold's training set is "everyone else"), so the 5 fold-level values are correlated with each other through shared training data, violating the paired t-test's independence assumption. Reported as a labeled supplement only, never as a substitute for the subject-level tests above.
+
+*No marks: low-power supplementary test, not a ranked comparison.*
+<!-- spec: items=fold-level paired t-test; marks=none; note=low-power supplementary test, not a ranked comparison -->
+| Model | Condition A | Condition B | Reference | n folds | Mean diff | sd of diff | t | df | p |
+|---|---|---|---|---|---|---|---|---|---|
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | 5 | -0.0008 | 0.0111 | -0.156 | 4 | 0.8836 |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | 5 | -0.0051 | 0.0182 | -0.624 | 4 | 0.5664 |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | 5 | -0.0043 | 0.0138 | -0.699 | 4 | 0.5233 |
+| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | 5 | -0.0471 | 0.0172 | -6.126 | 4 | 0.0036 |
+| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | 5 | -0.0464 | 0.0086 | -12.023 | 4 | 0.0003 |
+| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | 5 | -0.0420 | 0.0165 | -5.698 | 4 | 0.0047 |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 5 | 0.0049 | 0.0106 | 1.023 | 4 | 0.3640 |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 5 | 0.0051 | 0.0092 | 1.231 | 4 | 0.2858 |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | 5 | 0.0002 | 0.0026 | 0.192 | 4 | 0.8572 |
+| SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | 5 | -0.0331 | 0.0068 | -10.898 | 4 | 0.0004 |
+| SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | 5 | -0.0380 | 0.0082 | -10.387 | 4 | 0.0005 |
+| SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | 5 | -0.0382 | 0.0085 | -10.092 | 4 | 0.0005 |
+| BIOT | EEG1 only | EEG2 only |  | 5 | 0.0089 | 0.0055 | 3.622 | 4 | 0.0223 |
+| BIOT | EEG1 only | EEG3 only |  | 5 | -0.0022 | 0.0057 | -0.864 | 4 | 0.4361 |
+| BIOT | EEG2 only | EEG3 only |  | 5 | -0.0112 | 0.0058 | -4.328 | 4 | 0.0124 |
+| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 5 | -0.0565 | 0.0036 | -34.721 | 4 | 4.11e-06 |
+| BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 5 | -0.0655 | 0.0058 | -25.315 | 4 | 1.45e-05 |
+| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 5 | -0.0543 | 0.0070 | -17.461 | 4 | 6.32e-05 |
+
 ### D.3: TOST equivalence
 **PRIMARY statistic (epoch-pooled):**
 
@@ -279,6 +373,7 @@ Diff = condition A minus condition B. Holm adjustment is applied within each mod
 | BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0542 | [-0.0575, -0.0512] | not equivalent |
 | BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0542 | [-0.0575, -0.0512] | not equivalent |
 
+**Which pairs changed verdict against the old (secondary, mean-per-subject) version (task item 3):** matched by (model, condition A, condition B, margin) against the SECONDARY TOST table below -- exactly **1 of 36** verdicts changes: SleepFM Next-Token, EEG1 only vs EEG3 only, margin 0.01 -- PRIMARY says "inconclusive" (90% CI [0.0005, 0.0101], just barely overlapping the 0.01 boundary), SECONDARY said "equivalent" (90% CI [-0.0004, 0.0087], entirely inside 0.01). Every other verdict is unchanged between the two statistics, at both margins.
 
 **SECONDARY statistic (mean per-subject macro F1):**
 
@@ -582,7 +677,7 @@ Secondary statistic (mean per-subject macro F1), unchanged methodology from befo
 | SleepFM From-Scratch | SleepFM Next-Token | 3-channel benchmark | 2056 | 0.0023 | 0.1026 | 0.042 | both SleepFM, same patience per condition; differ only in pretraining objective |
 
 
-**Pretraining and patience note:** SleepFM's two encoders (From-Scratch and Next-Token) are pretrained unsupervised (no labels) on MESA itself, sharing one pretraining split (`sleepfm/configs/dataset_split_fromscratch_fullcohort.json`). Checked directly: every one of the 2056 subjects used for fine-tuning/testing across all 5 folds of `fold5_v1` is also in this pretraining split's `pretrain` set (2056/2056 match) -- so there IS subject-level overlap between pretraining and the evaluation cohort, though pretraining never sees any sleep-stage label (self-supervised: contrastive for From-Scratch, next-token-prediction for Next-Token). BIOT's encoder is pretrained externally, before this project, on EEG-SHHS+PREST (5M MGH resting-EEG + 5M Sleep Heart Health Study samples -- a sleep-PSG cohort comparable to MESA, but not MESA itself, so no subject overlap is possible for BIOT). Patience: SleepFM uses patience 10 for every single-channel run and the matched-patience 3-channel reference, patience 50 for its 3-channel benchmark run. BIOT uses patience 10 for its single-channel runs (confirmed via `biot_fullcohort_patience10.slurm` in each run's sacct `SubmitLine`) and patience 20 for its only 3-channel run (it has no patience-10 3-channel run, so the patience-20 run serves as its reference in D.2/D.3 above, labeled as such throughout).
+**Pretraining and patience note (exact statement, task item 6/7):** "SleepFM's two encoders' pretraining configs -- `fromscratch_eegonly_fullcohort/.../config.json` and `nexttoken_eegonly_fullcohort/.../config.json` -- both set `split_path` to the SAME file, `sleepfm/configs/dataset_split_fromscratch_fullcohort.json`, whose `pretrain` key lists 2056 subjects. The fine-tuning/test split file, `sleepfm/configs/dataset_split_fold5_v1.json`, has 5 folds (`fold_0`-`fold_4`) whose `test` subjects union to exactly 2056 (411+411+411+411+412). The exact-ID set intersection of these two subject lists is the full 2056 -- every fine-tuning/test subject is also a pretraining subject (2056/2056, set equality, checked by direct ID comparison, not by count alone). Pretraining itself is self-supervised (contrastive for From-Scratch, next-token-prediction for Next-Token) and uses no sleep-stage label, so this is subject-level overlap, not label leakage -- but it is real overlap, and is stated as such rather than elided." Verification: loaded both JSON split files directly, took `os.path.basename(path).split('.')[0]` as the subject ID from each HDF5 path entry, and compared the two ID sets with Python's set operations (`&`, `==`) -- reproducible via the one-off check recorded in this task's own log, not a script committed to the repo (no new script was needed; this uses only the two existing config/split JSON files already in `sleepfm/configs/`). BIOT's encoder is pretrained externally, before this project, on EEG-SHHS+PREST (5M MGH resting-EEG + 5M Sleep Heart Health Study samples -- a sleep-PSG cohort comparable to MESA, but not MESA itself, so no subject overlap is possible for BIOT). Patience: SleepFM uses patience 10 for every single-channel run and the matched-patience 3-channel reference, patience 50 for its 3-channel benchmark run. BIOT uses patience 10 for its single-channel runs (confirmed via `biot_fullcohort_patience10.slurm` in each run's sacct `SubmitLine`) and patience 20 for its only 3-channel run (it has no patience-10 3-channel run, so the patience-20 run serves as its reference in D.2/D.3 above, labeled as such throughout).
 
 ### D.7: fold-level sign counts
 Both forms, labeled: "subject-averaged" (mean of each fold's subjects' own macro F1 -- the secondary statistic, fold-restricted) and "fold macro F1" (the epoch-pooled per-fold statistic, same methodology as results/02/04/06 and this file's own D.1 primary per-fold values). These can disagree in sign on individual folds (see the nonlinearity note under D.1).
@@ -619,18 +714,18 @@ No marks (fixed from the first version of this report, which bolded a column tha
 
 *No marks: architectural properties, not a ranked comparison.*
 <!-- spec: items=checkpoint parameters and size; marks=none; note=architectural properties, not a ranked comparison -->
-| Model | Condition | Total params | Trainable params | Encoder params | Head params | Checkpoint size (MB) | Weights-only size (MB) | fp16 estimate (MB) | Note |
+| Model | Condition | Total params | Trainable params | Encoder params | Head params | Checkpoint size (MiB) | Weights-only size (MiB) | fp16 estimate (MiB) | Note |
 |---|---|---|---|---|---|---|---|---|---|
 | SleepFM From-Scratch | 1 channel | 7,019,179 | 2,170,629 | 4,848,550 | 2,170,629 | 45.301 | 26.776 | 13.388 | encoder is frozen during fine-tuning; only the head is trainable. From-Scratch encoder checkpoint also stores optimizer (Adam) state and LR scheduler state alongside the weights |
 | SleepFM From-Scratch | 3 channels | 7,019,179 | 2,170,629 | 4,848,550 | 2,170,629 | 45.301 | 26.776 | 13.388 | encoder is frozen during fine-tuning; only the head is trainable. From-Scratch encoder checkpoint also stores optimizer (Adam) state and LR scheduler state alongside the weights |
-| SleepFM Next-Token | 1 channel | 7,019,179 | 2,170,629 | 4,848,550 | 2,170,629 | 64.551 | 26.776 | 13.388 | encoder is frozen during fine-tuning; only the head is trainable. Next-Token encoder checkpoint also stores optimizer (Adam) state, LR scheduler state, AND a small next-token-prediction pretext head (head_state_dict, ~0.25MB, not used at fine-tuning time) alongside the weights |
-| SleepFM Next-Token | 3 channels | 7,019,179 | 2,170,629 | 4,848,550 | 2,170,629 | 64.551 | 26.776 | 13.388 | encoder is frozen during fine-tuning; only the head is trainable. Next-Token encoder checkpoint also stores optimizer (Adam) state, LR scheduler state, AND a small next-token-prediction pretext head (head_state_dict, ~0.25MB, not used at fine-tuning time) alongside the weights |
+| SleepFM Next-Token | 1 channel | 7,019,179 | 2,170,629 | 4,848,550 | 2,170,629 | 64.551 | 26.776 | 13.388 | encoder is frozen during fine-tuning; only the head is trainable. Next-Token encoder checkpoint also stores optimizer (Adam) state, LR scheduler state, AND a small next-token-prediction pretext head (head_state_dict, ~0.25MiB, not used at fine-tuning time) alongside the weights |
+| SleepFM Next-Token | 3 channels | 7,019,179 | 2,170,629 | 4,848,550 | 2,170,629 | 64.551 | 26.776 | 13.388 | encoder is frozen during fine-tuning; only the head is trainable. Next-Token encoder checkpoint also stores optimizer (Adam) state, LR scheduler state, AND a small next-token-prediction pretext head (head_state_dict, ~0.25MiB, not used at fine-tuning time) alongside the weights |
 | BIOT | 1 channel | 3,443,991 | 3,443,991 | n/a | n/a | 13.159 | 13.138 | 6.569 | single end-to-end checkpoint, fully fine-tuned, bare state_dict (no optimizer/scheduler state saved) |
 | BIOT | 3 channels | 3,443,991 | 3,443,991 | n/a | n/a | 13.159 | 13.138 | 6.569 | single end-to-end checkpoint, fully fine-tuned, bare state_dict (no optimizer/scheduler state saved) |
 
 SleepFM's SetTransformer encoder and BIOT's encoder both have channel-count-invariant parameter counts (shared per-channel weights for SleepFM; BIOT's published architecture always uses a fixed 18-channel positional embedding regardless of how many channels are actually fed in) -- this is why `total_params` does not change between 1 and 3 channels for any model here; it is a real architectural property, not an error.
 
-**What else is in the checkpoint files (checked directly, task item 7):** BIOT's checkpoint and SleepFM's fine-tuned head checkpoint are both bare `state_dict`s -- weights-only size equals file size almost exactly (BIOT: 13.138MB weights vs. 13.159MB file). SleepFM's PRETRAINING encoder checkpoints are much bigger than their weights: From-Scratch's `best.pt` also stores `epoch`, `temperature`, an Adam `optim_dict`, and an LR `scheduler_dict` (18.50MB weights inside a 37.01MB file); Next-Token's additionally stores a small next-token-prediction pretext `head_state_dict` (~0.25MB, not used at fine-tuning time) on top of the same optimizer/scheduler state (18.50MB weights inside a 56.26MB file). The weights-only column above sums just the encoder's and head's actual `state_dict` tensors; the gap to the checkpoint-size column is this extra saved state.
+**What else is in the checkpoint files (checked directly, task item 7):** BIOT's checkpoint and SleepFM's fine-tuned head checkpoint are both bare `state_dict`s -- weights-only size equals file size almost exactly (BIOT: 13.138MiB weights vs. 13.159MiB file). SleepFM's PRETRAINING encoder checkpoints are much bigger than their weights: From-Scratch's `best.pt` also stores `epoch`, `temperature`, an Adam `optim_dict`, and an LR `scheduler_dict` (18.50MiB weights inside a 37.01MiB file); Next-Token's additionally stores a small next-token-prediction pretext `head_state_dict` (~0.25MiB, not used at fine-tuning time) on top of the same optimizer/scheduler state (18.50MiB weights inside a 56.26MiB file). The weights-only column above sums just the encoder's and head's actual `state_dict` tensors; the gap to the checkpoint-size column is this extra saved state.
 
 ### E2: FLOPs per epoch and per night
 **Corrected real input shape (task item 5):** verified directly against the pretraining checkpoints' own `config.json` (`sampling_duration=5` [minutes], `sampling_freq=128` [Hz] for both From-Scratch and Next-Token) and `sleepfm/models/dataset.py`'s `SetTransformerDataset.samples_per_chunk = sampling_duration*60*sampling_freq` -- the SleepFM encoder's real forward call processes a **5-minute chunk (38400 samples)**, not a 30-second epoch (3840 samples) as the first version of this report (wrongly) benchmarked. `generate_embeddings.py` saves this call's per-patch (640 samples = 5s resolution, 60 patches/chunk) embedding stream, and `SleepEventClassificationDataset._try_get_item` (`sleepfm/models/dataset.py`) mean-pools every 6 consecutive patch embeddings ("Resample embeddings from 5-second to 30-second resolution") to build the 30s-epoch sequence the staging head actually consumes -- so the head's shape (960 x 128 embeddings/night) was already correct and is unchanged. BIOT's shape was verified unchanged too: one call per 30s epoch, 200Hz, 6000 samples, `n_fft=200, hop_length=100` (`scripts/biot_dataset.py`, `scripts/finetune_biot.py`).
