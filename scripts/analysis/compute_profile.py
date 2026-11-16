@@ -31,21 +31,27 @@ sys.path.insert(0, "/scratch/project_2019517/BIOT")
 # ---------------------------------------------------------------------------
 
 def count_params(path):
-    """Total parameter count and on-disk size of a .pt/.pth checkpoint.
+    """Total parameter count, on-disk file size, and weights-ONLY size
+    (sum of just the state_dict tensors' bytes) of a .pt/.pth checkpoint.
     Handles the three wrapping conventions seen in this project: a bare
-    state_dict, {"model_state_dict": ...} (BIOT/LaBraM/SensorLM eval
-    scripts), or {"state_dict": ...} (SleepFM encoder pretraining
-    checkpoints, which also carry optimizer/scheduler state alongside)."""
+    state_dict (BIOT, and SleepFM's fine-tuned head), {"model_state_dict":
+    ...} (BIOT/LaBraM/SensorLM eval scripts), or {"state_dict": ...}
+    (SleepFM encoder pretraining checkpoints -- see run_params()'s note on
+    what else these additionally carry)."""
     import torch
-    sd = torch.load(path, map_location="cpu", weights_only=False)
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    sd = raw
+    extra_keys = []
     if isinstance(sd, dict):
         for key in ("model_state_dict", "state_dict"):
             if key in sd and isinstance(sd[key], dict):
+                extra_keys = [k for k in sd.keys() if k != key]
                 sd = sd[key]
                 break
     total = sum(v.numel() for v in sd.values() if hasattr(v, "numel"))
+    weights_only_bytes = sum(v.numel() * v.element_size() for v in sd.values() if hasattr(v, "numel"))
     size_bytes = os.path.getsize(path)
-    return total, size_bytes
+    return total, size_bytes, weights_only_bytes, extra_keys
 
 
 def run_params():
@@ -74,25 +80,32 @@ def run_params():
     rows = []
     for key, enc_path in encoders.items():
         model, cond = key
-        enc_params, enc_size = count_params(enc_path)
-        head_params, head_size = count_params(heads[key])
+        enc_params, enc_size, enc_weights_only, enc_extra = count_params(enc_path)
+        head_params, head_size, head_weights_only, head_extra = count_params(heads[key])
+        extra_note = ("From-Scratch encoder checkpoint also stores optimizer (Adam) state and LR "
+                      "scheduler state alongside the weights" if "From-Scratch" in model else
+                      "Next-Token encoder checkpoint also stores optimizer (Adam) state, LR scheduler "
+                      "state, AND a small next-token-prediction pretext head (head_state_dict, ~0.25MB, "
+                      "not used at fine-tuning time) alongside the weights")
         rows.append(dict(
             model=model, condition=cond,
             encoder_params=enc_params, head_params=head_params, trainable_params=head_params,
             total_params=enc_params + head_params,
             ckpt_size_mb=(enc_size + head_size) / 1024 / 1024,
+            weights_only_mb=(enc_weights_only + head_weights_only) / 1024 / 1024,
             fp16_estimate_mb=(enc_params + head_params) * 2 / 1024 / 1024,
-            note="encoder is frozen during fine-tuning; only the head is trainable",
+            note="encoder is frozen during fine-tuning; only the head is trainable. " + extra_note,
         ))
     for key, path in biot.items():
         model, cond = key
-        total, size = count_params(path)
+        total, size, weights_only, extra = count_params(path)
         rows.append(dict(
             model=model, condition=cond,
             encoder_params=None, head_params=None, trainable_params=total,
             total_params=total, ckpt_size_mb=size / 1024 / 1024,
+            weights_only_mb=weights_only / 1024 / 1024,
             fp16_estimate_mb=total * 2 / 1024 / 1024,
-            note="single end-to-end checkpoint, fully fine-tuned",
+            note="single end-to-end checkpoint, fully fine-tuned, bare state_dict (no optimizer/scheduler state saved)",
         ))
     return rows
 
@@ -221,6 +234,16 @@ def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100, n_repeats=
         node = socket.gethostname()
         return node, _run(["squeue", "-w", node, "--format=%.18i %.9P %.30j %.8u %.2t %.10M %.6D %R"])
 
+    def hardware_record():
+        cpu = _run(["lscpu"])
+        cpu_model = next((l.split(":", 1)[1].strip() for l in cpu.splitlines() if l.startswith("Model name:")), "unknown")
+        cpu_count = next((l.split(":", 1)[1].strip() for l in cpu.splitlines() if l.strip().startswith("CPU(s):")), "unknown")
+        gpu_name = _run(["nvidia-smi", "-L"]).strip()
+        gpu_driver = _run(["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"]).strip()
+        return dict(cpu_model=cpu_model, cpu_count=cpu_count,
+                    gpu_name=gpu_name or "n/a (no GPU on this node)",
+                    gpu_driver=gpu_driver or "n/a (no GPU on this node)")
+
     def timed_runs(fn, device):
         for _ in range(n_warmup):
             fn()
@@ -261,6 +284,7 @@ def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100, n_repeats=
     device = "cuda" if torch.cuda.is_available() else "cpu"
     node_name, squeue_before = node_squeue_record()
     gpu_before = gpu_memory_record()
+    hardware = hardware_record()
 
     from finetune_biot import build_model as biot_build_model
     from models.models import SetTransformer, SleepEventLSTMClassifier
@@ -294,19 +318,27 @@ def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100, n_repeats=
                             device=f"CPU threads={n_threads}", node_label=node_label)
                 rows.append(cell)
 
-    # --- SleepFM encoder, per channel-count condition ---
+    # --- SleepFM encoder, per channel-count condition. CORRECTED shape:
+    # one forward call processes a 5-MINUTE chunk (38400 samples @ 128Hz --
+    # sampling_duration=5(min) in every pretraining config.json,
+    # sampling_freq=128 -- sleepfm/models/dataset.py's
+    # SetTransformerDataset.samples_per_chunk), not a 30s/3840-sample
+    # epoch as previously (wrongly) benchmarked. See results/07 Part E2's
+    # note for the full evidence trail. ---
+    SAMPLES_PER_CHUNK = 5 * 60 * 128  # 38400
     for n_ch, label in [(1, "1 channel"), (3, "3 channels")]:
         if want_gpu:
             encoder = SetTransformer(in_channels=1, embed_dim=128, num_heads=8, num_layers=6,
                                       pooling_head=8, dropout=0.0, patch_size=640).to(device).eval()
             for b in [1, 16, 128]:
-                x = torch.randn(b, n_ch, 3840, device=device)
+                x = torch.randn(b, n_ch, SAMPLES_PER_CHUNK, device=device)
                 mask = torch.zeros(b, n_ch, dtype=torch.bool, device=device)
                 with torch.no_grad():
                     cell = repeated_cell(lambda: encoder(x, mask), device, b,
                                           peak_mem_device="cuda" if b == 128 else None)
                 cell.update(model="SleepFM (From-Scratch/Next-Token share this encoder architecture)",
-                            component="encoder", condition=label, device=f"GPU batch={b}", node_label=node_label)
+                            component="encoder", condition=label, device=f"GPU batch={b}", node_label=node_label,
+                            real_shape=f"(B, {n_ch}, {SAMPLES_PER_CHUNK}) -- 5-min chunk")
                 rows.append(cell)
 
         if want_cpu:
@@ -314,12 +346,13 @@ def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100, n_repeats=
                                           pooling_head=8, dropout=0.0, patch_size=640).to("cpu").eval()
             for n_threads in [1, 8]:
                 torch.set_num_threads(n_threads)
-                x = torch.randn(16, n_ch, 3840)
+                x = torch.randn(16, n_ch, SAMPLES_PER_CHUNK)
                 mask = torch.zeros(16, n_ch, dtype=torch.bool)
                 with torch.no_grad():
                     cell = repeated_cell(lambda: encoder_cpu(x, mask), "cpu", 16)
                 cell.update(model="SleepFM (From-Scratch/Next-Token share this encoder architecture)",
-                            component="encoder", condition=label, device=f"CPU threads={n_threads}", node_label=node_label)
+                            component="encoder", condition=label, device=f"CPU threads={n_threads}", node_label=node_label,
+                            real_shape=f"(16, {n_ch}, {SAMPLES_PER_CHUNK}) -- 5-min chunk")
                 rows.append(cell)
 
     # --- SleepFM staging head, on embeddings (n_ch=3, as actually trained -- see run_flops()) ---
@@ -355,7 +388,7 @@ def run_benchmark(node_label="shared-node", n_warmup=10, n_timed=100, n_repeats=
 
     gpu_after = gpu_memory_record()
     _, squeue_after = node_squeue_record()
-    return dict(node=node_name, node_label=node_label, n_repeats=n_repeats,
+    return dict(node=node_name, node_label=node_label, n_repeats=n_repeats, hardware=hardware,
                 squeue_before=squeue_before, squeue_after=squeue_after,
                 gpu_before=gpu_before, gpu_after=gpu_after, results=rows)
 

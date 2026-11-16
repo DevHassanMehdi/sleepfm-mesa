@@ -90,6 +90,63 @@ def test_tost_verdict_inconclusive():
     assert cs.tost_verdict(-0.005, 0.015, margin=0.01) == "inconclusive"
 
 
+def test_hodges_lehmann_matches_median_for_symmetric_data():
+    diffs = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
+    assert cs.hodges_lehmann(diffs) == 0.0
+
+
+def test_hodges_lehmann_robust_to_one_outlier():
+    diffs = np.array([0.01, 0.02, 0.015, 0.018, 100.0])
+    # The single huge outlier should barely move the HL estimate, unlike the mean.
+    assert cs.hodges_lehmann(diffs) < 1.0
+
+
+def test_macro_f1_from_cm_perfect_classifier():
+    cm = np.eye(5) * 10
+    assert cs.macro_f1_from_cm(cm) == 1.0
+
+
+def test_macro_f1_from_cm_matches_sklearn():
+    from sklearn.metrics import f1_score
+    rng = np.random.default_rng(0)
+    y_true = rng.integers(0, 5, size=500)
+    y_pred = rng.integers(0, 5, size=500)
+    cm = np.zeros((5, 5), dtype=int)
+    for t, p in zip(y_true, y_pred):
+        cm[t, p] += 1
+    expected = f1_score(y_true, y_pred, labels=[0, 1, 2, 3, 4], average="macro", zero_division=0)
+    assert abs(cs.macro_f1_from_cm(cm) - expected) < 1e-9
+
+
+def test_pooled_cluster_bootstrap_cm_point_is_exact_pooled_value():
+    rng = np.random.default_rng(1)
+    # 20 subjects, each a 5x5 confusion matrix.
+    cm_array = rng.integers(0, 20, size=(20, 5, 5))
+    point, lo, hi, boot = cs.pooled_cluster_bootstrap_cm(cm_array, n_resamples=300, seed=0)
+    assert point == cs.macro_f1_from_cm(cm_array.sum(axis=0))
+    assert lo <= point <= hi
+    assert len(boot) == 300
+
+
+def test_paired_pooled_bootstrap_cm_zero_for_identical_inputs():
+    rng = np.random.default_rng(2)
+    cm_array = rng.integers(0, 20, size=(15, 5, 5))
+    point, lo, hi, boot = cs.paired_pooled_bootstrap_cm(cm_array, cm_array, n_resamples=200, seed=0)
+    assert point == 0.0
+    assert lo <= 0.0 <= hi
+
+
+def test_paired_pooled_bootstrap_cm_detects_a_real_shift():
+    rng = np.random.default_rng(3)
+    cm_a = rng.integers(5, 25, size=(30, 5, 5))
+    # b: same off-diagonal noise, but systematically fewer correct (diagonal) counts.
+    cm_b = cm_a.copy()
+    cm_b[:, range(5), range(5)] = np.maximum(cm_b[:, range(5), range(5)] - 10, 0)
+    point, lo, hi, _ = cs.paired_pooled_bootstrap_cm(cm_a, cm_b, n_resamples=300, seed=0)
+    assert point > 0  # a has more correct predictions pooled -> higher macro F1
+    assert lo > 0  # a real, large shift should clear the 95% CI
+
+
 def test_tost_from_bootstrap_equivalent_for_tiny_consistent_diff():
     rng = np.random.default_rng(5)
     a = rng.normal(0.70, 0.01, size=100)
@@ -242,4 +299,15 @@ def test_part_d7_fold_level_sign_counts():
     rows = cs.part_d7_fold_level(df)
     assert len(rows) > 0
     for r in rows:
-        assert r["n_positive"] + r["n_negative"] + r["n_zero"] == r["n_folds"]
+        assert r["n_positive_subject_averaged"] + r["n_negative_subject_averaged"] + r["n_zero_subject_averaged"] == r["n_folds"]
+
+
+def test_part_d7_fold_level_adds_fold_macro_f1_form_when_given():
+    df = _synthetic_df(n_subjects=40)
+    fold_level_df = _synthetic_fold_level_df(df)
+    rows = cs.part_d7_fold_level(df, fold_level_df)
+    assert len(rows) > 0
+    for r in rows:
+        assert "per_fold_diff_fold_macro_f1" in r
+        assert (r["n_positive_fold_macro_f1"] + r["n_negative_fold_macro_f1"]
+                + r["n_zero_fold_macro_f1"]) == r["n_folds"]

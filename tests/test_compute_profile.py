@@ -13,9 +13,11 @@ def test_count_params_bare_state_dict():
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "ckpt.pt")
         torch.save(sd, path)
-        total, size = cp.count_params(path)
+        total, size, weights_only, extra = cp.count_params(path)
         assert total == 10 * 5 + 5
         assert size == os.path.getsize(path)
+        assert weights_only <= size  # bare state_dict: no extra saved state beyond torch.save's own container overhead
+        assert extra == []
 
 
 def test_count_params_model_state_dict_wrapper():
@@ -24,8 +26,11 @@ def test_count_params_model_state_dict_wrapper():
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "ckpt.pt")
         torch.save(sd, path)
-        total, _ = cp.count_params(path)
+        total, size, weights_only, extra = cp.count_params(path)
         assert total == 16
+        assert weights_only == 16 * 4  # float32
+        assert weights_only < size  # optim_dict inflates the file beyond just the weights
+        assert extra == ["optim_dict"]
 
 
 def test_count_params_state_dict_wrapper():
@@ -34,8 +39,10 @@ def test_count_params_state_dict_wrapper():
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "ckpt.pt")
         torch.save(sd, path)
-        total, _ = cp.count_params(path)
+        total, size, weights_only, extra = cp.count_params(path)
         assert total == 9
+        assert weights_only == 9 * 4
+        assert extra == ["epoch"]
 
 
 def test_run_input_size_matches_known_sampling_rates():
