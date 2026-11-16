@@ -1,8 +1,8 @@
 # EEG Channel Statistics and Compute Analysis (Phase 1)
 
-**Finding:** A single EEG channel scores 0.03 to 0.07 macro F1 below its model's 3-channel run, and none is equivalent within 0.02. Between channels, differences are detectable but small: at the 0.01 margin, all 3 of SleepFM From-Scratch's channel pairs are TOST-equivalent, 2 of 3 of SleepFM Next-Token's are, and 1 of 3 of BIOT's is; at the 0.02 margin, all 9 of 9 channel pairs across the three models are equivalent. BIOT's EEG2 is about 0.01 lower than its other two channels. Fz-Cz has the lowest Wake recall and the highest N2 recall in all three models.
+**Finding:** A single EEG channel scores 0.03 to 0.07 macro F1 below its model's 3-channel run, and none is equivalent within 0.02. Between channels, differences are detectable but small: at the 0.01 margin, all 3 of SleepFM From-Scratch's channel pairs and all 3 of SleepFM Next-Token's are TOST-equivalent, and 1 of 3 of BIOT's is; at the 0.02 margin, all 9 of 9 channel pairs across the three models are equivalent. BIOT's EEG2 is about 0.01 lower than its other two channels. Fz-Cz has the lowest Wake recall and the highest N2 recall in all three models.
 
-(Numbers are the new PRIMARY statistic, epoch-pooled macro F1 -- see D.1/D.3. Verified directly, including a recount from the raw per-pair verdicts (task item 2 of this round): single-channel-vs-reference diffs range 0.0331-0.0654 -> "0.03 to 0.07" [D.2]; all 9 such pairs are "not equivalent" at margin 0.02 [D.3]; among the 3 channel-pairs per model, margin 0.01 gives From-Scratch 3/3 equivalent, Next-Token 2/3 (the third is "inconclusive", not "equivalent" -- EEG1 vs EEG3, 90% CI [0.0005, 0.0101], just crosses the margin), BIOT 1/3 (EEG1 vs EEG3 only; the other two are "inconclusive"); margin 0.02 gives 3/3 for every model, 9/9 overall -- this recount matches the counts expected from the underlying 90% intervals exactly, no discrepancy found. BIOT EEG1 vs EEG2 diff=+0.0092, EEG2 vs EEG3 diff=-0.0112, both -> "about 0.01 lower" for EEG2 [D.2]; pooled Wake/N2 recall confirms EEG1/Fz-Cz is lowest-Wake and highest-N2 in all three models [D.5].)
+(Numbers are the new PRIMARY statistic, epoch-pooled macro F1, at 10000 bootstrap resamples (see the stability note below D.3) -- see D.1/D.3. Verified directly, including a recount from the raw per-pair verdicts: single-channel-vs-reference diffs range 0.0331-0.0654 -> "0.03 to 0.07" [D.2]; all 9 such pairs are "not equivalent" at margin 0.02 [D.3]; among the 3 channel-pairs per model, margin 0.01 gives From-Scratch 3/3 equivalent and Next-Token 3/3 equivalent (at 2000 resamples, Next-Token's EEG1-vs-EEG3 pair had been "inconclusive" by a hair -- 90% CI [0.0005, 0.0101] -- that resolved to "equivalent" at 10000 resamples, stable across both seeds to 4 decimals), BIOT 1/3 (EEG1 vs EEG3 only; the other two are "inconclusive"); margin 0.02 gives 3/3 for every model, 9/9 overall. BIOT EEG1 vs EEG2 diff=+0.0092, EEG2 vs EEG3 diff=-0.0112, both -> "about 0.01 lower" for EEG2 [D.2]; pooled Wake/N2 recall confirms EEG1/Fz-Cz is lowest-Wake and highest-N2 in all three models [D.5].)
 
 ## Names used
 
@@ -126,20 +126,20 @@ Pool every valid epoch from the subjects in scope into one 5x5 confusion matrix,
 <!-- spec: block=Condition; items=models; value_cols=Run-pooled macro F1 (95% CI); bold=down; green=none -->
 | Condition | Model | Run-pooled macro F1 (95% CI) | Per-fold macro F1 (folds 0-4) | n subjects |
 |---|---|---|---|---|
-| EEG1 only | SleepFM From-Scratch | 0.6836 [0.6783, 0.6887] | 0.6899, 0.6919, 0.6610, 0.6934, 0.6812 | 2056 |
-| EEG2 only | SleepFM From-Scratch | 0.6842 [0.6795, 0.6892] | 0.6798, 0.7025, 0.6757, 0.6872, 0.6761 | 2056 |
-| EEG3 only | SleepFM From-Scratch | 0.6887 [0.6837, 0.6935] | 0.6966, 0.6947, 0.6947, 0.6923, 0.6646 | 2056 |
-| 3-channel, patience 10 | SleepFM From-Scratch | 0.7307 [0.7270, 0.7345] | 0.7139, 0.7446, 0.7324, 0.7357, 0.7265 | 2056 |
-| 3-channel benchmark | SleepFM From-Scratch | 0.7451 [0.7414, 0.7488] | 0.7385, 0.7496, 0.7446, 0.7521, 0.7404 | 2056 |
-| EEG1 only | SleepFM Next-Token | **0.7015 [0.6960, 0.7069]** | 0.6960, 0.7136, 0.6978, 0.7002, 0.6996 | 2056 |
-| EEG2 only | SleepFM Next-Token | **0.6964 [0.6910, 0.7018]** | 0.6963, 0.7036, 0.6935, 0.7092, 0.6804 | 2056 |
-| EEG3 only | SleepFM Next-Token | 0.6963 [0.6913, 0.7014] | 0.6981, 0.7051, 0.6905, 0.7060, 0.6821 | 2056 |
+| EEG1 only | SleepFM From-Scratch | 0.6836 [0.6784, 0.6886] | 0.6899, 0.6919, 0.6610, 0.6934, 0.6812 | 2056 |
+| EEG2 only | SleepFM From-Scratch | 0.6842 [0.6793, 0.6893] | 0.6798, 0.7025, 0.6757, 0.6872, 0.6761 | 2056 |
+| EEG3 only | SleepFM From-Scratch | 0.6887 [0.6837, 0.6936] | 0.6966, 0.6947, 0.6947, 0.6923, 0.6646 | 2056 |
+| 3-channel, patience 10 | SleepFM From-Scratch | 0.7307 [0.7269, 0.7344] | 0.7139, 0.7446, 0.7324, 0.7357, 0.7265 | 2056 |
+| 3-channel benchmark | SleepFM From-Scratch | 0.7451 [0.7413, 0.7488] | 0.7385, 0.7496, 0.7446, 0.7521, 0.7404 | 2056 |
+| EEG1 only | SleepFM Next-Token | **0.7015 [0.6961, 0.7068]** | 0.6960, 0.7136, 0.6978, 0.7002, 0.6996 | 2056 |
+| EEG2 only | SleepFM Next-Token | **0.6964 [0.6910, 0.7019]** | 0.6963, 0.7036, 0.6935, 0.7092, 0.6804 | 2056 |
+| EEG3 only | SleepFM Next-Token | 0.6963 [0.6910, 0.7015] | 0.6981, 0.7051, 0.6905, 0.7060, 0.6821 | 2056 |
 | 3-channel, patience 10 | SleepFM Next-Token | **0.7346 [0.7308, 0.7385]** | 0.7270, 0.7381, 0.7373, 0.7408, 0.7297 | 2056 |
-| 3-channel benchmark | SleepFM Next-Token | 0.7395 [0.7356, 0.7432] | 0.7350, 0.7461, 0.7373, 0.7449, 0.7338 | 2056 |
-| EEG1 only | BIOT | 0.6976 [0.6926, 0.7028] | 0.6922, 0.7074, 0.6952, 0.6951, 0.6982 | 2056 |
-| EEG2 only | BIOT | 0.6885 [0.6831, 0.6935] | 0.6840, 0.7043, 0.6779, 0.6900, 0.6872 | 2056 |
-| EEG3 only | BIOT | **0.6997 [0.6946, 0.7045]** | 0.6937, 0.7164, 0.6980, 0.6996, 0.6915 | 2056 |
-| 3-channel benchmark | BIOT | **0.7539 [0.7500, 0.7576]** | 0.7551, 0.7626, 0.7489, 0.7508, 0.7534 | 2056 |
+| 3-channel benchmark | SleepFM Next-Token | 0.7395 [0.7356, 0.7433] | 0.7350, 0.7461, 0.7373, 0.7449, 0.7338 | 2056 |
+| EEG1 only | BIOT | 0.6976 [0.6926, 0.7026] | 0.6922, 0.7074, 0.6952, 0.6951, 0.6982 | 2056 |
+| EEG2 only | BIOT | 0.6885 [0.6832, 0.6937] | 0.6840, 0.7043, 0.6779, 0.6900, 0.6872 | 2056 |
+| EEG3 only | BIOT | **0.6997 [0.6946, 0.7047]** | 0.6937, 0.7164, 0.6980, 0.6996, 0.6915 | 2056 |
+| 3-channel benchmark | BIOT | **0.7539 [0.7501, 0.7576]** | 0.7551, 0.7626, 0.7489, 0.7508, 0.7534 | 2056 |
 
 **Run-pooled vs. per-fold (both epoch-pooled, should be close):** the run-pooled value differs from the mean of the 5 per-fold values by well under 0.001 for every row here (e.g. SleepFM From-Scratch / EEG1 only: run-pooled=0.6836, mean of per-fold=0.68348, diff=0.0001) -- expected, since pooling all 2056 subjects at once is nearly the same operation as pooling each fold's ~411 subjects and then averaging 5 nearly-equal-size, nearly-equal-class-balance pools; the small residual gap is exactly the same mild nonlinearity (macro F1 is a nonlinear function of pooled counts) that produces the much larger gap against the SECONDARY statistic below.
 
@@ -174,24 +174,24 @@ This is the mean of each subject's OWN, separately-computed macro F1, bootstrapp
 <!-- spec: items=paired comparisons (primary, epoch-pooled); marks=none; note=paired comparison statistics, not a ranked comparison -->
 | Model | Condition A | Condition B | Reference | Pooled macro F1 diff (A-B) | Bootstrap 95% CI | 95% CI | n subjects |
 |---|---|---|---|---|---|---|---|
-| SleepFM From-Scratch | EEG1 only | EEG2 only |  | -0.0007 | [-0.0049, 0.0036] | includes zero | 2056 |
-| SleepFM From-Scratch | EEG1 only | EEG3 only |  | -0.0052 | [-0.0104, 0.0004] | includes zero | 2056 |
-| SleepFM From-Scratch | EEG2 only | EEG3 only |  | -0.0045 | [-0.0094, 0.0012] | includes zero | 2056 |
-| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0471 | [-0.0511, -0.0433] | excludes zero | 2056 |
-| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0464 | [-0.0499, -0.0428] | excludes zero | 2056 |
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | -0.0007 | [-0.0051, 0.0037] | includes zero | 2056 |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | -0.0052 | [-0.0105, 0.0002] | includes zero | 2056 |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | -0.0045 | [-0.0097, 0.0010] | includes zero | 2056 |
+| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0471 | [-0.0510, -0.0433] | excludes zero | 2056 |
+| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0464 | [-0.0501, -0.0427] | excludes zero | 2056 |
 | SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0419 | [-0.0458, -0.0382] | excludes zero | 2056 |
-| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.0051 | [0.0005, 0.0096] | excludes zero | 2056 |
-| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.0052 | [-0.0005, 0.0111] | includes zero | 2056 |
-| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.0001 | [-0.0055, 0.0062] | includes zero | 2056 |
-| SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0331 | [-0.0370, -0.0293] | excludes zero | 2056 |
-| SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0382 | [-0.0421, -0.0344] | excludes zero | 2056 |
-| SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0383 | [-0.0425, -0.0347] | excludes zero | 2056 |
-| BIOT | EEG1 only | EEG2 only |  | 0.0092 | [0.0050, 0.0133] | excludes zero | 2056 |
-| BIOT | EEG1 only | EEG3 only |  | -0.0021 | [-0.0071, 0.0030] | includes zero | 2056 |
-| BIOT | EEG2 only | EEG3 only |  | -0.0112 | [-0.0165, -0.0056] | excludes zero | 2056 |
-| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0562 | [-0.0594, -0.0530] | excludes zero | 2056 |
-| BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0654 | [-0.0691, -0.0617] | excludes zero | 2056 |
-| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0542 | [-0.0581, -0.0507] | excludes zero | 2056 |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.0051 | [0.0003, 0.0098] | excludes zero | 2056 |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.0052 | [-0.0003, 0.0109] | includes zero | 2056 |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.0001 | [-0.0052, 0.0059] | includes zero | 2056 |
+| SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0331 | [-0.0370, -0.0292] | excludes zero | 2056 |
+| SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0382 | [-0.0421, -0.0343] | excludes zero | 2056 |
+| SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0383 | [-0.0424, -0.0346] | excludes zero | 2056 |
+| BIOT | EEG1 only | EEG2 only |  | 0.0092 | [0.0049, 0.0134] | excludes zero | 2056 |
+| BIOT | EEG1 only | EEG3 only |  | -0.0021 | [-0.0070, 0.0029] | includes zero | 2056 |
+| BIOT | EEG2 only | EEG3 only |  | -0.0112 | [-0.0164, -0.0058] | excludes zero | 2056 |
+| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0562 | [-0.0595, -0.0531] | excludes zero | 2056 |
+| BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0654 | [-0.0690, -0.0617] | excludes zero | 2056 |
+| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0542 | [-0.0579, -0.0506] | excludes zero | 2056 |
 
 Diff = condition A minus condition B.
 
@@ -244,9 +244,9 @@ Per-subject macro F1 and accuracy, same 2056 subjects, same D.2 pairs. The paire
 <!-- spec: items=paired t-test vs Wilcoxon (macro F1); marks=none; note=paired comparison statistics, not a ranked comparison -->
 | Model | Condition A | Condition B | Reference | Mean diff | sd of diff | t | df | t-test p | t-test Holm p | Cohen's dz | t-test 95% CI | Wilcoxon p | Wilcoxon Holm p | Rank-biserial | Hodges-Lehmann diff | Skewness | Excess kurtosis |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| SleepFM From-Scratch | EEG1 only | EEG2 only |  | -0.0012 | 0.0993 | -0.552 | 2055 | 0.5809 | 1.0000 | -0.012 | [-0.0055, 0.0031] | 0.0001 | 0.0003 | -0.099 | -0.0050 | +0.628 | +8.318 |
-| SleepFM From-Scratch | EEG1 only | EEG3 only |  | -0.0012 | 0.1160 | -0.484 | 2055 | 0.6284 | 1.0000 | -0.011 | [-0.0063, 0.0038] | 0.4594 | 0.4594 | +0.019 | +0.0012 | -0.107 | +4.479 |
-| SleepFM From-Scratch | EEG2 only | EEG3 only |  | -0.0000 | 0.1211 | -0.011 | 2055 | 0.9912 | 1.0000 | -0.000 | [-0.0053, 0.0052] | 0.0099 | 0.0198 | +0.066 | +0.0041 | -0.319 | +4.689 |
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | -0.0012 | 0.0993 | -0.552 | 2055 | 0.5809 | 1.00 | -0.012 | [-0.0055, 0.0031] | 0.0001 | 0.0003 | -0.099 | -0.0050 | +0.628 | +8.318 |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | -0.0012 | 0.1160 | -0.484 | 2055 | 0.6284 | 1.00 | -0.011 | [-0.0063, 0.0038] | 0.4594 | 0.4594 | +0.019 | +0.0012 | -0.107 | +4.479 |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | -0.0000 | 0.1211 | -0.011 | 2055 | 0.9912 | 1.00 | -0.000 | [-0.0053, 0.0052] | 0.0099 | 0.0198 | +0.066 | +0.0041 | -0.319 | +4.689 |
 | SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0447 | 0.0823 | -24.628 | 2055 | 1.43e-117 | 8.57e-117 | -0.543 | [-0.0483, -0.0411] | 5.19e-142 | 3.12e-141 | -0.646 | -0.0359 | -1.330 | +6.430 |
 | SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0435 | 0.0848 | -23.257 | 2055 | 2.11e-106 | 8.44e-106 | -0.513 | [-0.0472, -0.0398] | 3.65e-137 | 1.83e-136 | -0.635 | -0.0316 | -1.928 | +6.477 |
 | SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0435 | 0.0840 | -23.465 | 2055 | 4.46e-108 | 2.23e-107 | -0.518 | [-0.0471, -0.0398] | 8.62e-133 | 3.45e-132 | -0.624 | -0.0349 | -1.627 | +5.992 |
@@ -275,15 +275,15 @@ Per-subject macro F1 and accuracy, same 2056 subjects, same D.2 pairs. The paire
 | SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0307 | 0.0769 | -18.112 | 2055 | 3.83e-68 | 1.53e-67 | -0.399 | [-0.0340, -0.0274] | 9.19e-87 | 3.68e-86 | -0.506 | -0.0188 | -2.358 | +11.400 |
 | SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0337 | 0.0745 | -20.485 | 2055 | 5.16e-85 | 3.10e-84 | -0.452 | [-0.0369, -0.0304] | 9.05e-113 | 5.43e-112 | -0.578 | -0.0206 | -2.477 | +8.900 |
 | SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0320 | 0.0743 | -19.498 | 2055 | 7.98e-78 | 3.99e-77 | -0.430 | [-0.0352, -0.0288] | 6.08e-111 | 3.04e-110 | -0.572 | -0.0216 | -2.484 | +11.603 |
-| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.0040 | 0.0964 | 1.871 | 2055 | 0.0615 | 0.1844 | +0.041 | [-0.0002, 0.0081] | 0.9774 | 1.0000 | +0.001 | +0.0000 | +0.027 | +14.808 |
-| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.0000 | 0.1139 | 0.011 | 2055 | 0.9913 | 0.9913 | +0.000 | [-0.0049, 0.0050] | 0.5167 | 1.0000 | +0.017 | +0.0007 | -0.135 | +9.825 |
-| SleepFM Next-Token | EEG2 only | EEG3 only |  | -0.0040 | 0.1145 | -1.564 | 2055 | 0.1180 | 0.2360 | -0.034 | [-0.0089, 0.0010] | 0.9876 | 1.0000 | +0.000 | +0.0000 | +0.064 | +7.777 |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.0040 | 0.0964 | 1.871 | 2055 | 0.0615 | 0.1844 | +0.041 | [-0.0002, 0.0081] | 0.9774 | 1.00 | +0.001 | +0.0000 | +0.027 | +14.808 |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.0000 | 0.1139 | 0.011 | 2055 | 0.9913 | 0.9913 | +0.000 | [-0.0049, 0.0050] | 0.5167 | 1.00 | +0.017 | +0.0007 | -0.135 | +9.825 |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | -0.0040 | 0.1145 | -1.564 | 2055 | 0.1180 | 0.2360 | -0.034 | [-0.0089, 0.0010] | 0.9876 | 1.00 | +0.000 | +0.0000 | +0.064 | +7.777 |
 | SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | -0.0280 | 0.0807 | -15.728 | 2055 | 1.02e-52 | 5.12e-52 | -0.347 | [-0.0315, -0.0245] | 1.46e-85 | 7.32e-85 | -0.503 | -0.0159 | -3.143 | +17.515 |
 | SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | -0.0320 | 0.0823 | -17.606 | 2055 | 9.83e-65 | 5.90e-64 | -0.388 | [-0.0355, -0.0284] | 1.73e-102 | 1.04e-101 | -0.551 | -0.0167 | -2.522 | +10.253 |
 | SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | -0.0280 | 0.0827 | -15.356 | 2055 | 1.83e-50 | 7.31e-50 | -0.339 | [-0.0316, -0.0244] | 2.52e-79 | 1.01e-78 | -0.482 | -0.0157 | -2.945 | +15.968 |
-| BIOT | EEG1 only | EEG2 only |  | 0.0030 | 0.0904 | 1.500 | 2055 | 0.1337 | 0.2675 | +0.033 | [-0.0009, 0.0069] | 0.9966 | 1.0000 | -0.000 | +0.0000 | +0.567 | +10.710 |
-| BIOT | EEG1 only | EEG3 only |  | -0.0017 | 0.1050 | -0.729 | 2055 | 0.4663 | 0.4663 | -0.016 | [-0.0062, 0.0029] | 0.9876 | 1.0000 | +0.000 | +0.0000 | -0.232 | +6.387 |
-| BIOT | EEG2 only | EEG3 only |  | -0.0047 | 0.1084 | -1.956 | 2055 | 0.0506 | 0.1517 | -0.043 | [-0.0094, 0.0000] | 0.5774 | 1.0000 | -0.014 | -0.0007 | -0.293 | +5.715 |
+| BIOT | EEG1 only | EEG2 only |  | 0.0030 | 0.0904 | 1.500 | 2055 | 0.1337 | 0.2675 | +0.033 | [-0.0009, 0.0069] | 0.9966 | 1.00 | -0.000 | +0.0000 | +0.567 | +10.710 |
+| BIOT | EEG1 only | EEG3 only |  | -0.0017 | 0.1050 | -0.729 | 2055 | 0.4663 | 0.4663 | -0.016 | [-0.0062, 0.0029] | 0.9876 | 1.00 | +0.000 | +0.0000 | -0.232 | +6.387 |
+| BIOT | EEG2 only | EEG3 only |  | -0.0047 | 0.1084 | -1.956 | 2055 | 0.0506 | 0.1517 | -0.043 | [-0.0094, 0.0000] | 0.5774 | 1.00 | -0.014 | -0.0007 | -0.293 | +5.715 |
 | BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0485 | 0.0707 | -31.106 | 2055 | 2.07e-174 | 1.24e-173 | -0.686 | [-0.0516, -0.0454] | 7.28e-238 | 4.37e-237 | -0.841 | -0.0374 | -2.596 | +10.644 |
 | BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0515 | 0.0788 | -29.619 | 2055 | 7.29e-161 | 3.64e-160 | -0.653 | [-0.0549, -0.0481] | 6.60e-223 | 3.30e-222 | -0.813 | -0.0379 | -2.342 | +8.349 |
 | BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | -0.0468 | 0.0753 | -28.194 | 2055 | 3.95e-148 | 1.58e-147 | -0.622 | [-0.0501, -0.0436] | 8.01e-213 | 3.21e-212 | -0.794 | -0.0361 | -2.404 | +10.511 |
@@ -294,8 +294,8 @@ Per-subject macro F1 and accuracy, same 2056 subjects, same D.2 pairs. The paire
 <!-- spec: items=t-test vs Wilcoxon disagreements; marks=none; note=diagnostic list, not a ranked comparison -->
 | Metric | Model | Condition A | Condition B | t-test Holm p | Wilcoxon Holm p |
 |---|---|---|---|---|---|
-| macro F1 | SleepFM From-Scratch | EEG1 only | EEG2 only | 1.0000 | 0.0003 |
-| macro F1 | SleepFM From-Scratch | EEG2 only | EEG3 only | 1.0000 | 0.0198 |
+| macro F1 | SleepFM From-Scratch | EEG1 only | EEG2 only | 1.00 | 0.0003 |
+| macro F1 | SleepFM From-Scratch | EEG2 only | EEG3 only | 1.00 | 0.0198 |
 | macro F1 | SleepFM Next-Token | EEG1 only | EEG2 only | 0.4110 | 0.0480 |
 | macro F1 | SleepFM Next-Token | EEG1 only | EEG3 only | 0.3975 | 0.0074 |
 | macro F1 | SleepFM Next-Token | EEG2 only | EEG3 only | 0.6813 | 4.15e-05 |
@@ -303,7 +303,9 @@ Per-subject macro F1 and accuracy, same 2056 subjects, same D.2 pairs. The paire
 
 Every disagreement listed is the SAME direction: Wilcoxon calls it significant, the t-test does not -- the mirror image never happens here.
 
-**On which test is primary (corrected wording, task item 3):** the primary result in this file is the difference in POOLED macro F1 (D.1-D.3's PRIMARY statistic) with its subject-cluster-bootstrap interval and TOST verdict -- not either per-subject test below. Of the two per-subject (SECONDARY-statistic) tests, the paired t-test tests whether the MEAN of the per-subject macro F1 differences is zero; the paired Wilcoxon tests whether there is a shift in the TYPICAL (median) subject. These are different questions about the same data, and with skewed per-subject differences (see the skewness/excess-kurtosis columns above) they can disagree -- as they do for the 5 pairs below, where the mean is near zero (sometimes even the opposite sign from the median) while the typical subject still shifts:
+Reading note, channel-vs-channel rows above (three per model): Each row compares two single channels of the same model on the same 2056 subjects. The headline number is the difference in pooled macro F1 with its 95% interval. The t-test checks the mean of the per-subject differences. The Wilcoxon test checks whether the typical subject shifts. With skewed differences they can disagree. P-values are Holm-adjusted across the six comparisons of each model (three channel-vs-channel, three channel-vs-reference). For SleepFM Next-Token, EEG1 against EEG2, the mean and the median shift have opposite signs, so no channel is better there.
+
+Reading note, channel-vs-reference rows above (three per model): Each row compares one channel with the same model using all three channels, on the same 2056 subjects. All nine drops are large and both tests agree. For BIOT, the three-channel run used patience 20 and the single channels used 10, so its drops include a patience difference. P-values are Holm-adjusted as above.
 
 *No marks: diagnostic detail for the 5 disagreeing pairs, not a ranked comparison.*
 <!-- spec: items=disagreeing pairs detail; marks=none; note=diagnostic detail for the 5 disagreeing pairs, not a ranked comparison -->
@@ -314,8 +316,6 @@ Every disagreement listed is the SAME direction: Wilcoxon calls it significant, 
 | SleepFM Next-Token | EEG1 only | EEG2 only | +0.0029 | -0.0029 | -0.0023 | +0.434 |
 | SleepFM Next-Token | EEG1 only | EEG3 only | +0.0041 | +0.0052 | +0.0041 | -0.001 |
 | SleepFM Next-Token | EEG2 only | EEG3 only | +0.0011 | +0.0076 | +0.0059 | -0.155 |
-
-Note the SleepFM Next-Token EEG1-vs-EEG2 row: the mean (+0.0029) and the median/Hodges-Lehmann estimate (-0.0029/-0.0023) don't even agree in SIGN -- exactly the kind of case where "the mean" and "the typical subject" are genuinely different questions, not two estimates of the same number. For the large, clearly nonzero single-channel-vs-reference effects elsewhere in this table, both tests agree at p < 0.0001 regardless of this concern.
 
 ### D.2 supplement: fold-level paired t-test (task item 2)
 A paired t-test on the 5 fold-level (epoch-pooled) macro F1 values for each D.2 pair -- df=4. **Low power** (n=5) **and not independent observations**: in 5-fold cross-validation every pair of folds' TRAINING sets share 3 of the other 4 folds' subjects (each fold's training set is "everyone else"), so the 5 fold-level values are correlated with each other through shared training data, violating the paired t-test's independence assumption. Reported as a labeled supplement only, never as a substitute for the subject-level tests above.
@@ -350,44 +350,44 @@ A paired t-test on the 5 fold-level (epoch-pooled) macro F1 values for each D.2 
 <!-- spec: items=TOST verdicts (primary, epoch-pooled); marks=none; note=equivalence verdicts, not a ranked comparison -->
 | Model | Condition A | Condition B | Reference | Margin | Point diff | 90% CI (pooled macro F1 diff) | Verdict |
 |---|---|---|---|---|---|---|---|
-| SleepFM From-Scratch | EEG1 only | EEG2 only |  | 0.01 | -0.0007 | [-0.0044, 0.0029] | equivalent |
-| SleepFM From-Scratch | EEG1 only | EEG2 only |  | 0.02 | -0.0007 | [-0.0044, 0.0029] | equivalent |
-| SleepFM From-Scratch | EEG1 only | EEG3 only |  | 0.01 | -0.0052 | [-0.0096, -0.0005] | equivalent |
-| SleepFM From-Scratch | EEG1 only | EEG3 only |  | 0.02 | -0.0052 | [-0.0096, -0.0005] | equivalent |
-| SleepFM From-Scratch | EEG2 only | EEG3 only |  | 0.01 | -0.0045 | [-0.0088, 0.0002] | equivalent |
-| SleepFM From-Scratch | EEG2 only | EEG3 only |  | 0.02 | -0.0045 | [-0.0088, 0.0002] | equivalent |
-| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0471 | [-0.0505, -0.0439] | not equivalent |
-| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0471 | [-0.0505, -0.0439] | not equivalent |
-| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0464 | [-0.0494, -0.0433] | not equivalent |
-| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0464 | [-0.0494, -0.0433] | not equivalent |
-| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0419 | [-0.0452, -0.0388] | not equivalent |
-| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0419 | [-0.0452, -0.0388] | not equivalent |
-| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.01 | 0.0051 | [0.0012, 0.0089] | equivalent |
-| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.02 | 0.0051 | [0.0012, 0.0089] | equivalent |
-| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.01 | 0.0052 | [0.0005, 0.0101] | inconclusive |
-| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.02 | 0.0052 | [0.0005, 0.0101] | equivalent |
-| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.01 | 0.0001 | [-0.0045, 0.0050] | equivalent |
-| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.02 | 0.0001 | [-0.0045, 0.0050] | equivalent |
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | 0.01 | -0.0007 | [-0.0045, 0.0029] | equivalent |
+| SleepFM From-Scratch | EEG1 only | EEG2 only |  | 0.02 | -0.0007 | [-0.0045, 0.0029] | equivalent |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | 0.01 | -0.0052 | [-0.0096, -0.0007] | equivalent |
+| SleepFM From-Scratch | EEG1 only | EEG3 only |  | 0.02 | -0.0052 | [-0.0096, -0.0007] | equivalent |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | 0.01 | -0.0045 | [-0.0088, 0.0000] | equivalent |
+| SleepFM From-Scratch | EEG2 only | EEG3 only |  | 0.02 | -0.0045 | [-0.0088, 0.0000] | equivalent |
+| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0471 | [-0.0504, -0.0439] | not equivalent |
+| SleepFM From-Scratch | EEG1 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0471 | [-0.0504, -0.0439] | not equivalent |
+| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0464 | [-0.0495, -0.0433] | not equivalent |
+| SleepFM From-Scratch | EEG2 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0464 | [-0.0495, -0.0433] | not equivalent |
+| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0419 | [-0.0451, -0.0388] | not equivalent |
+| SleepFM From-Scratch | EEG3 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0419 | [-0.0451, -0.0388] | not equivalent |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.01 | 0.0051 | [0.0011, 0.0090] | equivalent |
+| SleepFM Next-Token | EEG1 only | EEG2 only |  | 0.02 | 0.0051 | [0.0011, 0.0090] | equivalent |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.01 | 0.0052 | [0.0006, 0.0100] | equivalent |
+| SleepFM Next-Token | EEG1 only | EEG3 only |  | 0.02 | 0.0052 | [0.0006, 0.0100] | equivalent |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.01 | 0.0001 | [-0.0044, 0.0049] | equivalent |
+| SleepFM Next-Token | EEG2 only | EEG3 only |  | 0.02 | 0.0001 | [-0.0044, 0.0049] | equivalent |
 | SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0331 | [-0.0364, -0.0299] | not equivalent |
 | SleepFM Next-Token | EEG1 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0331 | [-0.0364, -0.0299] | not equivalent |
 | SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0382 | [-0.0415, -0.0348] | not equivalent |
 | SleepFM Next-Token | EEG2 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0382 | [-0.0415, -0.0348] | not equivalent |
 | SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | 0.01 | -0.0383 | [-0.0417, -0.0351] | not equivalent |
 | SleepFM Next-Token | EEG3 only | 3-channel, patience 10 | patience 10 | 0.02 | -0.0383 | [-0.0417, -0.0351] | not equivalent |
-| BIOT | EEG1 only | EEG2 only |  | 0.01 | 0.0092 | [0.0058, 0.0127] | inconclusive |
-| BIOT | EEG1 only | EEG2 only |  | 0.02 | 0.0092 | [0.0058, 0.0127] | equivalent |
-| BIOT | EEG1 only | EEG3 only |  | 0.01 | -0.0021 | [-0.0062, 0.0022] | equivalent |
-| BIOT | EEG1 only | EEG3 only |  | 0.02 | -0.0021 | [-0.0062, 0.0022] | equivalent |
-| BIOT | EEG2 only | EEG3 only |  | 0.01 | -0.0112 | [-0.0156, -0.0066] | inconclusive |
-| BIOT | EEG2 only | EEG3 only |  | 0.02 | -0.0112 | [-0.0156, -0.0066] | equivalent |
-| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0562 | [-0.0589, -0.0535] | not equivalent |
-| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0562 | [-0.0589, -0.0535] | not equivalent |
+| BIOT | EEG1 only | EEG2 only |  | 0.01 | 0.0092 | [0.0056, 0.0127] | inconclusive |
+| BIOT | EEG1 only | EEG2 only |  | 0.02 | 0.0092 | [0.0056, 0.0127] | equivalent |
+| BIOT | EEG1 only | EEG3 only |  | 0.01 | -0.0021 | [-0.0062, 0.0021] | equivalent |
+| BIOT | EEG1 only | EEG3 only |  | 0.02 | -0.0021 | [-0.0062, 0.0021] | equivalent |
+| BIOT | EEG2 only | EEG3 only |  | 0.01 | -0.0112 | [-0.0155, -0.0067] | inconclusive |
+| BIOT | EEG2 only | EEG3 only |  | 0.02 | -0.0112 | [-0.0155, -0.0067] | equivalent |
+| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0562 | [-0.0590, -0.0535] | not equivalent |
+| BIOT | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0562 | [-0.0590, -0.0535] | not equivalent |
 | BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0654 | [-0.0684, -0.0623] | not equivalent |
 | BIOT | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0654 | [-0.0684, -0.0623] | not equivalent |
-| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0542 | [-0.0575, -0.0512] | not equivalent |
-| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0542 | [-0.0575, -0.0512] | not equivalent |
+| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0542 | [-0.0573, -0.0512] | not equivalent |
+| BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0542 | [-0.0573, -0.0512] | not equivalent |
 
-**Which pairs changed verdict against the old (secondary, mean-per-subject) version (task item 3):** matched by (model, condition A, condition B, margin) against the SECONDARY TOST table below -- exactly **1 of 36** verdicts changes: SleepFM Next-Token, EEG1 only vs EEG3 only, margin 0.01 -- PRIMARY says "inconclusive" (90% CI [0.0005, 0.0101], just barely overlapping the 0.01 boundary), SECONDARY said "equivalent" (90% CI [-0.0004, 0.0087], entirely inside 0.01). Every other verdict is unchanged between the two statistics, at both margins.
+**Which pairs changed verdict against the secondary (mean-per-subject) version:** matched by (model, condition A, condition B, margin) against the SECONDARY TOST table below -- **0 of 36** verdicts differ, at both margins. (An earlier, 2000-resample version of the PRIMARY statistic had shown SleepFM Next-Token's EEG1-vs-EEG3 pair at margin 0.01 as "inconclusive" against the SECONDARY statistic's "equivalent" -- that gap closed once the bootstrap was rerun at 10000 resamples, see the stability note below D.3's table.)
 
 **SECONDARY statistic (mean per-subject macro F1):**
 
@@ -432,18 +432,20 @@ A paired t-test on the 5 fold-level (epoch-pooled) macro F1 values for each D.2 
 | BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.01 | -0.0546 | [-0.0581, -0.0514] | not equivalent |
 | BIOT | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 0.02 | -0.0546 | [-0.0581, -0.0514] | not equivalent |
 
-Margins (0.01 and 0.02 macro F1) were fixed before looking at any result, per the task instructions. "Equivalent" requires the 90% CI entirely inside [-margin, +margin]; "not equivalent" requires it entirely outside on one side; otherwise "inconclusive".
+Equivalent means the 90% interval of the pooled difference lies inside the margin. Not equivalent means it lies fully outside. Inconclusive means it crosses the margin. The margins, 0.01 and 0.02 macro F1, were fixed before the results were seen.
+
+**Bootstrap stability check (task item 1):** every PRIMARY-statistic pooled difference and TOST interval above (D.1, D.2, D.3, D.5, E6) was rerun at 10000 resamples under two seeds (0 and 1; seed 0 is the value used in every table in this file, seed 1 is run only for this check, never reported elsewhere -- see `run_bootstrap_stability.py`, `ADOPTED_SEED = 0` / `STABILITY_SEED = 1` in its own comments). Seed 0 vs. seed 1, both at 10000 resamples: **0 of 36** TOST verdicts (macro F1) and **0 of 36** (accuracy) change, and **0 of 90** D.5 pooled-per-class-F1 CI-excludes-zero flags change -- fully stable. Seed 0 at 10000 resamples vs. the previous seed-0-at-2000-resamples result: **1 of 36** macro-F1 verdicts changes (**0 of 36** for accuracy) -- SleepFM Next-Token, EEG1 only vs. EEG3 only, margin 0.01: 2000 resamples gave 90% CI [0.0005, 0.0101] ("inconclusive", the interval just crossing the margin); 10000 resamples gives [0.0006, 0.0100] from seed 0 and [0.0006, 0.0100] from seed 1 -- identical to 4 decimals between seeds, and now entirely inside 0.01 ("equivalent"). This was a genuine resample-count sensitivity at a boundary this close to the margin, not a seed-to-seed instability; the 10000-resample value is what is used throughout this file (the D.1-D.3, D.5, and E6 tables above already reflect it, and the Finding below is restated to match). No other pair in this file was close enough to a margin boundary for this to matter.
 
 ### D.4: Friedman test across EEG1/EEG2/EEG3 (secondary statistic)
-Per-subject macro F1, same as D.2's secondary statistic -- tests whether the three channels' typical (median) subject differs, not whether their means differ.
+The Friedman test checks whether the three channels differ for the typical subject. It is significant for all three models. Kendall's W is below 0.01, so the effect is very small.
 
 *No marks: omnibus test, not a ranked comparison.*
 <!-- spec: items=Friedman test results; marks=none; note=omnibus test, not a ranked comparison -->
-| Model | n subjects | Friedman statistic | p-value |
-|---|---|---|---|
-| SleepFM From-Scratch | 2056 | 19.682 | 5.32e-05 |
-| SleepFM Next-Token | 2056 | 37.561 | 6.98e-09 |
-| BIOT | 2056 | 32.152 | 1.04e-07 |
+| Model | n subjects | Friedman statistic | p-value | Kendall's W |
+|---|---|---|---|---|
+| SleepFM From-Scratch | 2056 | 19.682 | 5.32e-05 | 0.0048 |
+| SleepFM Next-Token | 2056 | 37.561 | 6.98e-09 | 0.0091 |
+| BIOT | 2056 | 32.152 | 1.04e-07 | 0.0078 |
 
 
 **Holm-adjusted post-hoc pairwise Wilcoxon (per model), with the Hodges-Lehmann estimate:**
@@ -482,9 +484,9 @@ Per-subject macro F1, same as D.2's secondary statistic -- tests whether the thr
 | SleepFM From-Scratch | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | -0.0306 | [-0.0426, -0.0187] | 0.0000 | 1.21e-13 | -0.219 | 6.06e-13 |
 | SleepFM From-Scratch | N3 | EEG2 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | -0.0016 | [-0.0130, 0.0108] | 0.0000 | 0.0024 | -0.090 | 0.0048 |
 | SleepFM From-Scratch | N3 | EEG3 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | -0.0505 | [-0.0637, -0.0375] | -0.0085 | 5.52e-20 | -0.268 | 3.31e-19 |
-| SleepFM From-Scratch | REM | EEG1 only | EEG2 only |  | 2012 | 44 | 0.0072 | [-0.0015, 0.0161] | 0.0000 | 0.8624 | 0.005 | 1.0000 |
+| SleepFM From-Scratch | REM | EEG1 only | EEG2 only |  | 2012 | 44 | 0.0072 | [-0.0015, 0.0161] | 0.0000 | 0.8624 | 0.005 | 1.00 |
 | SleepFM From-Scratch | REM | EEG1 only | EEG3 only |  | 2012 | 44 | 0.0033 | [-0.0071, 0.0132] | 0.0000 | 0.2816 | 0.031 | 0.8448 |
-| SleepFM From-Scratch | REM | EEG2 only | EEG3 only |  | 2012 | 44 | -0.0040 | [-0.0141, 0.0060] | 0.0000 | 0.6125 | 0.014 | 1.0000 |
+| SleepFM From-Scratch | REM | EEG2 only | EEG3 only |  | 2012 | 44 | -0.0040 | [-0.0141, 0.0060] | 0.0000 | 0.6125 | 0.014 | 1.00 |
 | SleepFM From-Scratch | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0348 | [-0.0425, -0.0275] | 0.0000 | 2.72e-16 | -0.239 | 1.09e-15 |
 | SleepFM From-Scratch | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0421 | [-0.0498, -0.0347] | 0.0000 | 7.00e-22 | -0.280 | 3.50e-21 |
 | SleepFM From-Scratch | REM | EEG3 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0381 | [-0.0455, -0.0309] | 0.0000 | 2.91e-24 | -0.295 | 1.75e-23 |
@@ -496,15 +498,15 @@ Per-subject macro F1, same as D.2's secondary statistic -- tests whether the thr
 | SleepFM Next-Token | N1 | EEG3 only | 3-channel, patience 10 | patience 10 | 2035 | 21 | -0.0809 | [-0.0855, -0.0756] | -0.0741 | 8.83e-171 | -0.729 | 5.30e-170 |
 | SleepFM Next-Token | N3 | EEG1 only | EEG2 only |  | 1885 | 171 | -0.0253 | [-0.0378, -0.0133] | 0.0000 | 2.57e-07 | -0.153 | 1.03e-06 |
 | SleepFM Next-Token | N3 | EEG1 only | EEG3 only |  | 1885 | 171 | -0.0183 | [-0.0317, -0.0044] | 0.0000 | 8.10e-05 | -0.117 | 0.0002 |
-| SleepFM Next-Token | N3 | EEG2 only | EEG3 only |  | 1885 | 171 | 0.0070 | [-0.0057, 0.0201] | 0.0000 | 0.7503 | -0.009 | 1.0000 |
-| SleepFM Next-Token | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | 0.0051 | [-0.0057, 0.0158] | 0.0000 | 0.8223 | 0.007 | 1.0000 |
+| SleepFM Next-Token | N3 | EEG2 only | EEG3 only |  | 1885 | 171 | 0.0070 | [-0.0057, 0.0201] | 0.0000 | 0.7503 | -0.009 | 1.00 |
+| SleepFM Next-Token | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | 0.0051 | [-0.0057, 0.0158] | 0.0000 | 0.8223 | 0.007 | 1.00 |
 | SleepFM Next-Token | N3 | EEG2 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | 0.0304 | [0.0201, 0.0413] | 0.0000 | 4.70e-10 | 0.188 | 2.35e-09 |
 | SleepFM Next-Token | N3 | EEG3 only | 3-channel, patience 10 | patience 10 | 1885 | 171 | 0.0234 | [0.0136, 0.0349] | 0.0000 | 3.22e-11 | 0.199 | 1.93e-10 |
-| SleepFM Next-Token | REM | EEG1 only | EEG2 only |  | 2012 | 44 | 0.0041 | [-0.0044, 0.0124] | 0.0000 | 0.8006 | -0.007 | 1.0000 |
+| SleepFM Next-Token | REM | EEG1 only | EEG2 only |  | 2012 | 44 | 0.0041 | [-0.0044, 0.0124] | 0.0000 | 0.8006 | -0.007 | 1.00 |
 | SleepFM Next-Token | REM | EEG1 only | EEG3 only |  | 2012 | 44 | 0.0137 | [0.0046, 0.0224] | 0.0000 | 0.0005 | 0.100 | 0.0022 |
 | SleepFM Next-Token | REM | EEG2 only | EEG3 only |  | 2012 | 44 | 0.0096 | [0.0004, 0.0188] | 0.0000 | 1.64e-05 | 0.125 | 8.20e-05 |
-| SleepFM Next-Token | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0079 | [-0.0140, -0.0014] | 0.0000 | 0.3476 | -0.028 | 1.0000 |
-| SleepFM Next-Token | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0120 | [-0.0190, -0.0050] | 0.0000 | 0.3690 | -0.027 | 1.0000 |
+| SleepFM Next-Token | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0079 | [-0.0140, -0.0014] | 0.0000 | 0.3476 | -0.028 | 1.00 |
+| SleepFM Next-Token | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0120 | [-0.0190, -0.0050] | 0.0000 | 0.3690 | -0.027 | 1.00 |
 | SleepFM Next-Token | REM | EEG3 only | 3-channel, patience 10 | patience 10 | 2012 | 44 | -0.0216 | [-0.0295, -0.0139] | 0.0000 | 1.01e-07 | -0.159 | 6.08e-07 |
 | BIOT | N1 | EEG1 only | EEG2 only |  | 2035 | 21 | 0.0509 | [0.0441, 0.0580] | 0.0471 | 1.11e-52 | 0.399 | 3.34e-52 |
 | BIOT | N1 | EEG1 only | EEG3 only |  | 2035 | 21 | 0.0016 | [-0.0073, 0.0100] | 0.0000 | 0.6598 | 0.011 | 0.6598 |
@@ -577,96 +579,96 @@ Holm adjustment is applied within each (model, stage) pair across its 6 comparis
 <!-- spec: items=pooled per-class F1 comparisons; marks=none; note=per-class comparisons, not a ranked comparison -->
 | Model | Stage | Condition A | Condition B | Reference | n subjects | Pooled F1 diff (A-B) | Bootstrap 95% CI |
 |---|---|---|---|---|---|---|---|
-| SleepFM From-Scratch | Wake | EEG1 only | EEG2 only |  | 2056 | -0.0050 | [-0.0081, -0.0018] |
+| SleepFM From-Scratch | Wake | EEG1 only | EEG2 only |  | 2056 | -0.0050 | [-0.0082, -0.0018] |
 | SleepFM From-Scratch | Wake | EEG1 only | EEG3 only |  | 2056 | 0.0007 | [-0.0031, 0.0046] |
-| SleepFM From-Scratch | Wake | EEG2 only | EEG3 only |  | 2056 | 0.0057 | [0.0018, 0.0098] |
+| SleepFM From-Scratch | Wake | EEG2 only | EEG3 only |  | 2056 | 0.0057 | [0.0019, 0.0097] |
 | SleepFM From-Scratch | Wake | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0255 | [-0.0284, -0.0226] |
-| SleepFM From-Scratch | Wake | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0205 | [-0.0234, -0.0178] |
-| SleepFM From-Scratch | Wake | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0262 | [-0.0291, -0.0233] |
-| SleepFM From-Scratch | N1 | EEG1 only | EEG2 only |  | 2056 | -0.0325 | [-0.0382, -0.0262] |
-| SleepFM From-Scratch | N1 | EEG1 only | EEG3 only |  | 2056 | -0.0199 | [-0.0276, -0.0119] |
-| SleepFM From-Scratch | N1 | EEG2 only | EEG3 only |  | 2056 | 0.0125 | [0.0053, 0.0200] |
-| SleepFM From-Scratch | N1 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.1064 | [-0.1124, -0.1003] |
-| SleepFM From-Scratch | N1 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0739 | [-0.0787, -0.0690] |
-| SleepFM From-Scratch | N1 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0864 | [-0.0922, -0.0806] |
+| SleepFM From-Scratch | Wake | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0205 | [-0.0234, -0.0176] |
+| SleepFM From-Scratch | Wake | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0262 | [-0.0292, -0.0234] |
+| SleepFM From-Scratch | N1 | EEG1 only | EEG2 only |  | 2056 | -0.0325 | [-0.0384, -0.0264] |
+| SleepFM From-Scratch | N1 | EEG1 only | EEG3 only |  | 2056 | -0.0199 | [-0.0280, -0.0121] |
+| SleepFM From-Scratch | N1 | EEG2 only | EEG3 only |  | 2056 | 0.0125 | [0.0053, 0.0198] |
+| SleepFM From-Scratch | N1 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.1064 | [-0.1125, -0.1002] |
+| SleepFM From-Scratch | N1 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0739 | [-0.0787, -0.0689] |
+| SleepFM From-Scratch | N1 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0864 | [-0.0921, -0.0806] |
 | SleepFM From-Scratch | N2 | EEG1 only | EEG2 only |  | 2056 | 0.0131 | [0.0087, 0.0174] |
-| SleepFM From-Scratch | N2 | EEG1 only | EEG3 only |  | 2056 | 0.0080 | [0.0028, 0.0133] |
-| SleepFM From-Scratch | N2 | EEG2 only | EEG3 only |  | 2056 | -0.0051 | [-0.0100, 0.0001] |
-| SleepFM From-Scratch | N2 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0213 | [-0.0253, -0.0176] |
-| SleepFM From-Scratch | N2 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0343 | [-0.0382, -0.0306] |
+| SleepFM From-Scratch | N2 | EEG1 only | EEG3 only |  | 2056 | 0.0080 | [0.0029, 0.0131] |
+| SleepFM From-Scratch | N2 | EEG2 only | EEG3 only |  | 2056 | -0.0051 | [-0.0101, 0.0002] |
+| SleepFM From-Scratch | N2 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0213 | [-0.0250, -0.0175] |
+| SleepFM From-Scratch | N2 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0343 | [-0.0382, -0.0305] |
 | SleepFM From-Scratch | N2 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0293 | [-0.0331, -0.0255] |
-| SleepFM From-Scratch | N3 | EEG1 only | EEG2 only |  | 2056 | 0.0065 | [-0.0025, 0.0152] |
-| SleepFM From-Scratch | N3 | EEG1 only | EEG3 only |  | 2056 | -0.0166 | [-0.0263, -0.0065] |
-| SleepFM From-Scratch | N3 | EEG2 only | EEG3 only |  | 2056 | -0.0232 | [-0.0328, -0.0128] |
-| SleepFM From-Scratch | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0292 | [-0.0372, -0.0218] |
-| SleepFM From-Scratch | N3 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0358 | [-0.0437, -0.0279] |
-| SleepFM From-Scratch | N3 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0126 | [-0.0204, -0.0053] |
-| SleepFM From-Scratch | REM | EEG1 only | EEG2 only |  | 2056 | 0.0144 | [0.0063, 0.0227] |
-| SleepFM From-Scratch | REM | EEG1 only | EEG3 only |  | 2056 | 0.0020 | [-0.0083, 0.0122] |
-| SleepFM From-Scratch | REM | EEG2 only | EEG3 only |  | 2056 | -0.0125 | [-0.0220, -0.0021] |
-| SleepFM From-Scratch | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0533 | [-0.0604, -0.0459] |
-| SleepFM From-Scratch | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0677 | [-0.0748, -0.0610] |
-| SleepFM From-Scratch | REM | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0552 | [-0.0628, -0.0480] |
-| SleepFM Next-Token | Wake | EEG1 only | EEG2 only |  | 2056 | -0.0057 | [-0.0089, -0.0022] |
-| SleepFM Next-Token | Wake | EEG1 only | EEG3 only |  | 2056 | 0.0005 | [-0.0037, 0.0050] |
-| SleepFM Next-Token | Wake | EEG2 only | EEG3 only |  | 2056 | 0.0062 | [0.0019, 0.0106] |
-| SleepFM Next-Token | Wake | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0207 | [-0.0237, -0.0177] |
-| SleepFM Next-Token | Wake | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0151 | [-0.0181, -0.0122] |
-| SleepFM Next-Token | Wake | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0212 | [-0.0247, -0.0178] |
-| SleepFM Next-Token | N1 | EEG1 only | EEG2 only |  | 2056 | -0.0077 | [-0.0132, -0.0024] |
-| SleepFM Next-Token | N1 | EEG1 only | EEG3 only |  | 2056 | 0.0423 | [0.0355, 0.0492] |
-| SleepFM Next-Token | N1 | EEG2 only | EEG3 only |  | 2056 | 0.0500 | [0.0438, 0.0562] |
+| SleepFM From-Scratch | N3 | EEG1 only | EEG2 only |  | 2056 | 0.0065 | [-0.0023, 0.0154] |
+| SleepFM From-Scratch | N3 | EEG1 only | EEG3 only |  | 2056 | -0.0166 | [-0.0262, -0.0068] |
+| SleepFM From-Scratch | N3 | EEG2 only | EEG3 only |  | 2056 | -0.0232 | [-0.0331, -0.0133] |
+| SleepFM From-Scratch | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0292 | [-0.0368, -0.0218] |
+| SleepFM From-Scratch | N3 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0358 | [-0.0435, -0.0280] |
+| SleepFM From-Scratch | N3 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0126 | [-0.0205, -0.0048] |
+| SleepFM From-Scratch | REM | EEG1 only | EEG2 only |  | 2056 | 0.0144 | [0.0061, 0.0228] |
+| SleepFM From-Scratch | REM | EEG1 only | EEG3 only |  | 2056 | 0.0020 | [-0.0079, 0.0121] |
+| SleepFM From-Scratch | REM | EEG2 only | EEG3 only |  | 2056 | -0.0125 | [-0.0220, -0.0026] |
+| SleepFM From-Scratch | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0533 | [-0.0606, -0.0461] |
+| SleepFM From-Scratch | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0677 | [-0.0748, -0.0607] |
+| SleepFM From-Scratch | REM | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0552 | [-0.0627, -0.0482] |
+| SleepFM Next-Token | Wake | EEG1 only | EEG2 only |  | 2056 | -0.0057 | [-0.0091, -0.0022] |
+| SleepFM Next-Token | Wake | EEG1 only | EEG3 only |  | 2056 | 0.0005 | [-0.0037, 0.0048] |
+| SleepFM Next-Token | Wake | EEG2 only | EEG3 only |  | 2056 | 0.0062 | [0.0020, 0.0105] |
+| SleepFM Next-Token | Wake | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0207 | [-0.0238, -0.0177] |
+| SleepFM Next-Token | Wake | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0151 | [-0.0180, -0.0121] |
+| SleepFM Next-Token | Wake | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0212 | [-0.0248, -0.0179] |
+| SleepFM Next-Token | N1 | EEG1 only | EEG2 only |  | 2056 | -0.0077 | [-0.0132, -0.0022] |
+| SleepFM Next-Token | N1 | EEG1 only | EEG3 only |  | 2056 | 0.0423 | [0.0354, 0.0492] |
+| SleepFM Next-Token | N1 | EEG2 only | EEG3 only |  | 2056 | 0.0500 | [0.0437, 0.0564] |
 | SleepFM Next-Token | N1 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0386 | [-0.0434, -0.0337] |
-| SleepFM Next-Token | N1 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0310 | [-0.0352, -0.0264] |
-| SleepFM Next-Token | N1 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0810 | [-0.0863, -0.0759] |
-| SleepFM Next-Token | N2 | EEG1 only | EEG2 only |  | 2056 | 0.0115 | [0.0073, 0.0159] |
-| SleepFM Next-Token | N2 | EEG1 only | EEG3 only |  | 2056 | 0.0046 | [-0.0007, 0.0099] |
-| SleepFM Next-Token | N2 | EEG2 only | EEG3 only |  | 2056 | -0.0069 | [-0.0122, -0.0016] |
-| SleepFM Next-Token | N2 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0246 | [-0.0284, -0.0210] |
-| SleepFM Next-Token | N2 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0361 | [-0.0401, -0.0325] |
-| SleepFM Next-Token | N2 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0292 | [-0.0331, -0.0256] |
-| SleepFM Next-Token | N3 | EEG1 only | EEG2 only |  | 2056 | 0.0027 | [-0.0057, 0.0104] |
-| SleepFM Next-Token | N3 | EEG1 only | EEG3 only |  | 2056 | -0.0147 | [-0.0244, -0.0046] |
-| SleepFM Next-Token | N3 | EEG2 only | EEG3 only |  | 2056 | -0.0174 | [-0.0271, -0.0075] |
-| SleepFM Next-Token | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0355 | [-0.0421, -0.0291] |
-| SleepFM Next-Token | N3 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0383 | [-0.0450, -0.0315] |
-| SleepFM Next-Token | N3 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0208 | [-0.0292, -0.0135] |
-| SleepFM Next-Token | REM | EEG1 only | EEG2 only |  | 2056 | 0.0245 | [0.0142, 0.0353] |
-| SleepFM Next-Token | REM | EEG1 only | EEG3 only |  | 2056 | -0.0066 | [-0.0184, 0.0055] |
-| SleepFM Next-Token | REM | EEG2 only | EEG3 only |  | 2056 | -0.0310 | [-0.0428, -0.0192] |
-| SleepFM Next-Token | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0460 | [-0.0553, -0.0371] |
-| SleepFM Next-Token | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0705 | [-0.0804, -0.0616] |
-| SleepFM Next-Token | REM | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0395 | [-0.0483, -0.0313] |
-| BIOT | Wake | EEG1 only | EEG2 only |  | 2056 | -0.0079 | [-0.0117, -0.0041] |
-| BIOT | Wake | EEG1 only | EEG3 only |  | 2056 | -0.0112 | [-0.0157, -0.0067] |
-| BIOT | Wake | EEG2 only | EEG3 only |  | 2056 | -0.0032 | [-0.0077, 0.0014] |
-| BIOT | Wake | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0385 | [-0.0420, -0.0350] |
-| BIOT | Wake | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0305 | [-0.0341, -0.0271] |
-| BIOT | Wake | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0273 | [-0.0303, -0.0243] |
-| BIOT | N1 | EEG1 only | EEG2 only |  | 2056 | 0.0004 | [-0.0047, 0.0054] |
-| BIOT | N1 | EEG1 only | EEG3 only |  | 2056 | 0.0023 | [-0.0034, 0.0080] |
-| BIOT | N1 | EEG2 only | EEG3 only |  | 2056 | 0.0019 | [-0.0040, 0.0078] |
-| BIOT | N1 | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0534 | [-0.0575, -0.0495] |
-| BIOT | N1 | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0538 | [-0.0586, -0.0492] |
-| BIOT | N1 | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0558 | [-0.0599, -0.0517] |
-| BIOT | N2 | EEG1 only | EEG2 only |  | 2056 | 0.0130 | [0.0085, 0.0176] |
-| BIOT | N2 | EEG1 only | EEG3 only |  | 2056 | 0.0106 | [0.0052, 0.0162] |
-| BIOT | N2 | EEG2 only | EEG3 only |  | 2056 | -0.0024 | [-0.0080, 0.0033] |
-| BIOT | N2 | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0455 | [-0.0491, -0.0419] |
+| SleepFM Next-Token | N1 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0310 | [-0.0355, -0.0264] |
+| SleepFM Next-Token | N1 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0810 | [-0.0863, -0.0757] |
+| SleepFM Next-Token | N2 | EEG1 only | EEG2 only |  | 2056 | 0.0115 | [0.0071, 0.0160] |
+| SleepFM Next-Token | N2 | EEG1 only | EEG3 only |  | 2056 | 0.0046 | [-0.0004, 0.0098] |
+| SleepFM Next-Token | N2 | EEG2 only | EEG3 only |  | 2056 | -0.0069 | [-0.0120, -0.0017] |
+| SleepFM Next-Token | N2 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0246 | [-0.0282, -0.0210] |
+| SleepFM Next-Token | N2 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0361 | [-0.0401, -0.0323] |
+| SleepFM Next-Token | N2 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0292 | [-0.0330, -0.0255] |
+| SleepFM Next-Token | N3 | EEG1 only | EEG2 only |  | 2056 | 0.0027 | [-0.0057, 0.0108] |
+| SleepFM Next-Token | N3 | EEG1 only | EEG3 only |  | 2056 | -0.0147 | [-0.0243, -0.0048] |
+| SleepFM Next-Token | N3 | EEG2 only | EEG3 only |  | 2056 | -0.0174 | [-0.0270, -0.0077] |
+| SleepFM Next-Token | N3 | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0355 | [-0.0425, -0.0289] |
+| SleepFM Next-Token | N3 | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0383 | [-0.0451, -0.0313] |
+| SleepFM Next-Token | N3 | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0208 | [-0.0288, -0.0133] |
+| SleepFM Next-Token | REM | EEG1 only | EEG2 only |  | 2056 | 0.0245 | [0.0138, 0.0353] |
+| SleepFM Next-Token | REM | EEG1 only | EEG3 only |  | 2056 | -0.0066 | [-0.0184, 0.0054] |
+| SleepFM Next-Token | REM | EEG2 only | EEG3 only |  | 2056 | -0.0310 | [-0.0428, -0.0191] |
+| SleepFM Next-Token | REM | EEG1 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0460 | [-0.0550, -0.0371] |
+| SleepFM Next-Token | REM | EEG2 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0705 | [-0.0800, -0.0614] |
+| SleepFM Next-Token | REM | EEG3 only | 3-channel, patience 10 | patience 10 | 2056 | -0.0395 | [-0.0482, -0.0312] |
+| BIOT | Wake | EEG1 only | EEG2 only |  | 2056 | -0.0079 | [-0.0118, -0.0041] |
+| BIOT | Wake | EEG1 only | EEG3 only |  | 2056 | -0.0112 | [-0.0156, -0.0067] |
+| BIOT | Wake | EEG2 only | EEG3 only |  | 2056 | -0.0032 | [-0.0076, 0.0013] |
+| BIOT | Wake | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0385 | [-0.0419, -0.0350] |
+| BIOT | Wake | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0305 | [-0.0340, -0.0271] |
+| BIOT | Wake | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0273 | [-0.0303, -0.0244] |
+| BIOT | N1 | EEG1 only | EEG2 only |  | 2056 | 0.0004 | [-0.0046, 0.0055] |
+| BIOT | N1 | EEG1 only | EEG3 only |  | 2056 | 0.0023 | [-0.0034, 0.0079] |
+| BIOT | N1 | EEG2 only | EEG3 only |  | 2056 | 0.0019 | [-0.0041, 0.0079] |
+| BIOT | N1 | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0534 | [-0.0574, -0.0495] |
+| BIOT | N1 | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0538 | [-0.0585, -0.0493] |
+| BIOT | N1 | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0558 | [-0.0600, -0.0516] |
+| BIOT | N2 | EEG1 only | EEG2 only |  | 2056 | 0.0130 | [0.0084, 0.0176] |
+| BIOT | N2 | EEG1 only | EEG3 only |  | 2056 | 0.0106 | [0.0052, 0.0160] |
+| BIOT | N2 | EEG2 only | EEG3 only |  | 2056 | -0.0024 | [-0.0077, 0.0032] |
+| BIOT | N2 | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0455 | [-0.0492, -0.0419] |
 | BIOT | N2 | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0585 | [-0.0627, -0.0544] |
-| BIOT | N2 | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0561 | [-0.0602, -0.0519] |
-| BIOT | N3 | EEG1 only | EEG2 only |  | 2056 | 0.0075 | [-0.0001, 0.0148] |
-| BIOT | N3 | EEG1 only | EEG3 only |  | 2056 | -0.0146 | [-0.0233, -0.0052] |
-| BIOT | N3 | EEG2 only | EEG3 only |  | 2056 | -0.0220 | [-0.0302, -0.0128] |
-| BIOT | N3 | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0545 | [-0.0618, -0.0471] |
-| BIOT | N3 | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0620 | [-0.0685, -0.0548] |
-| BIOT | N3 | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0400 | [-0.0470, -0.0334] |
-| BIOT | REM | EEG1 only | EEG2 only |  | 2056 | 0.0329 | [0.0256, 0.0408] |
-| BIOT | REM | EEG1 only | EEG3 only |  | 2056 | 0.0024 | [-0.0076, 0.0119] |
-| BIOT | REM | EEG2 only | EEG3 only |  | 2056 | -0.0305 | [-0.0404, -0.0204] |
-| BIOT | REM | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0894 | [-0.0958, -0.0834] |
-| BIOT | REM | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.1223 | [-0.1293, -0.1154] |
-| BIOT | REM | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0918 | [-0.0990, -0.0848] |
+| BIOT | N2 | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0561 | [-0.0602, -0.0520] |
+| BIOT | N3 | EEG1 only | EEG2 only |  | 2056 | 0.0075 | [-0.0002, 0.0151] |
+| BIOT | N3 | EEG1 only | EEG3 only |  | 2056 | -0.0146 | [-0.0236, -0.0053] |
+| BIOT | N3 | EEG2 only | EEG3 only |  | 2056 | -0.0220 | [-0.0306, -0.0130] |
+| BIOT | N3 | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0545 | [-0.0620, -0.0473] |
+| BIOT | N3 | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0620 | [-0.0688, -0.0552] |
+| BIOT | N3 | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0400 | [-0.0468, -0.0335] |
+| BIOT | REM | EEG1 only | EEG2 only |  | 2056 | 0.0329 | [0.0252, 0.0408] |
+| BIOT | REM | EEG1 only | EEG3 only |  | 2056 | 0.0024 | [-0.0069, 0.0117] |
+| BIOT | REM | EEG2 only | EEG3 only |  | 2056 | -0.0305 | [-0.0401, -0.0208] |
+| BIOT | REM | EEG1 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0894 | [-0.0956, -0.0835] |
+| BIOT | REM | EEG2 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.1223 | [-0.1295, -0.1153] |
+| BIOT | REM | EEG3 only | 3-channel benchmark | patience 20 (BIOT has no patience-10 3-channel run) | 2056 | -0.0918 | [-0.0988, -0.0850] |
 
 
 ### D.6: models against each other, same subjects, per condition
@@ -988,9 +990,9 @@ Fixed again (task item 7): now compares BIOT against each SleepFM model at the S
 | Condition | Model A | Patience A | Model B | Patience B | n subjects | Pooled macro F1 diff (A-B), 95% CI | Compute ratio per night (A/B, FLOPs, second method) |
 |---|---|---|---|---|---|---|---|
 | EEG3 only | BIOT | patience 10 | SleepFM From-Scratch | patience 10 | 2056 | +0.0110 [+0.0078, +0.0141] | 5.61x (369,917,309,978 / 65,925,880,320) |
-| 3-channel benchmark | BIOT | patience 20 | SleepFM From-Scratch | patience 50 | 2056 | +0.0088 [+0.0059, +0.0115] | 10.46x (1,113,175,520,335 / 106,426,606,080) |
-| EEG3 only | BIOT | patience 10 | SleepFM Next-Token | patience 10 | 2056 | +0.0034 [+0.0002, +0.0065] | 5.61x (369,917,309,978 / 65,925,880,320) |
-| 3-channel benchmark | BIOT | patience 20 | SleepFM Next-Token | patience 50 | 2056 | +0.0144 [+0.0113, +0.0171] | 10.46x (1,113,175,520,335 / 106,426,606,080) |
+| 3-channel benchmark | BIOT | patience 20 | SleepFM From-Scratch | patience 50 | 2056 | +0.0088 [+0.0060, +0.0116] | 10.46x (1,113,175,520,335 / 106,426,606,080) |
+| EEG3 only | BIOT | patience 10 | SleepFM Next-Token | patience 10 | 2056 | +0.0034 [+0.0002, +0.0066] | 5.61x (369,917,309,978 / 65,925,880,320) |
+| 3-channel benchmark | BIOT | patience 20 | SleepFM Next-Token | patience 50 | 2056 | +0.0144 [+0.0114, +0.0173] | 10.46x (1,113,175,520,335 / 106,426,606,080) |
 
 Diff = Model A minus Model B; a positive diff means BIOT scores higher. The compute ratio does not depend on which SleepFM model it's compared to (both share the same encoder architecture and FLOPs), only on the condition (1 channel vs. 3 channels) -- it is shown once per row for direct reading next to that row's macro F1 difference, not because it changes. At EEG3 only, BIOT scores 0.003-0.011 macro F1 higher for 5.6x the compute; at the 3-channel benchmark, BIOT scores 0.009-0.014 higher for 10.5x the compute, but BIOT's 3-channel run also used a lower patience (20 vs. 50) than SleepFM's, so part of that gap is not a clean architecture comparison -- see D.6 for the full patience/pretraining caveats.
 
