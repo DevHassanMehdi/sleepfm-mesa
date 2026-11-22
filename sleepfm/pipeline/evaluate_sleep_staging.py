@@ -80,10 +80,6 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
     model = model_class(**model_params).to(device)
     model_name = type(model).__name__
 
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-        logger.info(f"Using {torch.cuda.device_count()} GPUs")
-    
     logger.info(f"Model initialized: {model_name}")
     total_layers, total_params = count_parameters(model)
     logger.info(f'Trainable parameters: {total_params / 1e6:.2f} million')
@@ -96,11 +92,26 @@ def evaluate_sleep_staging(config_path, channel_groups_path, output_path, split,
     if os.path.isfile(checkpoint_path):
         logger.info(f"Loading checkpoint '{checkpoint_path}'")
         checkpoint = torch.load(checkpoint_path, map_location=device)
+        # A saved checkpoint may or may not carry the "module." prefix
+        # nn.DataParallel adds to every key, depending on how many GPUs
+        # happened to be visible when the run that saved it was training
+        # (finetune_sleep_staging.py auto-wraps the same way). Load into
+        # the UNWRAPPED model -- stripping the prefix if present -- so
+        # loading never depends on how many GPUs are visible right now;
+        # only wrap in DataParallel afterward, which is purely a
+        # multi-GPU work-splitting layer and does not change the loaded
+        # weights or any computed output.
+        if any(k.startswith("module.") for k in checkpoint):
+            checkpoint = {k[len("module."):]: v for k, v in checkpoint.items()}
         model.load_state_dict(checkpoint)
         logger.info("Checkpoint loaded successfully")
     else:
         logger.error(f"Checkpoint '{checkpoint_path}' not found")
         return
+
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+        logger.info(f"Using {torch.cuda.device_count()} GPUs")
 
     if dataset:
         config["dataset"] = dataset

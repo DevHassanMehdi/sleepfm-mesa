@@ -43,6 +43,7 @@ from run_tracking import init_run
 
 from labram_dataset import LaBraMSleepDataset, MODALITY_CHANNELS, get_ch_names, HDF5_DIR
 from modeling_finetune import labram_base_patch200_200
+from seed_utils import set_seed, seed_worker, get_git_commit, RANDOMNESS_SOURCES
 
 SPLIT_PATH = os.path.join(REPO_ROOT, "sleepfm/configs/dataset_split_fromscratch_staging.json")
 PRETRAINED_PATH = "/scratch/project_2019517/LaBraM/checkpoints/labram-base.pth"
@@ -196,9 +197,26 @@ def main():
                          help="Allow fewer subjects/files to load than the split lists. "
                               "Default off: a shortfall raises instead of silently "
                               "training/evaluating on fewer subjects than intended.")
+    parser.add_argument("--seed", type=int, default=None,
+                         help="Seeds python/numpy/torch/CUDA, the training DataLoader's "
+                              "shuffle generator, and per-worker RNGs for reproducibility. "
+                              "Default (omitted) preserves existing behavior exactly: no "
+                              "seeding call is made (this script has no config-file seed "
+                              "field to begin with).")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    git_commit = get_git_commit(REPO_ROOT)
+    config_dict = {**vars(args), "git_commit": git_commit}
+    if args.seed is not None:
+        set_seed(args.seed)
+        print(f"Reproducibility: seed={args.seed} applied to python/numpy/torch/CUDA; "
+              f"cudnn.deterministic={torch.backends.cudnn.deterministic}", flush=True)
+        print(RANDOMNESS_SOURCES, flush=True)
+    else:
+        print("Reproducibility: no --seed given; training is unseeded (existing behavior).",
+              flush=True)
 
     fold_num = int(args.fold_key.replace("fold_", ""))
     if args.checkpoint_dir:
@@ -212,7 +230,7 @@ def main():
     print(f">>> RESULTS DIR: {exp.results_dir}", flush=True)
 
     tracker = init_run(model="labram", pretrain_method="finetuned", modality=exp.modality,
-                        split_id=exp.split_id, fold=fold_num)
+                        split_id=exp.split_id, fold=fold_num, seed=args.seed, git_commit=git_commit)
 
     try:
         # Derived from exp.split_id (not args.split_id directly) so a resumed
@@ -227,10 +245,18 @@ def main():
                                      allow_missing_subjects=args.allow_missing_subjects)
         print(f"[{args.modality}] train={len(train_ds)} val={len(val_ds)}", flush=True)
 
+        shuffle_generator = None
+        worker_init = None
+        if args.seed is not None:
+            shuffle_generator = torch.Generator()
+            shuffle_generator.manual_seed(args.seed)
+            worker_init = seed_worker
+
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
-                                   num_workers=args.num_workers, drop_last=True)
+                                   num_workers=args.num_workers, drop_last=True,
+                                   generator=shuffle_generator, worker_init_fn=worker_init)
         val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
-                                 num_workers=args.num_workers)
+                                 num_workers=args.num_workers, worker_init_fn=worker_init)
 
         model = build_model(args.modality).to(device)
         input_chans = torch.tensor(get_input_chans(get_ch_names(args.modality)), device=device)
@@ -262,7 +288,7 @@ def main():
                   f"patience_counter={patience_counter}", flush=True)
         else:
             with open(os.path.join(out_dir, "config.json"), "w") as f:
-                json.dump(vars(args), f, indent=2)
+                json.dump(config_dict, f, indent=2)
 
         for epoch in range(start_epoch, args.epochs):
             train_loss, train_f1, _ = run_epoch(model, train_loader, device, input_chans, optimizer, class_weights)
@@ -275,7 +301,7 @@ def main():
                 patience_counter = 0
                 torch.save(model.state_dict(), os.path.join(out_dir, "best.pth"))
                 with open(os.path.join(out_dir, "config.json"), "w") as f:
-                    json.dump(vars(args), f, indent=2)
+                    json.dump(config_dict, f, indent=2)
                 link_checkpoint_and_results(exp, fold_num)
                 tracker.mark_best(epoch + 1, val_f1, per_class_f1=val_per_class_f1)
                 marker = " *"

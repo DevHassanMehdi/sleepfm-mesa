@@ -7,6 +7,8 @@ from loguru import logger
 import wandb
 import yaml
 import os
+import random
+import subprocess
 
 # Must be set before h5py is imported (via models.dataset) to take effect.
 os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
@@ -33,6 +35,34 @@ from sklearn.metrics import f1_score
 torch.backends.cuda.enable_flash_sdp(False)
 torch.backends.cuda.enable_mem_efficient_sdp(False)
 torch.backends.cuda.enable_math_sdp(True)
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+def seed_worker(worker_id):
+    """Pass as DataLoader(..., worker_init_fn=seed_worker) alongside a
+    seeded generator= so each DataLoader worker process gets its own
+    deterministic RNG state instead of inheriting an identical fork of
+    whatever state the parent process happened to be in."""
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
+def get_git_commit():
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, stderr=subprocess.DEVNULL
+        ).decode().strip()
+    except Exception:
+        return "unknown"
 
 
 def masked_cross_entropy_loss(outputs, y_data, mask, device):
@@ -114,7 +144,13 @@ def masked_cross_entropy_loss(outputs, y_data, mask, device):
               help="Allow fewer subjects/files to load than the split lists for a "
                    "given split name. Default off: a shortfall raises instead of "
                    "silently training/evaluating on fewer subjects than intended.")
-def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience, root, split_tmp_dir, allow_missing_subjects):
+@click.option("--seed", type=int, default=None,
+              help="Seeds python/numpy/torch/CUDA, the training DataLoader's "
+                   "shuffle generator, and per-worker RNGs for reproducibility. "
+                   "Default (omitted) preserves existing behavior exactly: no "
+                   "seeding call is made, regardless of the config's own "
+                   "(otherwise unused) 'seed' field.")
+def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, split_path, hdf5_dir, train_split, fold, pretrain_approach, split_id, timestamp, patience, root, split_tmp_dir, allow_missing_subjects, seed):
     # Load configuration
     config = load_config(config_path)
     channel_groups = load_config(channel_groups_path)
@@ -211,6 +247,40 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
 
     config["allow_missing_subjects"] = allow_missing_subjects
 
+    # config["seed"] previously existed as a static, unapplied field (always
+    # 42 regardless of whether any seeding actually happened). Overwrite it
+    # with the truth: the actual --seed value used for THIS run (None if the
+    # flag was omitted), so config.json never implies seeding that didn't
+    # happen. git_commit is recorded unconditionally -- cheap, and useful
+    # provenance for every run, not just seeded ones.
+    git_commit = get_git_commit()
+    config["seed"] = seed
+    config["git_commit"] = git_commit
+
+    if seed is not None:
+        set_seed(seed)
+        logger.info(f"Reproducibility: seed={seed} applied to python/numpy/torch/CUDA; "
+                    f"cudnn.deterministic={torch.backends.cudnn.deterministic}")
+        logger.info(
+            "Randomness sources and what --seed controls: "
+            "(1) model head initialization (SleepEventLSTMClassifier's "
+            "AttentionPooling/TransformerEncoder/LSTM/Linear layers, freshly "
+            "initialized at construction) -- controlled by torch.manual_seed + "
+            "torch.cuda.manual_seed_all; "
+            "(2) training data order (train_loader shuffle=True) -- controlled "
+            "by an explicit per-run torch.Generator seeded from --seed; "
+            "(3) dropout masks during training (AttentionPooling/"
+            "TransformerEncoder/LSTM dropout) -- controlled by the CUDA RNG via "
+            "torch.cuda.manual_seed_all; "
+            "(4) DataLoader worker processes (num_workers>0) -- controlled by "
+            "worker_init_fn, seeded deterministically per worker. "
+            "The frozen pretrained encoder (model_path) is not reinitialized "
+            "here and has no randomness of its own at fine-tuning time; no "
+            "data augmentation or random subsampling is used by this script."
+        )
+    else:
+        logger.info("Reproducibility: no --seed given; training is unseeded (existing behavior).")
+
     # exp is None only on the --checkpoint_path resume branch, which doesn't
     # preserve pretrain_approach/split_id as robustly as the --checkpoint_dir
     # convention used by finetune_biot.py/finetune_labram.py/finetune_sensorlm.py
@@ -221,6 +291,8 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
         modality=(exp.modality if exp is not None else channel_like_string),
         split_id=(exp.split_id if exp is not None else split_id),
         fold=fold,
+        seed=seed,
+        git_commit=git_commit,
     )
 
     try:
@@ -246,8 +318,24 @@ def finetune_sleep_staging(config_path, channel_groups_path, checkpoint_path, sp
       train_dataset = Dataset(config, channel_groups, split=train_split)
       val_dataset = Dataset(config, channel_groups, split="validation")
 
-      train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate_fn)
-      val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
+      # Only meaningful when --seed is given: an explicit generator for the
+      # shuffling sampler (so train-data order doesn't depend on whatever
+      # state the global torch RNG happens to be in by this point) and a
+      # worker_init_fn so num_workers>0 doesn't give every worker an
+      # identical fork of the same RNG state. No-op either way when --seed
+      # is omitted (generator=None, worker_init_fn=None -- default DataLoader
+      # behavior, unchanged).
+      shuffle_generator = None
+      worker_init = None
+      if seed is not None:
+          shuffle_generator = torch.Generator()
+          shuffle_generator.manual_seed(seed)
+          worker_init = seed_worker
+
+      train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
+                                 collate_fn=collate_fn, generator=shuffle_generator, worker_init_fn=worker_init)
+      val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
+                               collate_fn=collate_fn, worker_init_fn=worker_init)
 
       logger.info(f"Data: fold={fold} | train={len(train_dataset)} | val={len(val_dataset)}")
 

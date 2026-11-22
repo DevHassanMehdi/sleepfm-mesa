@@ -65,7 +65,8 @@ CLASS_NAMES = ["Wake", "N1", "N2", "N3", "REM"]
 
 class RunTracker:
     def __init__(self, model, pretrain_method, modality, split_id, fold=None,
-                 metric_name="Macro_F1", timestamp=None, sample_interval_s=30):
+                 metric_name="Macro_F1", timestamp=None, sample_interval_s=30,
+                 seed=None, git_commit=None):
         self.model = model
         self.pretrain_method = pretrain_method
         self.modality = modality
@@ -73,6 +74,11 @@ class RunTracker:
         self.fold = fold
         self.metric_name = metric_name
         self.is_finetune = fold is not None
+        # Provenance for the --seed reproducibility flag -- None/omitted on
+        # every caller that hasn't added --seed yet, so summary.txt's format
+        # is unchanged for them. See _build_summary_lines.
+        self.seed = seed
+        self.git_commit = git_commit
 
         # Seconds + PID (not just %H%M) -- two processes for the identical
         # (model, pretrain_method, modality, split_id, fold) tuple starting in
@@ -351,6 +357,17 @@ class RunTracker:
 
         lines.append(f"Status: {status}")
 
+        if self.seed is not None:
+            try:
+                import torch
+                cudnn_det = torch.backends.cudnn.deterministic
+            except Exception:
+                cudnn_det = "unknown"
+            lines.append(
+                f"Seed: {self.seed} | cuDNN deterministic: {cudnn_det} | "
+                f"Git commit: {self.git_commit}"
+            )
+
         util_str = f"{avg_util:.1f}" if avg_util is not None else "N/A"
         mem_str = f"{peak_mem_gb:.2f}" if peak_mem_gb is not None else "N/A"
         lines.append(
@@ -400,6 +417,7 @@ class RunTracker:
 
 
 def init_run(model, pretrain_method, modality, split_id, fold=None,
-             metric_name="Macro_F1", timestamp=None):
+             metric_name="Macro_F1", timestamp=None, seed=None, git_commit=None):
     return RunTracker(model, pretrain_method, modality, split_id, fold=fold,
-                       metric_name=metric_name, timestamp=timestamp)
+                       metric_name=metric_name, timestamp=timestamp,
+                       seed=seed, git_commit=git_commit)
